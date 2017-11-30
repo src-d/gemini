@@ -94,12 +94,17 @@ MASTER="spark://<spark-master-url>" ./hash <path>
 
 # Dev
 
-Build
+Build, fatJar for Apache Spark (hash, report)
 ```
 ./sbt assembly
 ```
 
-Tests with embedded Cassandra
+Build, for query
+```
+./sbt package
+```
+
+Tests (with embedded Cassandra)
 ```
 ./sbt test
 ```
