@@ -1,0 +1,21 @@
+language: scala
+scala:
+   - 2.11.2
+
+matrix:
+  fast_finish: true
+  include:
+  - scala: 2.11.2
+    script: ./sbt test
+
+  - scala: 2.11.2
+    env: INTEGRATION_TESTS=true
+    script: ./hash .; ./query ./LICENSE
+
+  - scala: 2.11.2
+    env: STYLE_CHECK=true
+    script: ./sbt scalastyle
+
+cache:
+  directories:
+    - /home/travis/.sbt

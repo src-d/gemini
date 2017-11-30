@@ -1,0 +1,48 @@
+#!/bin/bash
+# Convenience script to run hashing over a set repositories in .siva files
+
+E_NO_SPARK=141
+E_BUILD_FAILED=142
+
+jar="target/gemini-uber.jar"
+build_command="./sbt assembly"
+
+app_class="tech.sourced.gemini.HashSparkApp"
+app_name="Gemini - hashing"
+
+hash java >/dev/null 2>&1 || { echo "Please install Java" >&2; exit 1; }
+
+if [[ ! -f "${jar}" ]]; then
+    echo "${jar} not found. Running build '${build_command}'"
+    if ! $build_command ; then
+        exit "${E_BUILD_FAILED}"
+    fi
+fi
+
+sparkSubmit() {
+    if hash spark-submit 2>/dev/null; then
+        exec spark-submit "$@"
+    elif [[ -n "${SPARK_HOME}" ]]; then
+        echo "Using spark-submit from ${SPARK_HOME}"
+        exec "${SPARK_HOME}/bin/spark-submit" "$@"
+    else
+        echo "Please, install and configure Apache Spark, set $SPARK_HOME"
+        exit "${E_NO_SPARK}"
+    fi
+}
+
+#  --conf "spark.local.dir=/spark-temp-data" \
+#  --conf "spark.executor.extraJavaOptions=-Djava.io.tmpdir=/spark-temp-data" \
+#  --conf "spark.eventLog.enabled=true" \
+
+# https://issues.apache.org/jira/browse/SPARK-16784
+# spark.executor.extraJavaOptions=-Dlog4j.configuration=log4j-spark.properties
+
+sparkSubmit \
+  --class "${app_class}" \
+  --master "${MASTER:=local[*]}" \
+  --name "${app_name}" \
+  --conf "spark.executor.memory=4g" \
+  --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j-spark.properties" \
+  "${jar}" \
+  "$@"

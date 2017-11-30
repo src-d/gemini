@@ -1,0 +1,10 @@
+*~
+#*
+.#
+~*
+target/
+.idea/
+
+metastore_db/
+scylla
+derby.log
