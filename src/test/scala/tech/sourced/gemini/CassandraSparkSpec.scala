@@ -50,7 +50,7 @@ class CassandraSparkSpec extends FlatSpec
 
     conn.withSessionDo { session =>
       val sha1 = Gemini.query("LICENSE", session)
-      sha1.head should be("43fa11234bc29cdd498cba1e200edd2dae052fa9") // git hash-object -w LICENSE
+      sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
     }
   }
 

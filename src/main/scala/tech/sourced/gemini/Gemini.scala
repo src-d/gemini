@@ -40,7 +40,7 @@ class Gemini(session: SparkSession) {
 
 }
 
-case class RepoFile(repo: String, file: String)
+case class RepoFile(repo: String, file: String, sha: String)
 
 object Gemini {
   val formatter = new ObjectInserter.Formatter
@@ -81,7 +81,7 @@ object Gemini {
     results = conn
       .execute(query)
       .asScala map { row =>
-        RepoFile(row.getString("repo"), row.getString("file_path"))
+        RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
       }
     results
   }
