@@ -1,18 +1,26 @@
 package tech.sourced.gemini
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-trait BaseSparkSpec extends BeforeAndAfterAll
-  /*with BeforeAndAfterEach*/ {
+trait BaseSparkSpec extends BeforeAndAfterAll {
   this: Suite =>
 
-  @transient var ss: SparkSession = _
+  @transient var sparkSession: SparkSession = _
+  private var _conf: SparkConf = _
+
+  def useSparkConf(conf: SparkConf): SparkConf = {
+    _conf = conf
+    _conf
+  }
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    ss = SparkSession.builder()
+
+    sparkSession = SparkSession.builder()
       .appName("test").master("local[*]")
+      .config(_conf)
       .config("spark.driver.host", "localhost")
       .getOrCreate()
   }
@@ -23,9 +31,9 @@ trait BaseSparkSpec extends BeforeAndAfterAll
   }
 
   def resetSparkContext(): Unit = {
-    if (ss != null) {
-      ss.stop()
+    if (sparkSession != null) {
+      sparkSession.stop()
     }
-    ss = null
+    sparkSession = null
   }
 }

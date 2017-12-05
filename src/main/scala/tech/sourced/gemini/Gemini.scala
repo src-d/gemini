@@ -81,8 +81,8 @@ object Gemini {
     results = conn
       .execute(query)
       .asScala map { row =>
-      RepoFile(row.getString("repo"), row.getString("file_path"))
-    }
+        RepoFile(row.getString("repo"), row.getString("file_path"))
+      }
     results
   }
 
@@ -93,16 +93,17 @@ object Gemini {
     objectId.getName
   }
 
-  def applySchema(session: Session, pathToCqlFile: String): Seq[Future[Any]] = {
+  def applySchema(session: Session, pathToCqlFile: String): TraversableOnce[Future[Any]] = {
     implicit val ec = scala.concurrent.ExecutionContext.global
 
     return Source
       .fromFile(pathToCqlFile)
       .getLines
       .map(_.trim)
-      .filter(_.isEmpty)
+      .filter(!_.isEmpty)
       .map { line =>
+        println(s"CQL: $line")
         Future(session.execute(line))
-      }.toSeq
+      }
   }
 }
