@@ -1,8 +1,22 @@
 package tech.sourced.gemini
 
 object ReportSparkApp extends App {
-  val reposPath = args(1)
-  println(s"Reporting all duplicates of: $reposPath") // "in (project1, project2, ...)"?
+  def printUsage(): Unit = {
+    println("Usage: ./report <repository>")
+    println("")
+    println("Finds duplicated files among hashed repositories")
+    println("  <repository> - repository url, example: github.com/src-d/go-git.git")
+    System.exit(2)
+  }
+
+  if (args.length <= 0) {
+    printUsage()
+  }
+
+  val repository = args(0)
+  println(s"Reporting all duplicates of: $repository")
+
+  val similar = Gemini.report(repository)
 
   //for every file
   // query Cassandry by hash
