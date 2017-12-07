@@ -43,7 +43,7 @@ class Gemini(session: SparkSession) {
 case class RepoFile(repo: String, file: String, sha: String)
 
 object Gemini {
-  val defaultCassandraHost: String = "0.0.0.0"
+  val defaultCassandraHost: String = "127.0.0.1"
   val defaultCassandraPort: String = "9042"
 
   val formatter = new ObjectInserter.Formatter

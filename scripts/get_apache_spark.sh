@@ -3,7 +3,7 @@
 # A helper script to get Apache Spark spark-shell on CI machine
 # Use TravisCI cache to minimize load on ASF mirrors
 
-set -ev
+set -e
 
 if [[ "$#" -ne 2 ]]; then
     echo "usage) $0 [spark version] [hadoop version]"
