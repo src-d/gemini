@@ -1,11 +1,12 @@
 #!/bin/bash
-set -ev
 
 # CI convenience script to start a DB in Docker container.
 # Skips starting DB for jobs that do not need it i.e stylecheck
 
 E_BAD_DOCKER=2
 image="scylladb/scylla:2.0.0"
+
+set -ev
 
 if [[ -z "${STYLE_CHECK}" ]]; then
   echo "Starting Docker image ${image}"

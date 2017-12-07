@@ -1,8 +1,8 @@
 #!/bin/bash
 # Convenience script to run hashing over a set repositories in .siva files
 
-E_NO_SPARK=141
-E_BUILD_FAILED=142
+E_NO_SPARK=2
+E_BUILD_FAILED=1
 
 jar="target/gemini-uber.jar"
 build_command="./sbt assembly"
@@ -26,7 +26,7 @@ sparkSubmit() {
         echo "Using spark-submit from ${SPARK_HOME}"
         exec "${SPARK_HOME}/bin/spark-submit" "$@"
     else
-        echo "Please, install and configure Apache Spark, set $SPARK_HOME"
+        echo "Please, install and configure Apache Spark, set SPARK_HOME"
         exit "${E_NO_SPARK}"
     fi
 }

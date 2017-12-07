@@ -6,6 +6,10 @@ sudo: required
 services:
   - docker
 
+env:
+  global:
+    - SPARK_HOME=./spark
+
 matrix:
   fast_finish: true
   include:
@@ -15,7 +19,8 @@ matrix:
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
     script:
-     - ./hash .
+     - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
+     - ./hash . || travis_terminate 1
      - ./query ./LICENSE
 
   - scala: 2.11.2
@@ -30,5 +35,6 @@ after_failure:
 
 cache:
   directories:
+    - .spark-dist
     - /home/travis/.sbt
     - /home/travis/.ivy2
