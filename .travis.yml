@@ -14,15 +14,21 @@ matrix:
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
-    script: ./hash .; ./query ./LICENSE
+    script:
+     - ./hash .
+     - ./query ./LICENSE
 
   - scala: 2.11.2
     env: STYLE_CHECK=true
     script: ./sbt scalastyle
 
 before_script:
- - docker run -p 9042:9042 -d scylladb/scylla:2.0.0 --broadcast-address 127.0.0.1 --listen-address 0.0.0.0 --broadcast-rpc-address 127.0.0.1 --memory 2G --smp 1
+ - ./scripts/start_docker.sh
+
+after_failure:
+ - docker logs db
 
 cache:
   directories:
     - /home/travis/.sbt
+    - /home/travis/.ivy2
