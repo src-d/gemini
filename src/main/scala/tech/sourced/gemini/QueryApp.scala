@@ -18,8 +18,8 @@ object QueryApp extends App {
   val file = args(0)
   println(s"Query duplicate files to: $file")
 
-  //wrap to CassandraConnector(config).withSessionDo { session =>
-  val cluster = Cluster.builder().addContactPoint("0.0.0.0").build()
+  //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
+  val cluster = Cluster.builder().addContactPoint(Gemini.defaultCassandraHost).build()
   val session = cluster.connect()
   val similar = Gemini.query(file, session)
 
@@ -27,7 +27,7 @@ object QueryApp extends App {
   cluster.close
 
   if (similar.isEmpty) {
-    println(s"NodDuplicates of $file found.")
+    println(s"No duplicates of $file found.")
     System.exit(1)
   } else {
     println(s"Duplicates of $file:\n\t" + (similar mkString ("\n\t")))

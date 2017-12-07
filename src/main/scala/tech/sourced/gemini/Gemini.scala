@@ -43,6 +43,9 @@ class Gemini(session: SparkSession) {
 case class RepoFile(repo: String, file: String, sha: String)
 
 object Gemini {
+  val defaultCassandraHost: String = "0.0.0.0"
+  val defaultCassandraPort: String = "9042"
+
   val formatter = new ObjectInserter.Formatter
 
   def apply(ss: SparkSession): Gemini = new Gemini(ss)
@@ -67,8 +70,8 @@ object Gemini {
     }
   }
 
-  //TODO
   def findDuplicateProjects(in: File, conn: Session): Iterable[RepoFile] = {
+    //TODO(bzz): project is duplicate if it has all it's files in some other projects
     throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
   }
 

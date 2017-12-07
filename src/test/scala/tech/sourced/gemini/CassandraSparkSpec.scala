@@ -20,8 +20,8 @@ class CassandraSparkSpec extends FlatSpec
   // + spark-cassandra-connector/blob/master/spark-cassandra-connector/src/it/resources/cassandra-3.2.yaml.template
 
   val defaultConf = new SparkConf(true)
-    .set("spark.cassandra.connection.host", "127.0.0.1")
-    .set("spark.cassandra.connection.port", "9042")
+    .set("spark.cassandra.connection.host", Gemini.defaultCassandraHost)
+    .set("spark.cassandra.connection.port", Gemini.defaultCassandraPort)
     .set("spark.cassandra.connection.keep_alive_ms", "5000")
     .set("spark.cassandra.connection.timeout_ms", "30000")
     .set("spark.ui.showConsoleProgress", "false")
