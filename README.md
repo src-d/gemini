@@ -23,7 +23,7 @@ borges pack --loglevel=debug --workers=2 --to=./repos -f repo-list.txt
 
 # start Apache Cassandra
 docker run -p 9042:9042 \
-  --name cassandra -d rinscy/cassandra:3.11.1
+  --name cassandra -d rinscy/cassandra:3.11
 
 # or ScyllaDB \w workaround https://github.com/gocql/gocql/issues/987
 docker run -p 9042:9042 --volume $(pwd)/scylla:/var/lib/scylla \
