@@ -4,6 +4,7 @@ import java.io.{File, FileInputStream}
 
 import com.datastax.driver.core.Session
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.eclipse.jgit.lib.Constants.OBJ_BLOB
 import org.eclipse.jgit.lib.ObjectInserter
@@ -32,6 +33,16 @@ class Gemini(session: SparkSession) {
 
     filesToWrite
   }
+
+  def hashAndSave(reposPath: String): Unit = {
+    val files = hash(reposPath)
+    println(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
+    files.write
+      .mode("append")
+      .cassandraFormat("blob_hash_files", "hashes")
+      .save()
+  }
+
 }
 
 case class RepoFile(repo: String, file: String, sha: String)

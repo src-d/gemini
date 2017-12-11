@@ -4,6 +4,7 @@ import com.datastax.driver.core.Session
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.cassandra._
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 import scala.concurrent.duration.Duration
@@ -52,18 +53,20 @@ class CassandraSparkSpec extends FlatSpec
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
-  "Read from Cassandra" should "return same results as were written" in {
+  "Read from Cassandra" should "return same results as written" in {
     val gemini = Gemini(sparkSession)
 
-    println("Hashing:")
-    //TODO(bzz): repo URL list, that will be fetched by Engine
-    gemini.hash("src/test/resources/siva")
-    println("Done.")
+    println("Hash")
+    gemini.hashAndSave("src/test/resources/siva")
+    println("Done")
 
-    println("Query:")
+    println("Query")
     val sha1 = Gemini.query("LICENSE", session)
-    println("Done.")
+    println("Done")
+
     sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
+
+  //TODO(bzz): add test \w repo URL list, that will be fetched by Engine
 
 }
