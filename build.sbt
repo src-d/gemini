@@ -12,14 +12,16 @@ libraryDependencies ++= Seq(
   spark % Test,
 
   sparkSql % Provided,
+  fixNewerHadoopClient % Provided, //due to newer v. of guava
+
   scalaLib % Compile,
   engine % Compile,
   jgit % Compile,
   fixNetty,
-  cassandraDriverMetrics % Compile, //needed for using Driver from SparkConnector
+  cassandraDriverMetrics % Compile, //needed for using Driver \wo Spark from SparkConnector
   cassandraSparkConnector % Compile
 )
-assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true)
+assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 assemblyJarName in assembly := s"${name.value}-uber.jar"
 
 assemblyMergeStrategy in assembly := {
