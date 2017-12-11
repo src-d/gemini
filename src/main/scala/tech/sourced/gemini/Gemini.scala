@@ -2,7 +2,7 @@ package tech.sourced.gemini
 
 import java.io.{File, FileInputStream}
 
-import com.datastax.driver.core.Session
+import com.datastax.driver.core.{Session, SimpleStatement}
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -52,6 +52,9 @@ class Gemini(session: SparkSession) {
 }
 
 case class RepoFile(repo: String, file: String, sha: String)
+case class DuplicateBlobHash(sha: String, count: Long) {
+   override def toString(): String = s"$sha ($count duplicates)"
+}
 
 object Gemini {
   val defaultCassandraHost: String = "127.0.0.1"
@@ -83,13 +86,33 @@ object Gemini {
   }
 
   /**
-    * Finds duplicated files among hashed repositories that already exists in certain repository
+    * Finds duplicate files among hashed repositories
     *
-    * @param repository repository url, example: github.com/src-d/go-git.git"
+    * @param conn   Database connection
     * @return
     */
-  def report(repository: String): Iterable[RepoFile] = {
-    throw new UnsupportedOperationException("Finding all duplicate files in many repositories is no implemented yet.")
+  def report(conn: Session): Iterable[DuplicateBlobHash] = {
+    findDuplicateBlobHash(conn)
+  }
+
+  /**
+    * Finds duplicate files among hashed repositories, and returns all duplicated files
+    *
+    * @param conn   Database connection
+    * @return
+    */
+  def detailedReport(conn: Session): Iterable[Iterable[RepoFile]] = {
+    findDuplicateBlobHash(conn)
+        .map {d => findDuplicateFiles(d.sha, conn)}
+  }
+
+  def findDuplicateBlobHash(conn: Session): Iterable[DuplicateBlobHash] = {
+    val cql = "SELECT blob_hash, repo, file_path, COUNT(*) as count FROM hashes.blob_hash_files GROUP BY blob_hash"
+    conn
+      .execute(new SimpleStatement(cql))
+      .asScala
+      .filter( _.getLong("count") > 1 )
+      .map { r => DuplicateBlobHash(r.getString("blob_hash"), r.getLong("count")) }
   }
 
   def findDuplicateProjects(in: File, conn: Session): Iterable[RepoFile] = {
@@ -98,7 +121,10 @@ object Gemini {
   }
 
   def findDuplicateFiles(file: File, conn: Session): Iterable[RepoFile] = {
-    val sha = computeSha1(file)
+    findDuplicateFiles(computeSha1(file), conn)
+  }
+
+  def findDuplicateFiles(sha: String, conn: Session): Iterable[RepoFile] = {
     val query = QueryBuilder.select().all().from("hashes", "blob_hash_files").where(QueryBuilder.eq("blob_hash", sha))
     conn.execute(query).asScala.map { row =>
       RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
