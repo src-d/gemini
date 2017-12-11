@@ -9,8 +9,6 @@ name := "gemini"
 libraryDependencies ++= Seq(
   scalaTest % Test,
   scoverage % Test,
-  cassandra % Test,
-  cassandraSparkConnectorEmbedded % Test exclude("com.datastax.cassandra", "cassandra-driver-core"),
   spark % Test,
 
   sparkSql % Provided,
@@ -18,10 +16,9 @@ libraryDependencies ++= Seq(
   engine % Compile,
   jgit % Compile,
   fixNetty,
-  cassandraSparkConnector % Compile exclude("com.datastax.cassandra", "cassandra-driver-core"),
-  cassandraDriver % Compile exclude("io.netty", "*")
-).map(_.exclude("org.slf4j", "log4j-over-slf4j"))  // Cassandra embedded does not run with those
-
+  cassandraDriverMetrics % Compile, //needed for using Driver from SparkConnector
+  cassandraSparkConnector % Compile
+)
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true)
 assemblyJarName in assembly := s"${name.value}-uber.jar"
 

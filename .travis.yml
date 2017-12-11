@@ -2,20 +2,42 @@ language: scala
 scala:
    - 2.11.2
 
+sudo: required
+services:
+  - docker
+
+env:
+  global:
+    - SPARK_HOME=./spark
+
 matrix:
   fast_finish: true
   include:
   - scala: 2.11.2
-    script: ./sbt test
+    script:
+      - ./scripts/wait-for-it.sh 127.0.0.1:9042 -- echo "Cassandra/ScyllaDB is up"
+      - ./sbt test
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
-    script: ./hash .; ./query ./LICENSE
+    script:
+     - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
+     - ./scripts/wait-for-it.sh 127.0.0.1:9042 -- echo "Cassandra/ScyllaDB is up"
+     - ./hash . || travis_terminate 1
+     - ./query ./LICENSE
 
   - scala: 2.11.2
     env: STYLE_CHECK=true
     script: ./sbt scalastyle
 
+before_script:
+ - ./scripts/start_docker.sh
+
+after_failure:
+ - docker logs db
+
 cache:
   directories:
+    - .spark-dist
     - /home/travis/.sbt
+    - /home/travis/.ivy2

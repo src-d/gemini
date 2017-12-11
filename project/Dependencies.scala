@@ -9,8 +9,6 @@ object Dependencies {
   lazy val fixNetty = "io.netty" % "netty-all" % "4.1.11.Final"
   lazy val engine = "tech.sourced" % "engine" % "0.1.12" classifier "slim"
   lazy val jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "4.9.0.201710071750-r"
-  lazy val cassandra =  "org.apache.cassandra" % "cassandra-all" % "3.2"
-  lazy val cassandraDriver = "com.datastax.cassandra" % "cassandra-driver-core" % "3.1.4" classifier "shaded"
-  lazy val cassandraSparkConnector = "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.5"
-  lazy val cassandraSparkConnectorEmbedded = "com.datastax.spark" %% "spark-cassandra-connector-embedded" % "2.0.5"
+  lazy val cassandraSparkConnector = "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.6"
+  lazy val cassandraDriverMetrics = "com.codahale.metrics" % "metrics-core" % "3.0.2"
 }

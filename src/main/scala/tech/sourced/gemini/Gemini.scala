@@ -40,9 +40,12 @@ class Gemini(session: SparkSession) {
 
 }
 
-case class RepoFile(repo: String, file: String)
+case class RepoFile(repo: String, file: String, sha: String)
 
 object Gemini {
+  val defaultCassandraHost: String = "127.0.0.1"
+  val defaultCassandraPort: String = "9042"
+
   val formatter = new ObjectInserter.Formatter
 
   def apply(ss: SparkSession): Gemini = new Gemini(ss)
@@ -67,8 +70,8 @@ object Gemini {
     }
   }
 
-  //TODO
   def findDuplicateProjects(in: File, conn: Session): Iterable[RepoFile] = {
+    //TODO(bzz): project is duplicate if it has all it's files in some other projects
     throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
   }
 
@@ -81,8 +84,8 @@ object Gemini {
     results = conn
       .execute(query)
       .asScala map { row =>
-      RepoFile(row.getString("repo"), row.getString("file_path"))
-    }
+        RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
+      }
     results
   }
 
@@ -93,16 +96,17 @@ object Gemini {
     objectId.getName
   }
 
-  def applySchema(session: Session, pathToCqlFile: String): Seq[Future[Any]] = {
+  def applySchema(session: Session, pathToCqlFile: String): TraversableOnce[Future[Any]] = {
     implicit val ec = scala.concurrent.ExecutionContext.global
 
     return Source
       .fromFile(pathToCqlFile)
       .getLines
       .map(_.trim)
-      .filter(_.isEmpty)
+      .filter(!_.isEmpty)
       .map { line =>
+        println(s"CQL: $line")
         Future(session.execute(line))
-      }.toSeq
+      }
   }
 }
