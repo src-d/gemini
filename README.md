@@ -23,7 +23,7 @@ borges pack --loglevel=debug --workers=2 --to=./repos -f repo-list.txt
 
 # start Apache Cassandra
 docker run -p 9042:9042 \
-  --name cassandra -d rinscy/cassandra:3.11.1
+  --name cassandra -d rinscy/cassandra:3.11
 
 # or ScyllaDB \w workaround https://github.com/gocql/gocql/issues/987
 docker run -p 9042:9042 --volume $(pwd)/scylla:/var/lib/scylla \
@@ -34,7 +34,13 @@ docker run -p 9042:9042 --volume $(pwd)/scylla:/var/lib/scylla \
 # to get access to DB for development
 docker exec -it some-scylla cqlsh
 
-# apply schema from ./src/main/resourced/schema.cql
+# apply schema from ./src/main/resources/schema.cql
+while read query; do
+    if [ -n "${query}" ]; then
+        echo "RUNNING: ${query}";
+        docker exec cassandra cqlsh -e "${query}";
+    fi;
+done < ./src/main/resources/schema.cql
 ```
 
 
