@@ -32,12 +32,6 @@ class Gemini(session: SparkSession) {
 
     filesToWrite
   }
-
-  //TODO
-  def report(reposPath: String): DataFrame = {
-    throw new UnsupportedOperationException("Finding all duplicate files in many repositories is no implemented yet.")
-  }
-
 }
 
 case class RepoFile(repo: String, file: String, sha: String)
@@ -68,6 +62,16 @@ object Gemini {
       //TODO: implement based on Apolo
       //findSimilarFiles(path, conn)
     }
+  }
+
+  /**
+    * Finds duplicated files among hashed repositories that already exists in certain repository
+    *
+    * @param repository repository url, example: github.com/src-d/go-git.git"
+    * @return
+    */
+  def report(repository: String): Iterable[RepoFile] = {
+    throw new UnsupportedOperationException("Finding all duplicate files in many repositories is no implemented yet.")
   }
 
   def findDuplicateProjects(in: File, conn: Session): Iterable[RepoFile] = {
