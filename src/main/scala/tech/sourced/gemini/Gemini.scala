@@ -11,7 +11,6 @@ import org.eclipse.jgit.lib.ObjectInserter
 import tech.sourced.engine._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
 import scala.io.Source
 
 
@@ -50,6 +49,7 @@ case class RepoFile(repo: String, file: String, sha: String)
 object Gemini {
   val defaultCassandraHost: String = "127.0.0.1"
   val defaultCassandraPort: String = "9042"
+  val defaultSchemaFile: String = "src/main/resources/schema.cql"
 
   val formatter = new ObjectInserter.Formatter
 
@@ -111,17 +111,18 @@ object Gemini {
     objectId.getName
   }
 
-  def applySchema(session: Session, pathToCqlFile: String): TraversableOnce[Future[Any]] = {
-    implicit val ec = scala.concurrent.ExecutionContext.global
-
-    return Source
+  def applySchema(session: Session, pathToCqlFile: String = defaultSchemaFile): Unit = {
+    println("CQL: creating schema") //TODO(bzz): Log.Debug
+    Source
       .fromFile(pathToCqlFile)
       .getLines
       .map(_.trim)
       .filter(!_.isEmpty)
-      .map { line =>
+      .foreach { line =>
         println(s"CQL: $line")
-        Future(session.execute(line))
+        session.execute(line)
       }
+    println("CQL: Done. Schema created")
   }
+
 }

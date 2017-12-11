@@ -4,7 +4,6 @@ import com.datastax.driver.core.Session
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.cassandra._
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 import scala.concurrent.duration.Duration
@@ -38,9 +37,7 @@ class CassandraSparkSpec extends FlatSpec
   override def beforeAll(): Unit = {
     super.beforeAll()
     session = CassandraConnector(defaultConf).openSession()
-    println("CQL: creating schema")
-    awaitAll(Gemini.applySchema(session, "src/main/resources/schema.cql"))
-    println("CQL: Done. Schema created")
+    Gemini.applySchema(session)
   }
 
   override def afterAll(): Unit = {
