@@ -7,7 +7,7 @@ Supported granularity level or items are:
  - files
  - functions (TBD)
 
-## Pre-requests
+## Requirements
  - JVM 1.8
  - Apache Cassandra or ScyllaDB
  - Apache Spark
@@ -114,3 +114,8 @@ Tests (with embedded Cassandra)
 ```
 ./sbt test
 ```
+
+## License
+
+Copyright (C) 2017 source{d}.
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
