@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scylladb
+  labels:
+    app: scylladb
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9042
+      protocol: TCP
+      name: scylladb-client
+  selector:
+    app: scylladb

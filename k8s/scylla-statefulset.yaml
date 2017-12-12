@@ -1,0 +1,65 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: scylladb
+  labels:
+    app: scylladb
+spec:
+  serviceName: scylladb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scylladb
+  template:
+    metadata:
+      labels:
+        app: scylladb
+    spec:
+      containers:
+      - name: scylladb
+        image: scylladb/scylla:2.0.2
+        imagePullPolicy: IfNotPresent
+        # to run cluster we will to specify seeds, but I don't know where it will be deployed 
+        # args: ["--seeds", "scylla-0.scylla.default.svc.cluster.local"]
+        ports:
+          - containerPort: 7000
+            name: intra-node
+          - containerPort: 7001
+            name: tls-intra-node
+          - containerPort: 7199
+            name: jmx
+          - containerPort: 9042
+            name: cql
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "PID=$(pidof scylla) && kill $PID && while ps -p $PID > /dev/null; do sleep 1; done"]
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        readinessProbe:
+          exec:
+            command:
+              - /bin/bash
+              - -c
+              - exec
+              - /opt/ready-probe.sh
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        volumeMounts:
+          - name: scylla-data
+            mountPath: /var/lib/scylla
+          - name: scylla-ready-probe
+            mountPath: /opt/ready-probe.sh
+            subPath: ready-probe.sh
+      nodeSelector:
+        # add selecter here when node is ready
+      volumes:
+        - name: scylla-data # don't forget to change to persistent volume
+          emptyDir:
+            medium: "Memory"
+        - name: scylla-ready-probe
+          configMap:
+            name: scylladb
