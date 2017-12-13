@@ -1,13 +1,15 @@
 package tech.sourced.gemini
 
+import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.cassandra._
 
 import scala.util.Properties
 
-
+/**
+  * Apache Spark app that applied LSH to given repos, using source{d} Engine.
+  */
 object HashSparkApp extends App {
   def printUsage(): Unit = {
     println("Usage: ./hash <path-to-git-repos>")
@@ -21,21 +23,19 @@ object HashSparkApp extends App {
     printUsage()
   }
   val reposPath = args(0)
-  val session = SparkSession.builder()
+  val spark = SparkSession.builder()
     .master(Properties.envOrElse("MASTER", "local[*]"))
     .getOrCreate()
 
-  val repos = listRepositories(reposPath, session.sparkContext.hadoopConfiguration)
-  println(s"Hashing all ${repos.length} repositories in: $reposPath\n\t" + (repos mkString ("\n\t")))
+  val repos = listRepositories(reposPath, spark.sparkContext.hadoopConfiguration)
+  println(s"Hashing all ${repos.length} repositories in: $reposPath\n\t" + (repos mkString "\n\t"))
 
-  val gemini = Gemini(session)
+  val gemini = Gemini(spark)
+  CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
+    Gemini.applySchema(cassandra)
+  }
   val filesToWrite = gemini.hash(reposPath)
-
-  println(s"Writing ${filesToWrite.rdd.countApprox(10000L)} files to DB")
-  filesToWrite.write
-    .mode("append")
-    .cassandraFormat("blob_hash_files", "hashes")
-    .save()
+  gemini.save(filesToWrite)
   println("Done")
 
 

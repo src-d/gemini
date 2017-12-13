@@ -23,7 +23,7 @@ matrix:
     script:
      - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
      - ./scripts/wait-for-it.sh 127.0.0.1:9042 -- echo "Cassandra/ScyllaDB is up"
-     - ./hash . || travis_terminate 1
+     - ./hash src/test/resources/siva || travis_terminate 1
      - ./query ./LICENSE
 
   - scala: 2.11.2

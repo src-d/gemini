@@ -4,13 +4,13 @@ import java.io.{File, FileInputStream}
 
 import com.datastax.driver.core.Session
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.eclipse.jgit.lib.Constants.OBJ_BLOB
 import org.eclipse.jgit.lib.ObjectInserter
 import tech.sourced.engine._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
 import scala.io.Source
 
 
@@ -19,7 +19,10 @@ class Gemini(session: SparkSession) {
   def hash(reposPath: String): DataFrame = {
     val engine = Engine(session, reposPath)
 
-    val headRefs = engine.getRepositories.getHEAD.withColumnRenamed("hash", "commit_hash")
+    val headRefs = engine.getRepositories
+      .getReferences //TODO(bzz) replace \w .getHead() after https://github.com/src-d/engine/issues/255
+      .filter("name = 'refs/heads/HEAD' OR name = 'HEAD'")
+      .withColumnRenamed("hash", "commit_hash")
     val files = headRefs.getCommits.getFirstReferenceCommit.getFiles.select("file_hash", "commit_hash", "path")
 
     val filesInRepos = files.join(headRefs, "commit_hash")
@@ -32,6 +35,20 @@ class Gemini(session: SparkSession) {
 
     filesToWrite
   }
+
+  def save(files: DataFrame): Unit = {
+    println(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
+    files.write
+      .mode("append")
+      .cassandraFormat("blob_hash_files", "hashes")
+      .save()
+  }
+
+  def hashAndSave(reposPath: String): Unit = {
+    val files = hash(reposPath)
+    save(files)
+  }
+
 }
 
 case class RepoFile(repo: String, file: String, sha: String)
@@ -39,6 +56,7 @@ case class RepoFile(repo: String, file: String, sha: String)
 object Gemini {
   val defaultCassandraHost: String = "127.0.0.1"
   val defaultCassandraPort: String = "9042"
+  val defaultSchemaFile: String = "src/main/resources/schema.cql"
 
   val formatter = new ObjectInserter.Formatter
 
@@ -81,16 +99,10 @@ object Gemini {
 
   def findDuplicateFiles(file: File, conn: Session): Iterable[RepoFile] = {
     val sha = computeSha1(file)
-
     val query = QueryBuilder.select().all().from("hashes", "blob_hash_files").where(QueryBuilder.eq("blob_hash", sha))
-    var results: Iterable[RepoFile] = Iterable()
-
-    results = conn
-      .execute(query)
-      .asScala map { row =>
-        RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
-      }
-    results
+    conn.execute(query).asScala.map { row =>
+      RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
+    }
   }
 
   def computeSha1(file: File): String = {
@@ -100,17 +112,18 @@ object Gemini {
     objectId.getName
   }
 
-  def applySchema(session: Session, pathToCqlFile: String): TraversableOnce[Future[Any]] = {
-    implicit val ec = scala.concurrent.ExecutionContext.global
-
-    return Source
+  def applySchema(session: Session, pathToCqlFile: String = defaultSchemaFile): Unit = {
+    println("CQL: creating schema") //TODO(bzz): Log.Debug
+    Source
       .fromFile(pathToCqlFile)
       .getLines
       .map(_.trim)
       .filter(!_.isEmpty)
-      .map { line =>
+      .foreach { line =>
         println(s"CQL: $line")
-        Future(session.execute(line))
+        session.execute(line)
       }
+    println("CQL: Done. Schema created")
   }
+
 }

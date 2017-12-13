@@ -37,7 +37,7 @@ class CassandraSparkSpec extends FlatSpec
   override def beforeAll(): Unit = {
     super.beforeAll()
     session = CassandraConnector(defaultConf).openSession()
-    awaitAll(Gemini.applySchema(session, "src/main/resources/schema.cql"))
+    Gemini.applySchema(session)
   }
 
   override def afterAll(): Unit = {
@@ -50,14 +50,20 @@ class CassandraSparkSpec extends FlatSpec
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
-  "Read from Cassandra" should "return same results as were written" in {
+  "Read from Cassandra" should "return same results as written" in {
     val gemini = Gemini(sparkSession)
 
-    //TODO(bzz): repo URL list, that will be fetched by Engine
-    gemini.hash("src/test/resources/siva")
+    println("Hash")
+    gemini.hashAndSave("src/test/resources/siva")
+    println("Done")
 
+    println("Query")
     val sha1 = Gemini.query("LICENSE", session)
+    println("Done")
+
     sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
+
+  //TODO(bzz): add test \w repo URL list, that will be fetched by Engine
 
 }

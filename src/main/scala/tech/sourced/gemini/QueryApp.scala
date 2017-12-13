@@ -2,6 +2,9 @@ package tech.sourced.gemini
 
 import com.datastax.driver.core.Cluster
 
+/**
+  * Scala app that searches all hashed repos for a given file.
+  */
 object QueryApp extends App {
   def printUsage(): Unit = {
     println("Usage: ./query <path-to-file>")
@@ -20,10 +23,12 @@ object QueryApp extends App {
 
   //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
   val cluster = Cluster.builder().addContactPoint(Gemini.defaultCassandraHost).build()
-  val session = cluster.connect()
-  val similar = Gemini.query(file, session)
+  val cassandra = cluster.connect()
+  Gemini.applySchema(cassandra)
 
-  session.close
+  val similar = Gemini.query(file, cassandra)
+
+  cassandra.close
   cluster.close
 
   if (similar.isEmpty) {
