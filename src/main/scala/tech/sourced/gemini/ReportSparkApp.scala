@@ -1,7 +1,6 @@
 package tech.sourced.gemini
 
 import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.Session
 
 object ReportSparkApp extends App {
   def printUsage(): Unit = {
@@ -12,9 +11,17 @@ object ReportSparkApp extends App {
     System.exit(2)
   }
 
-  def printIsEmpty[T](report:Iterable[T]): Unit = {
+  def print(report: Iterable[Any], detailed: Boolean): Unit = {
     if (report.isEmpty) {
       println(s"No duplicates found.")
+    } else if (detailed) {
+      report.foreach { item =>
+        val duplicateFiles = item.asInstanceOf[Iterable[RepoFile]]
+        val count = duplicateFiles.count(_=>true)
+        println (s"$count duplicates:\n\t" + (duplicateFiles mkString "\n\t") + "\n")
+      }
+    } else {
+      println(s"Duplicates found:\n\t" + (report mkString "\n\t"))
     }
   }
 
@@ -31,18 +38,8 @@ object ReportSparkApp extends App {
   val cluster = Cluster.builder().addContactPoint(Gemini.defaultCassandraHost).build()
   val session = cluster.connect()
 
-  if (detailed) {
-    val report = Gemini.detailedReport(session)
-    printIsEmpty(report)
-    report.foreach( duplicateFiles => {
-      val count = duplicateFiles.count(_=>true)
-      println (s"$count duplicates:\n\t" + (duplicateFiles mkString ("\n\t")))
-    })
-  } else {
-    val report = Gemini.report(session)
-    printIsEmpty(report)
-    println(s"Duplicates found:\n\t" + (report mkString ("\n\t")))
-  }
+  val report = Gemini.report(session, detailed)
+  print(report, detailed)
 
   session.close
   cluster.close
