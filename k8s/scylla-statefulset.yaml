@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta2
+apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: scylladb
@@ -55,7 +55,7 @@ spec:
             mountPath: /opt/ready-probe.sh
             subPath: ready-probe.sh
       nodeSelector:
-        # add selecter here when node is ready
+        srcd.host/type: worker-applications
       volumes:
         - name: scylla-data # don't forget to change to persistent volume
           emptyDir:
