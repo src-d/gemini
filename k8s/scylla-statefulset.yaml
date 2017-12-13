@@ -55,7 +55,10 @@ spec:
             mountPath: /opt/ready-probe.sh
             subPath: ready-probe.sh
       nodeSelector:
-        srcd.host/type: worker-applications
+        # selector should be:
+        # srcd.host/type: worker-applications
+        # but for now let's pin it to particular node
+        kubernetes.io/hostname: worker-4.k8s.pipeline.staging.srcd.host
       volumes:
         - name: scylla-data # don't forget to change to persistent volume
           emptyDir:
