@@ -64,6 +64,42 @@ class CassandraSparkSpec extends FlatSpec
     sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
 
+  "Report from Cassandra" should "return duplicate files" in {
+    val gemini = Gemini(sparkSession)
+
+    println("Query")
+    val report = Gemini.report(session, false)
+    println("Done")
+
+    report.count(_ => true) should be(8)
+    report.foreach(group => group.asInstanceOf[DuplicateBlobHash].count should be(2))
+  }
+
+  "Detailed Report from Cassandra" should "return duplicate files" in {
+    val gemini = Gemini(sparkSession)
+
+    println("Query")
+    val detailedReport = Gemini.report(session, true)
+    println("Done")
+
+    val duplicatedFiles = detailedReport.map { g =>
+      g.asInstanceOf[Iterable[RepoFile]].head.file
+    } toSeq
+
+    val shouldBeDuplicateFiles = List(
+      "LICENSE",
+      "model_test.go",
+      "MAINTAINERS",
+      "changes.go",
+      "model.go",
+      "cli/borges/version.go",
+      "Makefile",
+      "doc.go"
+    )
+
+    duplicatedFiles should contain theSameElementsAs (shouldBeDuplicateFiles)
+  }
+
   //TODO(bzz): add test \w repo URL list, that will be fetched by Engine
 
 }
