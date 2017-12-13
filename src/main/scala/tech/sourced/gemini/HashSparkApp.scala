@@ -4,7 +4,6 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.cassandra._
 
 import scala.util.Properties
 
@@ -36,12 +35,7 @@ object HashSparkApp extends App {
     Gemini.applySchema(cassandra)
   }
   val filesToWrite = gemini.hash(reposPath)
-
-  println(s"Writing ${filesToWrite.rdd.countApprox(10000L)} files to DB")
-  filesToWrite.write
-    .mode("append")
-    .cassandraFormat("blob_hash_files", "hashes")
-    .save()
+  gemini.save(filesToWrite)
   println("Done")
 
 

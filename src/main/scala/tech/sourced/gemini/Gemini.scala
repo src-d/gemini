@@ -36,13 +36,17 @@ class Gemini(session: SparkSession) {
     filesToWrite
   }
 
-  def hashAndSave(reposPath: String): Unit = {
-    val files = hash(reposPath)
+  def save(files: DataFrame): Unit = {
     println(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
     files.write
       .mode("append")
       .cassandraFormat("blob_hash_files", "hashes")
       .save()
+  }
+
+  def hashAndSave(reposPath: String): Unit = {
+    val files = hash(reposPath)
+    save(files)
   }
 
 }
@@ -95,16 +99,10 @@ object Gemini {
 
   def findDuplicateFiles(file: File, conn: Session): Iterable[RepoFile] = {
     val sha = computeSha1(file)
-
     val query = QueryBuilder.select().all().from("hashes", "blob_hash_files").where(QueryBuilder.eq("blob_hash", sha))
-    var results: Iterable[RepoFile] = Iterable()
-
-    results = conn
-      .execute(query)
-      .asScala map { row =>
-        RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
-      }
-    results
+    conn.execute(query).asScala.map { row =>
+      RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
+    }
   }
 
   def computeSha1(file: File): String = {
