@@ -17,8 +17,8 @@ object ReportSparkApp extends App {
     } else if (detailed) {
       report.foreach { item =>
         val duplicateFiles = item.asInstanceOf[Iterable[RepoFile]]
-        val count = duplicateFiles.count(_=>true)
-        println (s"$count duplicates:\n\t" + (duplicateFiles mkString "\n\t") + "\n")
+        val count = duplicateFiles.count(_ => true)
+        println(s"$count duplicates:\n\t" + (duplicateFiles mkString "\n\t") + "\n")
       }
     } else {
       println(s"Duplicates found:\n\t" + (report mkString "\n\t"))

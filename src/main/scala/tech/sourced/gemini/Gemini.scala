@@ -52,8 +52,9 @@ class Gemini(session: SparkSession) {
 }
 
 case class RepoFile(repo: String, file: String, sha: String)
+
 case class DuplicateBlobHash(sha: String, count: Long) {
-   override def toString(): String = s"$sha ($count duplicates)"
+  override def toString(): String = s"$sha ($count duplicates)"
 }
 
 object Gemini {
@@ -90,7 +91,8 @@ object Gemini {
   /**
     * Finds duplicate files among hashed repositories
     *
-    * @param conn Database connection
+    * @param conn     Database connection
+    * @param detailed If detailed is set to true, the output will contain which files are duplicated in each group
     * @return
     */
   def report(conn: Session, detailed: Boolean): Iterable[Any] = {
@@ -105,16 +107,16 @@ object Gemini {
   }
 
   /**
-    * Finds duplicate files among hashed repositories, and returns all duplicated files
+    * Finds groups of duplicate files identified by the blob_hash
     *
-    * @param conn   Database connection
+    * @param conn Database connection
     * @return
     */
   def findAllDuplicateItems(conn: Session): Iterable[DuplicateBlobHash] = {
     conn
       .execute(new SimpleStatement(cql))
       .asScala
-      .filter( _.getLong("count") > 1 )
+      .filter(_.getLong("count") > 1)
       .map { r => DuplicateBlobHash(r.getString("blob_hash"), r.getLong("count")) }
   }
 
