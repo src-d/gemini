@@ -59,14 +59,14 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
     * @param conn   Database connection
     * @return
     */
-  def query(inPath: String, conn: Session): Iterable[RepoFile] = {
+  def query(inPath: String, conn: Session): ReportByLine = {
     val path = new File(inPath)
     if (path.isDirectory) {
-      Gemini.findDuplicateProjects(path, conn, keyspace)
+      ReportByLine(Gemini.findDuplicateProjects(path, conn, keyspace))
       //TODO: implement based on Apolo
       //findSimilarProjects(path)
     } else {
-      Gemini.findDuplicateItemForFile(path, conn, keyspace)
+      ReportByLine(Gemini.findDuplicateItemForFile(path, conn, keyspace))
       //TODO: implement based on Apolo
       //findSimilarFiles(path)
     }
@@ -79,14 +79,14 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
     * @param conn     Database connections
     * @return
     */
-  def report(detailed: Boolean, conn: Session): Iterable[Any] = if (detailed) {
+  def report(detailed: Boolean, conn: Session): Report = if (detailed) {
     val duplicates = Gemini.findAllDuplicateItems(conn, keyspace)
       .map { item =>
         Gemini.findDuplicateItemForBlobHash(item.sha, conn, keyspace)
       }
-    duplicates
+    ReportExpandedGroup(duplicates)
   } else {
-    Gemini.findAllDuplicateItems(conn, keyspace)
+    ReportGrouped(Gemini.findAllDuplicateItems(conn, keyspace))
   }
 
 
@@ -169,3 +169,20 @@ object Gemini {
   }
 
 }
+
+sealed abstract class Report(v: Iterable[Any]) {
+  def empty(): Boolean = {
+    v.isEmpty
+  }
+
+  def size(): Int = {
+    v.asInstanceOf[Iterable[Any]].size
+  }
+}
+
+case class ReportByLine(v: Iterable[RepoFile]) extends Report(v)
+
+case class ReportGrouped(v: Iterable[DuplicateBlobHash]) extends Report(v)
+
+case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)
+

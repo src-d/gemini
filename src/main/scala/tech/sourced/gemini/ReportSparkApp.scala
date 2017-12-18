@@ -11,17 +11,16 @@ object ReportSparkApp extends App {
     System.exit(2)
   }
 
-  def print(report: Iterable[Any], detailed: Boolean): Unit = {
-    if (report.isEmpty) {
-      println(s"No duplicates found.")
-    } else if (detailed) {
-      report.foreach { item =>
-        val duplicateFiles = item.asInstanceOf[Iterable[RepoFile]]
-        val count = duplicateFiles.count(_ => true)
-        println(s"$count duplicates:\n\t" + (duplicateFiles mkString "\n\t") + "\n")
+  def print(report: Report, detailed: Boolean): Unit = {
+    report match {
+      case e if e.empty() => println(s"No duplicates found.")
+      case r: ReportGrouped => println(s"Duplicates found:\n\t" + (r.v mkString "\n\t"))
+      case g: ReportExpandedGroup => {
+        g.v.foreach { item =>
+          val count = item.size
+          println(s"$count duplicates:\n\t" + (item mkString "\n\t") + "\n")
+        }
       }
-    } else {
-      println(s"Duplicates found:\n\t" + (report mkString "\n\t"))
     }
   }
 

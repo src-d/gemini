@@ -62,6 +62,7 @@ class CassandraSparkSpec extends FlatSpec
     "Makefile",
     "doc.go"
   )
+
   def prepareKeyspace(sivaPath: String, keyspace: String): Unit = {
     val gemini = Gemini(sparkSession, keyspace)
     gemini.dropSchema(session)
@@ -81,32 +82,28 @@ class CassandraSparkSpec extends FlatSpec
     val sha1 = gemini.query("LICENSE", session)
     println("Done")
 
-    sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
+    sha1.v.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
 
   "Report from Cassandra" should "return duplicate files" in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
-    val report = gemini.report(false, session)
+    val report = gemini.report(false, session).asInstanceOf[ReportGrouped].v
     println("Done")
 
     report should have size (shouldBeDuplicateFileNames.size)
-    report foreach { line =>
-      line.asInstanceOf[DuplicateBlobHash].count should be(2)
-    }
+    report foreach (_.count should be(2))
   }
 
   "Detailed Report from Cassandra" should "return duplicate files" in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
-    val detailedReport = gemini.report(true, session)
+    val detailedReport = gemini.report(true, session).asInstanceOf[ReportExpandedGroup].v
     println("Done")
 
-    val duplicatedFileNames = detailedReport.map { line =>
-      line.asInstanceOf[Iterable[RepoFile]].head.file
-    }
+    val duplicatedFileNames = detailedReport map (_.head.file)
     duplicatedFileNames.toSeq should contain theSameElementsAs (shouldBeDuplicateFileNames)
   }
 
