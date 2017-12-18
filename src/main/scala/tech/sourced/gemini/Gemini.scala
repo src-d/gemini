@@ -137,7 +137,8 @@ object Gemini {
   /**
     * Finds groups of duplicate files identified by the blob_hash
     *
-    * @param conn Database connection
+    * @param conn     Database connections
+    * @param keyspace Keyspace under data is stored
     * @return
     */
   def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
