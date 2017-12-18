@@ -24,9 +24,10 @@ object QueryApp extends App {
   //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
   val cluster = Cluster.builder().addContactPoint(Gemini.defaultCassandraHost).build()
   val cassandra = cluster.connect()
-  Gemini.applySchema(cassandra)
+  val gemini = Gemini(null)
+  gemini.applySchema(cassandra)
 
-  val similar = Gemini.query(file, cassandra)
+  val similar = gemini.query(file, cassandra)
 
   cassandra.close
   cluster.close

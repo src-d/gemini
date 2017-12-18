@@ -35,12 +35,16 @@ object ReportSparkApp extends App {
     }
   }
 
+  //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
   val cluster = Cluster.builder().addContactPoint(Gemini.defaultCassandraHost).build()
-  val session = cluster.connect()
+  val cassandra = cluster.connect()
+  val gemini = Gemini(null)
+  gemini.applySchema(cassandra)
 
-  val report = Gemini.report(session, detailed)
-  print(report, detailed)
+  val report = gemini.report(detailed, cassandra)
 
-  session.close
+  cassandra.close
   cluster.close
+
+  print(report, detailed)
 }

@@ -37,10 +37,13 @@ class CassandraSparkSpec extends FlatSpec
   override def beforeAll(): Unit = {
     super.beforeAll()
     session = CassandraConnector(defaultConf).openSession()
-    Gemini.applySchema(session)
+    prepareKeyspace("src/test/resources/siva/unique-files", UNIQUES)
+    prepareKeyspace("src/test/resources/siva/duplicate-files", DUPLICATES)
   }
 
   override def afterAll(): Unit = {
+    Gemini(null, UNIQUES).dropSchema(session)
+    Gemini(null, DUPLICATES).dropSchema(session)
     super.afterAll()
     session.close()
   }
@@ -50,56 +53,72 @@ class CassandraSparkSpec extends FlatSpec
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
-  "Read from Cassandra" should "return same results as written" in {
-    val gemini = Gemini(sparkSession)
-
+  val shouldBeDuplicateFileNames = List(
+    "model_test.go",
+    "MAINTAINERS",
+    "changes.go",
+    "model.go",
+    "cli/borges/version.go",
+    "Makefile",
+    "doc.go"
+  )
+  def prepareKeyspace(sivaPath: String, keyspace: String): Unit = {
+    val gemini = Gemini(sparkSession, keyspace)
+    gemini.dropSchema(session)
+    gemini.applySchema(session)
     println("Hash")
-    gemini.hashAndSave("src/test/resources/siva")
+    gemini.hashAndSave(sivaPath)
     println("Done")
+  }
+
+  val UNIQUES = "test_hashes_uniques"
+  val DUPLICATES = "test_hashes_duplicates"
+
+  "Read from Cassandra" should "return same results as written" in {
+    val gemini = Gemini(sparkSession, UNIQUES)
 
     println("Query")
-    val sha1 = Gemini.query("LICENSE", session)
+    val sha1 = gemini.query("LICENSE", session)
     println("Done")
 
     sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
 
   "Report from Cassandra" should "return duplicate files" in {
-    val gemini = Gemini(sparkSession)
+    val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
-    val report = Gemini.report(session, false)
+    val report = gemini.report(false, session)
     println("Done")
 
-    report.count(_ => true) should be(8)
-    report.foreach(group => group.asInstanceOf[DuplicateBlobHash].count should be(2))
+    report should have size (shouldBeDuplicateFileNames.size)
+    report foreach { line =>
+      line.asInstanceOf[DuplicateBlobHash].count should be(2)
+    }
   }
 
   "Detailed Report from Cassandra" should "return duplicate files" in {
-    val gemini = Gemini(sparkSession)
+    val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
-    val detailedReport = Gemini.report(session, true)
+    val detailedReport = gemini.report(true, session)
     println("Done")
 
-    val duplicatedFiles = detailedReport.map { g =>
-      g.asInstanceOf[Iterable[RepoFile]].head.file
-    } toSeq
+    val duplicatedFileNames = detailedReport.map { line =>
+      line.asInstanceOf[Iterable[RepoFile]].head.file
+    }
+    duplicatedFileNames.toSeq should contain theSameElementsAs (shouldBeDuplicateFileNames)
+  }
 
-    val shouldBeDuplicateFiles = List(
-      "LICENSE",
-      "model_test.go",
-      "MAINTAINERS",
-      "changes.go",
-      "model.go",
-      "cli/borges/version.go",
-      "Makefile",
-      "doc.go"
-    )
+  "Report from Cassandra with unique files" should "return no duplicate files" in {
+    val gemini = Gemini(null, UNIQUES)
 
-    duplicatedFiles should contain theSameElementsAs (shouldBeDuplicateFiles)
+    println("Query")
+    val report = gemini.report(false, session)
+    println("Done")
+
+    report should have size (0)
   }
 
   //TODO(bzz): add test \w repo URL list, that will be fetched by Engine
-
 }
