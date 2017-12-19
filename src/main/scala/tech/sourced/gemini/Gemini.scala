@@ -74,21 +74,42 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
 
   /**
     * Finds duplicate files among hashed repositories
+    * It is used one query per distinct file
     *
-    * @param detailed If detailed is set to true, the output will contain which files are duplicated in each group
-    * @param conn     Database connections
+    * @param conn Database connections
     * @return
     */
-  def report(detailed: Boolean, conn: Session): Report = if (detailed) {
-    val duplicates = Gemini.findAllDuplicateItems(conn, keyspace)
+  def report(conn: Session): ReportExpandedGroup = {
+    ReportExpandedGroup(Gemini.findAllDuplicateItems(conn, keyspace))
+  }
+
+  /**
+    * Finds duplicate files among hashed repositories
+    * It is used only one query
+    * (Only supported by Apache Cassandra databases)
+    *
+    * @param conn Database connections
+    * @return
+    */
+  def reportCassandraCondensed(conn: Session): ReportGrouped = {
+    ReportGrouped(Gemini.findAllDuplicateBlobHashes(conn, keyspace))
+  }
+
+  /**
+    * Finds duplicate files among hashed repositories
+    * It is used one query per unique duplicate file, plus an extra one
+    * (Only supported by Apache Cassandra databases)
+    *
+    * @param conn Database connections
+    * @return
+    */
+  def reportCassandraGroupBy(conn: Session): ReportExpandedGroup = {
+    val duplicates = reportCassandraCondensed(conn).v
       .map { item =>
         Gemini.findDuplicateItemForBlobHash(item.sha, conn, keyspace)
       }
     ReportExpandedGroup(duplicates)
-  } else {
-    ReportGrouped(Gemini.findAllDuplicateItems(conn, keyspace))
   }
-
 
   def applySchema(session: Session): Unit = {
     println("CQL: creating schema") //TODO(bzz): Log.Debug
@@ -135,13 +156,14 @@ object Gemini {
   }
 
   /**
-    * Finds groups of duplicate files identified by the blob_hash
+    * Finds the blob_hash that are repeated in the database, and how many times
+    * (Only supported by Apache Cassandra databases)
     *
     * @param conn     Database connections
     * @param keyspace Keyspace under data is stored
     * @return
     */
-  def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
+  def findAllDuplicateBlobHashes(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
     val duplicatesCountCql = s"SELECT blob_hash, COUNT(*) as count FROM ${keyspace}.blob_hash_files GROUP BY blob_hash"
     conn
       .execute(new SimpleStatement(duplicatesCountCql))
@@ -149,6 +171,29 @@ object Gemini {
       .filter(_.getLong("count") > 1)
       .map { r =>
         DuplicateBlobHash(r.getString("blob_hash"), r.getLong("count"))
+      }
+  }
+
+  /**
+    * Finds the groups of duplicate files identified by the blob_hash
+    *
+    * @param conn     Database connections
+    * @param keyspace Keyspace under data is stored
+    * @return
+    */
+  def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[Iterable[RepoFile]] = {
+    val distinctBlobHash = s"SELECT distinct blob_hash FROM ${keyspace}.blob_hash_files"
+    conn
+      .execute(new SimpleStatement(distinctBlobHash))
+      .asScala
+      .flatMap { r => {
+        val dupes = findDuplicateItemForBlobHash(r.getString("blob_hash"), conn, keyspace)
+        if (dupes.size > 1) {
+          List(dupes)
+        } else {
+          List()
+        }
+      }
       }
   }
 
@@ -186,4 +231,3 @@ case class ReportByLine(v: Iterable[RepoFile]) extends Report(v)
 case class ReportGrouped(v: Iterable[DuplicateBlobHash]) extends Report(v)
 
 case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)
-

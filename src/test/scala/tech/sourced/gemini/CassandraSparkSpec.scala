@@ -85,22 +85,33 @@ class CassandraSparkSpec extends FlatSpec
     sha1.v.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
 
-  "Report from Cassandra" should "return duplicate files" in {
+  "Report from Cassandra using GROUP BY" should "return duplicate files" in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
-    val report = gemini.report(false, session).asInstanceOf[ReportGrouped].v
+    val report = gemini.reportCassandraCondensed(session).v
     println("Done")
 
     report should have size (shouldBeDuplicateFileNames.size)
     report foreach (_.count should be(2))
   }
 
-  "Detailed Report from Cassandra" should "return duplicate files" in {
+  "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
-    val detailedReport = gemini.report(true, session).asInstanceOf[ReportExpandedGroup].v
+    val detailedReport = gemini.reportCassandraGroupBy(session).v
+    println("Done")
+
+    val duplicatedFileNames = detailedReport map (_.head.file)
+    duplicatedFileNames.toSeq should contain theSameElementsAs (shouldBeDuplicateFileNames)
+  }
+
+  "Detailed Report from Database" should "return duplicate files" in {
+    val gemini = Gemini(null, DUPLICATES)
+
+    println("Query")
+    val detailedReport = gemini.report(session).v
     println("Done")
 
     val duplicatedFileNames = detailedReport map (_.head.file)
@@ -111,7 +122,7 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(null, UNIQUES)
 
     println("Query")
-    val report = gemini.report(false, session)
+    val report = gemini.report(session)
     println("Done")
 
     report should have size (0)
