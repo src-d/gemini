@@ -4,7 +4,7 @@ import com.datastax.driver.core.Session
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Tag}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -75,6 +75,8 @@ class CassandraSparkSpec extends FlatSpec
   val UNIQUES = "test_hashes_uniques"
   val DUPLICATES = "test_hashes_duplicates"
 
+  object Cassandra extends Tag("Cassandra")
+
   "Read from Cassandra" should "return same results as written" in {
     val gemini = Gemini(sparkSession, UNIQUES)
 
@@ -85,7 +87,7 @@ class CassandraSparkSpec extends FlatSpec
     sha1.v.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
 
-  "Report from Cassandra using GROUP BY" should "return duplicate files" in {
+  "Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs (Cassandra) in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
@@ -96,7 +98,7 @@ class CassandraSparkSpec extends FlatSpec
     report foreach (_.count should be(2))
   }
 
-  "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" in {
+  "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs (Cassandra) in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
