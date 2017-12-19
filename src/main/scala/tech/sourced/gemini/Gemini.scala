@@ -186,14 +186,13 @@ object Gemini {
     conn
       .execute(new SimpleStatement(distinctBlobHash))
       .asScala
-      .flatMap { r => {
+      .flatMap { r =>
         val dupes = findDuplicateItemForBlobHash(r.getString("blob_hash"), conn, keyspace)
         if (dupes.size > 1) {
           List(dupes)
         } else {
           List()
         }
-      }
       }
   }
 
@@ -221,9 +220,7 @@ sealed abstract class Report(v: Iterable[Any]) {
     v.isEmpty
   }
 
-  def size(): Int = {
-    v.asInstanceOf[Iterable[Any]].size
-  }
+  def size(): Int = v.size
 }
 
 case class ReportByLine(v: Iterable[RepoFile]) extends Report(v)

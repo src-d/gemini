@@ -21,9 +21,9 @@ object ReportSparkApp extends App {
   def print(report: Report): Unit = {
     report match {
       case e if e.empty() => println(s"No duplicates found.")
-      case r: ReportGrouped => println(s"Duplicates found:\n\t" + (r.v mkString "\n\t"))
-      case g: ReportExpandedGroup => {
-        g.v.foreach { item =>
+      case ReportGrouped(v) => println(s"Duplicates found:\n\t" + (v mkString "\n\t"))
+      case ReportExpandedGroup(v) => {
+        v.foreach { item =>
           val count = item.size
           println(s"$count duplicates:\n\t" + (item mkString "\n\t") + "\n")
         }
