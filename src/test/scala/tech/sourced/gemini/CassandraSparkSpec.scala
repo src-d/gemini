@@ -6,9 +6,6 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Tag}
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
-
 class CassandraSparkSpec extends FlatSpec
   with Matchers
   with BaseSparkSpec
@@ -23,7 +20,7 @@ class CassandraSparkSpec extends FlatSpec
 
   var session: Session = _
 
-  val defaultConf = new SparkConf(true)
+  val defaultConf: SparkConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", Gemini.defaultCassandraHost)
     .set("spark.cassandra.connection.port", Gemini.defaultCassandraPort)
     .set("spark.cassandra.connection.keep_alive_ms", "5000")
@@ -48,12 +45,7 @@ class CassandraSparkSpec extends FlatSpec
     session.close()
   }
 
-  def awaitAll(units: TraversableOnce[Future[Any]]): Unit = {
-    implicit val ec = scala.concurrent.ExecutionContext.global
-    Await.result(Future.sequence(units), Duration.Inf)
-  }
-
-  val shouldBeDuplicateFileNames = List(
+  val expectedDuplicateFiles = List(
     "model_test.go",
     "MAINTAINERS",
     "changes.go",
@@ -87,18 +79,18 @@ class CassandraSparkSpec extends FlatSpec
     sha1.v.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
   }
 
-  "Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs (Cassandra) in {
+  "Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
     val report = gemini.reportCassandraCondensed(session).v
     println("Done")
 
-    report should have size (shouldBeDuplicateFileNames.size)
+    report should have size expectedDuplicateFiles.size
     report foreach (_.count should be(2))
   }
 
-  "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs (Cassandra) in {
+  "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
     val gemini = Gemini(null, DUPLICATES)
 
     println("Query")
@@ -106,7 +98,7 @@ class CassandraSparkSpec extends FlatSpec
     println("Done")
 
     val duplicatedFileNames = detailedReport map (_.head.file)
-    duplicatedFileNames.toSeq should contain theSameElementsAs (shouldBeDuplicateFileNames)
+    duplicatedFileNames.toSeq should contain theSameElementsAs expectedDuplicateFiles
   }
 
   "Detailed Report from Database" should "return duplicate files" in {
@@ -117,7 +109,7 @@ class CassandraSparkSpec extends FlatSpec
     println("Done")
 
     val duplicatedFileNames = detailedReport map (_.head.file)
-    duplicatedFileNames.toSeq should contain theSameElementsAs (shouldBeDuplicateFileNames)
+    duplicatedFileNames.toSeq should contain theSameElementsAs expectedDuplicateFiles
   }
 
   "Report from Cassandra with unique files" should "return no duplicate files" in {
@@ -127,7 +119,7 @@ class CassandraSparkSpec extends FlatSpec
     val report = gemini.report(session)
     println("Done")
 
-    report should have size (0)
+    report should have size 0
   }
 
   //TODO(bzz): add test \w repo URL list, that will be fetched by Engine
