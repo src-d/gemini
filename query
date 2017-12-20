@@ -18,5 +18,5 @@ if [[ ! -f "${jar}" ]]; then
 fi
 
 
-#exec java -cp "${jar}" "${app_class}" $@
-exec ./sbt "run-main tech.sourced.gemini.QueryApp $@"
+#exec java -cp "${jar}" "${app_class}" $*
+exec ./sbt "run-main tech.sourced.gemini.QueryApp $*"
