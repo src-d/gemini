@@ -38,6 +38,8 @@ assemblyShadeRules in assembly := Seq(
 
 test in assembly := {}
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oUT")
+testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-l", "Cassandra")
+
 parallelExecution in Test := false
 fork in Test := true //Forking is required for the Embedded Cassandra
 logBuffered in Test := false

@@ -16,7 +16,7 @@ matrix:
   - scala: 2.11.2
     script:
       - ./scripts/wait-for-it.sh 127.0.0.1:9042 -- echo "Cassandra/ScyllaDB is up"
-      - ./sbt "test-only -- -l Cassandra"
+      - ./sbt test
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
