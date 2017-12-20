@@ -49,7 +49,9 @@ func main() {
 		log.Fatal("select:", err)
 	}
 
-	fmt.Printf("%+v\n", similarHashes)
+	for _, hash := range similarHashes {
+		fmt.Printf("\t%+v\n", hash)
+	}
 }
 
 // connect to the cluster
