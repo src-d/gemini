@@ -2,8 +2,8 @@ package tech.sourced.gemini
 
 import java.io.{File, FileInputStream}
 
-import com.datastax.driver.core.Session
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import com.datastax.driver.core.{Session, SimpleStatement}
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.eclipse.jgit.lib.Constants.OBJ_BLOB
@@ -13,10 +13,13 @@ import tech.sourced.engine._
 import scala.collection.JavaConverters._
 import scala.io.Source
 
-
-class Gemini(session: SparkSession) {
+class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
 
   def hash(reposPath: String): DataFrame = {
+    if (session == null) {
+      throw new UnsupportedOperationException("Hashing requires a SparkSession.")
+    }
+
     val engine = Engine(session, reposPath)
 
     val headRefs = engine.getRepositories
@@ -40,7 +43,7 @@ class Gemini(session: SparkSession) {
     println(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
     files.write
       .mode("append")
-      .cassandraFormat("blob_hash_files", "hashes")
+      .cassandraFormat("blob_hash_files", keyspace)
       .save()
   }
 
@@ -49,19 +52,6 @@ class Gemini(session: SparkSession) {
     save(files)
   }
 
-}
-
-case class RepoFile(repo: String, file: String, sha: String)
-
-object Gemini {
-  val defaultCassandraHost: String = "127.0.0.1"
-  val defaultCassandraPort: String = "9042"
-  val defaultSchemaFile: String = "src/main/resources/schema.cql"
-
-  val formatter = new ObjectInserter.Formatter
-
-  def apply(ss: SparkSession): Gemini = new Gemini(ss)
-
   /**
     * Search for duplicates and similar items to the given one.
     *
@@ -69,41 +59,94 @@ object Gemini {
     * @param conn   Database connection
     * @return
     */
-  def query(inPath: String, conn: Session): Iterable[RepoFile] = {
+  def query(inPath: String, conn: Session): ReportByLine = {
     val path = new File(inPath)
     if (path.isDirectory) {
-      findDuplicateProjects(path, conn)
+      ReportByLine(Gemini.findDuplicateProjects(path, conn, keyspace))
       //TODO: implement based on Apolo
-      //findSimilarProjects(path, conn)
+      //findSimilarProjects(path)
     } else {
-      findDuplicateFiles(path, conn)
+      ReportByLine(Gemini.findDuplicateItemForFile(path, conn, keyspace))
       //TODO: implement based on Apolo
-      //findSimilarFiles(path, conn)
+      //findSimilarFiles(path)
     }
   }
 
   /**
-    * Finds duplicated files among hashed repositories that already exists in certain repository
+    * Finds duplicate files among hashed repositories
+    * It is used one query per distinct file
     *
-    * @param repository repository url, example: github.com/src-d/go-git.git"
+    * @param conn Database connections
     * @return
     */
-  def report(repository: String): Iterable[RepoFile] = {
-    throw new UnsupportedOperationException("Finding all duplicate files in many repositories is no implemented yet.")
+  def report(conn: Session): ReportExpandedGroup = {
+    ReportExpandedGroup(Gemini.findAllDuplicateItems(conn, keyspace))
   }
 
-  def findDuplicateProjects(in: File, conn: Session): Iterable[RepoFile] = {
-    //TODO(bzz): project is duplicate if it has all it's files in some other projects
-    throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
+  /**
+    * Finds duplicate files among hashed repositories
+    * It is used only one query
+    * (Only supported by Apache Cassandra databases)
+    *
+    * @param conn Database connections
+    * @return
+    */
+  def reportCassandraCondensed(conn: Session): ReportGrouped = {
+    ReportGrouped(Gemini.findAllDuplicateBlobHashes(conn, keyspace))
   }
 
-  def findDuplicateFiles(file: File, conn: Session): Iterable[RepoFile] = {
-    val sha = computeSha1(file)
-    val query = QueryBuilder.select().all().from("hashes", "blob_hash_files").where(QueryBuilder.eq("blob_hash", sha))
-    conn.execute(query).asScala.map { row =>
-      RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
-    }
+  /**
+    * Finds duplicate files among hashed repositories
+    * It is used one query per unique duplicate file, plus an extra one
+    * (Only supported by Apache Cassandra databases)
+    *
+    * @param conn Database connections
+    * @return
+    */
+  def reportCassandraGroupBy(conn: Session): ReportExpandedGroup = {
+    val duplicates = reportCassandraCondensed(conn).v
+      .map { item =>
+        Gemini.findDuplicateItemForBlobHash(item.sha, conn, keyspace)
+      }
+    ReportExpandedGroup(duplicates)
   }
+
+  def applySchema(session: Session): Unit = {
+    println("CQL: creating schema") //TODO(bzz): Log.Debug
+    Source
+      .fromFile(Gemini.defaultSchemaFile)
+      .getLines
+      .map(_.trim)
+      .filter(!_.isEmpty)
+      .foreach { line =>
+        val cql = line.replace("__KEYSPACE__", keyspace)
+        println(s"CQL: $cql")
+        session.execute(cql)
+      }
+    println("CQL: Done. Schema created")
+  }
+
+  def dropSchema(session: Session): Unit = {
+    println("CQL: dropping schema") //TODO(bzz): Log.Debug
+    session.execute(s"DROP KEYSPACE IF EXISTS $keyspace;")
+  }
+}
+
+case class RepoFile(repo: String, file: String, sha: String)
+
+case class DuplicateBlobHash(sha: String, count: Long) {
+  override def toString(): String = s"$sha ($count duplicates)"
+}
+
+object Gemini {
+  val defaultCassandraHost: String = "127.0.0.1"
+  val defaultCassandraPort: String = "9042"
+  val defaultSchemaFile: String = "src/main/resources/schema.cql"
+  val defautKeyspace: String = "hashes"
+
+  val formatter = new ObjectInserter.Formatter
+
+  def apply(ss: SparkSession, keyspace: String = defautKeyspace): Gemini = new Gemini(ss, keyspace)
 
   def computeSha1(file: File): String = {
     val in = new FileInputStream(file)
@@ -112,18 +155,76 @@ object Gemini {
     objectId.getName
   }
 
-  def applySchema(session: Session, pathToCqlFile: String = defaultSchemaFile): Unit = {
-    println("CQL: creating schema") //TODO(bzz): Log.Debug
-    Source
-      .fromFile(pathToCqlFile)
-      .getLines
-      .map(_.trim)
-      .filter(!_.isEmpty)
-      .foreach { line =>
-        println(s"CQL: $line")
-        session.execute(line)
+  /**
+    * Finds the blob_hash that are repeated in the database, and how many times
+    * (Only supported by Apache Cassandra databases)
+    *
+    * @param conn     Database connections
+    * @param keyspace Keyspace under data is stored
+    * @return
+    */
+  def findAllDuplicateBlobHashes(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
+    val duplicatesCountCql = s"SELECT blob_hash, COUNT(*) as count FROM ${keyspace}.blob_hash_files GROUP BY blob_hash"
+    conn
+      .execute(new SimpleStatement(duplicatesCountCql))
+      .asScala
+      .filter(_.getLong("count") > 1)
+      .map { r =>
+        DuplicateBlobHash(r.getString("blob_hash"), r.getLong("count"))
       }
-    println("CQL: Done. Schema created")
+  }
+
+  /**
+    * Finds the groups of duplicate files identified by the blob_hash
+    *
+    * @param conn     Database connections
+    * @param keyspace Keyspace under data is stored
+    * @return
+    */
+  def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[Iterable[RepoFile]] = {
+    val distinctBlobHash = s"SELECT distinct blob_hash FROM ${keyspace}.blob_hash_files"
+    conn
+      .execute(new SimpleStatement(distinctBlobHash))
+      .asScala
+      .flatMap { r =>
+        val dupes = findDuplicateItemForBlobHash(r.getString("blob_hash"), conn, keyspace)
+        if (dupes.size > 1) {
+          List(dupes)
+        } else {
+          List()
+        }
+      }
+  }
+
+  def findDuplicateProjects(in: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
+    //TODO(bzz): project is duplicate if it has all it's files in some other projects
+    throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
+  }
+
+  def findDuplicateItemForFile(file: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
+    findDuplicateItemForBlobHash(Gemini.computeSha1(file), conn, keyspace)
+  }
+
+  def findDuplicateItemForBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
+    val query = QueryBuilder.select().all().from(keyspace, "blob_hash_files")
+      .where(QueryBuilder.eq("blob_hash", sha))
+    conn.execute(query).asScala.map { row =>
+      RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
+    }
   }
 
 }
+
+sealed abstract class Report(v: Iterable[Any]) {
+  def empty(): Boolean = {
+    v.isEmpty
+  }
+
+  def size(): Int = v.size
+}
+
+case class ReportByLine(v: Iterable[RepoFile]) extends Report(v)
+
+case class ReportGrouped(v: Iterable[DuplicateBlobHash]) extends Report(v)
+
+case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)

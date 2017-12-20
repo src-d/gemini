@@ -30,14 +30,13 @@ object HashSparkApp extends App {
   val repos = listRepositories(reposPath, spark.sparkContext.hadoopConfiguration)
   println(s"Hashing all ${repos.length} repositories in: $reposPath\n\t" + (repos mkString "\n\t"))
 
-  val gemini = Gemini(spark)
+  val gemini = Gemini(spark, "hashes")
   CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
-    Gemini.applySchema(cassandra)
+    gemini.applySchema(cassandra)
   }
   val filesToWrite = gemini.hash(reposPath)
   gemini.save(filesToWrite)
   println("Done")
-
 
   private def listRepositories(path: String, conf: Configuration): Array[Path] =
     FileSystem.get(conf)

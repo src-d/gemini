@@ -1,34 +1,67 @@
 package tech.sourced.gemini
 
+import com.datastax.driver.core.Cluster
+
 object ReportSparkApp extends App {
   def printUsage(): Unit = {
-    println("Usage: ./report <repository>")
+    println("Usage: ./report [--use-group-by|--condensed]")
     println("")
-    println("Finds duplicated files among hashed repositories")
-    println("  <repository> - repository url, example: github.com/src-d/go-git.git")
+    println("Finds duplicate files among hashed repositories." +
+      "\n\tIt uses as many queries as distinct files are stored in the database"
+    )
+    println("  --use-group-by" +
+      "\n\tIt uses as many queries as unique duplicate files are found, plus one. (only for Apache Cassandra database)"
+    )
+    println("  --condensed displays only the duplicate blob_hash and the number of occurrences." +
+      "\n\tIt uses only one query to find the duplicates. (only for Apache Cassandra database)"
+    )
     System.exit(2)
   }
 
-  if (args.length <= 0) {
+  def print(report: Report): Unit = {
+    report match {
+      case e if e.empty() => println(s"No duplicates found.")
+      case ReportGrouped(v) => println(s"Duplicates found:\n\t" + (v mkString "\n\t"))
+      case ReportExpandedGroup(v) => {
+        v.foreach { item =>
+          val count = item.size
+          println(s"$count duplicates:\n\t" + (item mkString "\n\t") + "\n")
+        }
+      }
+    }
+  }
+
+  val ERROR = -1
+  val DEFAULT = 0
+  val CONDENSED = 1
+  val GROUP_BY = 2
+
+  val mode = args match {
+    case _ if args.length > 1 => ERROR
+    case _ if args.length == 0 => DEFAULT
+    case _ if args.length == 1 && args(0) == "--use-group-by" => GROUP_BY
+    case _ if args.length == 1 && args(0) == "--condensed" => CONDENSED
+    case _ => ERROR
+  }
+
+  if (mode == ERROR) {
     printUsage()
   }
 
-  val repository = args(0)
-  println(s"Reporting all duplicates of: $repository")
+  //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
+  val cluster = Cluster.builder().addContactPoint(Gemini.defaultCassandraHost).build()
+  val cassandra = cluster.connect()
+  val gemini = Gemini(null)
+  gemini.applySchema(cassandra)
 
-  val similar = Gemini.report(repository)
+  val report = mode match {
+    case DEFAULT => gemini.report(cassandra)
+    case CONDENSED => gemini.reportCassandraCondensed(cassandra)
+    case GROUP_BY => gemini.reportCassandraGroupBy(cassandra)
+  }
 
-  //for every file
-  // query Cassandry by hash
-  // .collect()
-  //print
+  cassandra.close
+  cluster.close
 
-  // Output:
-  //
-  // Project1
-  //  file1:sha1 - Project1:sha1, Project2:sha1, Project3:sha3 ...
-  //  file2:sha2 - Project1:sha2, Project2:sha2, ...
-  //  .
-  //  .
-  //  fileN:shaN - ProjectN:shaN
+  print(report)
 }
