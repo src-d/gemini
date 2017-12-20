@@ -17,4 +17,5 @@ if [[ ! -f "${jar}" ]]; then
     fi
 fi
 
-exec ./sbt "run-main ${app_class} $@"
+exec ./sbt "run-main ${app_class} $*"
+

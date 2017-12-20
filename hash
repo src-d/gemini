@@ -46,3 +46,4 @@ sparkSubmit \
   --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j-spark.properties" \
   "${jar}" \
   "$@"
+

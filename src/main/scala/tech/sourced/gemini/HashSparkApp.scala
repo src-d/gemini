@@ -7,43 +7,67 @@ import org.apache.spark.sql.SparkSession
 
 import scala.util.Properties
 
+case class HashAppConfig(reposPath: String = "",
+                         limit: Int = 0,
+                         host: String = Gemini.defaultCassandraHost,
+                         port: Int = Gemini.defaultCassandraPort)
+
 /**
   * Apache Spark app that applied LSH to given repos, using source{d} Engine.
   */
 object HashSparkApp extends App {
-  def printUsage(): Unit = {
-    println("Usage: ./hash <path-to-git-repos>")
-    println("")
-    println("Hashes given set of Git repositories, either from FS or as .siva files.")
-    println("  <path-to-git-repos> - path to git repositories. Clones in local FS or Siva files in HDFS are supported.")
-    System.exit(2)
+  val parser = new scopt.OptionParser[HashAppConfig]("./hash") {
+    head("Gemini Hasher")
+    note("Hashes given set of Git repositories, either from FS or as .siva files.")
+
+    opt[String]('h', "host")
+      .action((x, c) => c.copy(host = x))
+      .text("host is Cassandra host")
+    opt[Int]('p', "port")
+      .action((x, c) => c.copy(port = x))
+      .text("port is Cassandra port")
+    opt[Int]('l', "limit")
+      .action((x, c) => c.copy(limit = x))
+      .text("limit on the number of processed repositories")
+    arg[String]("<path-to-git-repos>")
+      .required()
+      .action((x, c) => c.copy(reposPath = x))
+      .text("path to git repositories. Clones in local FS or Siva files in HDFS are supported.")
   }
 
-  if (args.length <= 0) {
-    printUsage()
+  parser.parse(args, HashAppConfig()) match {
+    case Some(config) =>
+      val reposPath = config.reposPath
+
+      val spark = SparkSession.builder()
+        .master(Properties.envOrElse("MASTER", "local[*]"))
+        .config("spark.cassandra.connection.host", config.host)
+        .config("spark.cassandra.connection.port", config.port)
+        .getOrCreate()
+
+      val repos = listRepositories(reposPath, spark.sparkContext.hadoopConfiguration, config.limit)
+      println(s"Hashing ${repos.length} repositories in: $reposPath\n\t" + (repos mkString "\n\t"))
+
+      val gemini = Gemini(spark, "hashes")
+      CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
+        gemini.applySchema(cassandra)
+      }
+      val filesToWrite = gemini.hash(reposPath, config.limit)
+      gemini.save(filesToWrite)
+      println("Done")
+
+    case None =>
+      System.exit(2)
   }
-  val reposPath = args(0)
-  val spark = SparkSession.builder()
-    .master(Properties.envOrElse("MASTER", "local[*]"))
-    .getOrCreate()
 
-  val repos = listRepositories(reposPath, spark.sparkContext.hadoopConfiguration)
-  println(s"Hashing all ${repos.length} repositories in: $reposPath\n\t" + (repos mkString "\n\t"))
-
-  val gemini = Gemini(spark, "hashes")
-  CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
-    gemini.applySchema(cassandra)
-  }
-  val filesToWrite = gemini.hash(reposPath)
-  gemini.save(filesToWrite)
-  println("Done")
-
-  private def listRepositories(path: String, conf: Configuration): Array[Path] =
-    FileSystem.get(conf)
+  private def listRepositories(path: String, conf: Configuration, limit: Int): Array[Path] = {
+    val paths = FileSystem.get(conf)
       .listStatus(new Path(path))
       .filter { file =>
         file.isDirectory || file.getPath.getName.endsWith(".siva")
       }
       .map(_.getPath)
 
+    if (limit <= 0) paths else paths.take(limit)
+  }
 }

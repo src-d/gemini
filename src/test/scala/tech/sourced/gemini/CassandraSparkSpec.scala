@@ -25,7 +25,7 @@ class CassandraSparkSpec extends FlatSpec
 
   val defaultConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", Gemini.defaultCassandraHost)
-    .set("spark.cassandra.connection.port", Gemini.defaultCassandraPort)
+    .set("spark.cassandra.connection.port", Gemini.defaultCassandraPort.toString)
     .set("spark.cassandra.connection.keep_alive_ms", "5000")
     .set("spark.cassandra.connection.timeout_ms", "30000")
     .set("spark.ui.showConsoleProgress", "false")
@@ -128,6 +128,12 @@ class CassandraSparkSpec extends FlatSpec
     println("Done")
 
     report should have size (0)
+  }
+
+  "Hash with limit" should "collect files only from limit repos" in {
+    val gemini = Gemini(sparkSession)
+    val repos = gemini.hash("src/test/resources/siva", 1).select("repo").distinct().count()
+    repos should be(1)
   }
 
   //TODO(bzz): add test \w repo URL list, that will be fetched by Engine
