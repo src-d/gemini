@@ -4,7 +4,8 @@ import com.datastax.driver.core.Cluster
 
 case class QueryAppConfig(file: String = "",
                           host: String = Gemini.defaultCassandraHost,
-                          port: Int = Gemini.defaultCassandraPort)
+                          port: Int = Gemini.defaultCassandraPort,
+                          verbose: Boolean = false)
 
 /**
   * Scala app that searches all hashed repos for a given file.
@@ -20,6 +21,9 @@ object QueryApp extends App {
     opt[Int]('p', "port")
       .action((x, c) => c.copy(port = x))
       .text("port is Cassandra port")
+    opt[Unit]('v', "verbose")
+      .action((_, c) => c.copy(verbose = true))
+      .text("producing more verbose debug output")
     arg[String]("<path-to-file>")
       .required()
       .action((x, c) => c.copy(file = x))
@@ -28,6 +32,8 @@ object QueryApp extends App {
 
   parser.parse(args, QueryAppConfig()) match {
     case Some(config) =>
+      val log = Logger("gemini", config.verbose)
+
       val file = config.file
       println(s"Query duplicate files to: $file")
 
@@ -37,7 +43,7 @@ object QueryApp extends App {
         .withPort(config.port)
         .build()
       val cassandra = cluster.connect()
-      val gemini = Gemini(null)
+      val gemini = Gemini(null, log)
       gemini.applySchema(cassandra)
 
       val similar = gemini.query(file, cassandra).v
@@ -49,7 +55,7 @@ object QueryApp extends App {
         println(s"No duplicates of $file found.")
         System.exit(1)
       } else {
-        println(s"Duplicates of $file:\n\t" + (similar mkString ("\n\t")))
+        println(s"Duplicates of $file:\n\t" + (similar mkString "\n\t"))
       }
 
     case None =>
