@@ -15,14 +15,28 @@ import scala.io.Source
 
 class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
 
-  def hash(reposPath: String): DataFrame = {
+  import session.implicits._
+
+  def hash(reposPath: String, limit: Int = 0): DataFrame = {
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }
 
     val engine = Engine(session, reposPath)
 
-    val headRefs = engine.getRepositories
+    // engine.getRepositories.limit(n)...getFiles - doesn't work in engine now
+    // https://github.com/src-d/engine/issues/267
+    // use workaround with filter
+    if (limit <= 0) {
+      hashForRepos(engine.getRepositories)
+    } else {
+      val repoIds = engine.getRepositories.limit(limit).select($"id").collect().map(_ (0))
+      hashForRepos(engine.getRepositories.filter($"id".isin(repoIds: _*)))
+    }
+  }
+
+  def hashForRepos(repos: DataFrame): DataFrame = {
+    val headRefs = repos
       .getReferences //TODO(bzz) replace \w .getHead() after https://github.com/src-d/engine/issues/255
       .filter("name = 'refs/heads/HEAD' OR name = 'HEAD'")
       .withColumnRenamed("hash", "commit_hash")
@@ -47,8 +61,8 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
       .save()
   }
 
-  def hashAndSave(reposPath: String): Unit = {
-    val files = hash(reposPath)
+  def hashAndSave(reposPath: String, limit: Int = 0): Unit = {
+    val files = hash(reposPath, limit)
     save(files)
   }
 
@@ -139,8 +153,9 @@ case class DuplicateBlobHash(sha: String, count: Long) {
 }
 
 object Gemini {
+
   val defaultCassandraHost: String = "127.0.0.1"
-  val defaultCassandraPort: String = "9042"
+  val defaultCassandraPort: Int = 9042
   val defaultSchemaFile: String = "src/main/resources/schema.cql"
   val defautKeyspace: String = "hashes"
 
@@ -208,6 +223,7 @@ object Gemini {
   def findDuplicateItemForBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
     val query = QueryBuilder.select().all().from(keyspace, "blob_hash_files")
       .where(QueryBuilder.eq("blob_hash", sha))
+
     conn.execute(query).asScala.map { row =>
       RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
     }

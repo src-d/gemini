@@ -2,20 +2,58 @@ package tech.sourced.gemini
 
 import com.datastax.driver.core.Cluster
 
+case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
+                           port: Int = Gemini.defaultCassandraPort,
+                           mode: String = ReportSparkApp.defaultMode
+                          )
+
 object ReportSparkApp extends App {
-  def printUsage(): Unit = {
-    println("Usage: ./report [--use-group-by|--condensed]")
-    println("")
-    println("Finds duplicate files among hashed repositories." +
-      "\n\tIt uses as many queries as distinct files are stored in the database"
-    )
-    println("  --use-group-by" +
-      "\n\tIt uses as many queries as unique duplicate files are found, plus one. (only for Apache Cassandra database)"
-    )
-    println("  --condensed displays only the duplicate blob_hash and the number of occurrences." +
-      "\n\tIt uses only one query to find the duplicates. (only for Apache Cassandra database)"
-    )
-    System.exit(2)
+  val defaultMode = ""
+  val groupByMode = "use-group-by"
+  val condensedMode = "condensed"
+
+  val parser = new scopt.OptionParser[ReportAppConfig]("./report") {
+    head("Gemini Report")
+    note("Finds duplicated files among hashed repositories." +
+      "It uses as many queries as distinct files are stored in the database")
+
+    opt[String]('h', "host")
+      .action((x, c) => c.copy(host = x))
+      .text("host is Cassandra host")
+    opt[Int]('p', "port")
+      .action((x, c) => c.copy(port = x))
+      .text("port is Cassandra port")
+    opt[String]("mode")
+      .valueName("use-group-by or condensed")
+      .action((x, c) => c.copy(mode = x))
+      .text("Only for Apache Cassandra database\n" +
+        "use-group-by - use as many queries as unique duplicate files are found, plus one.\n" +
+        "condensed - use only one query to find the duplicates.")
+  }
+
+  parser.parse(args, ReportAppConfig()) match {
+    case Some(config) =>
+      //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
+      val cluster = Cluster.builder()
+        .addContactPoint(config.host)
+        .withPort(config.port)
+        .build()
+      val cassandra = cluster.connect()
+      val gemini = Gemini(null)
+      gemini.applySchema(cassandra)
+
+      val report = config.mode match {
+        case `defaultMode` => gemini.report(cassandra)
+        case `condensedMode` => gemini.reportCassandraCondensed(cassandra)
+        case `groupByMode` => gemini.reportCassandraGroupBy(cassandra)
+      }
+
+      cassandra.close
+      cluster.close
+
+      print(report)
+    case None =>
+      System.exit(2)
   }
 
   def print(report: Report): Unit = {
@@ -31,37 +69,4 @@ object ReportSparkApp extends App {
     }
   }
 
-  val ERROR = -1
-  val DEFAULT = 0
-  val CONDENSED = 1
-  val GROUP_BY = 2
-
-  val mode = args match {
-    case _ if args.length > 1 => ERROR
-    case _ if args.length == 0 => DEFAULT
-    case _ if args.length == 1 && args(0) == "--use-group-by" => GROUP_BY
-    case _ if args.length == 1 && args(0) == "--condensed" => CONDENSED
-    case _ => ERROR
-  }
-
-  if (mode == ERROR) {
-    printUsage()
-  }
-
-  //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
-  val cluster = Cluster.builder().addContactPoint(Gemini.defaultCassandraHost).build()
-  val cassandra = cluster.connect()
-  val gemini = Gemini(null)
-  gemini.applySchema(cassandra)
-
-  val report = mode match {
-    case DEFAULT => gemini.report(cassandra)
-    case CONDENSED => gemini.reportCassandraCondensed(cassandra)
-    case GROUP_BY => gemini.reportCassandraGroupBy(cassandra)
-  }
-
-  cassandra.close
-  cluster.close
-
-  print(report)
 }

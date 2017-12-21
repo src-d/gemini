@@ -12,4 +12,5 @@ object Dependencies {
   lazy val jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "4.9.0.201710071750-r"
   lazy val cassandraSparkConnector = "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.6"
   lazy val cassandraDriverMetrics = "com.codahale.metrics" % "metrics-core" % "3.0.2"
+  lazy val scopt = "com.github.scopt" %% "scopt" % "3.7.0"
 }
