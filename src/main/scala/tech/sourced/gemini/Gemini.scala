@@ -44,9 +44,10 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       .getFirstReferenceCommit
       .getTreeEntries
       .getBlobs
-      .select("blob_id", "repository_id", "path")
+      .select("blob_id", "repository_id", "commit_hash", "path")
       .withColumnRenamed("blob_id", "blob_hash")
       .withColumnRenamed("repository_id", "repo")
+      .withColumnRenamed("commit_hash", "ref_hash")
       .withColumnRenamed("path", "file_path")
 
   def save(files: DataFrame): Unit = {
@@ -142,7 +143,25 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 }
 
-case class RepoFile(repo: String, file: String, sha: String)
+object URLFormatter {
+  val services = Map(
+    "github.com" -> "https://%s/blob/%s/%s",
+    "bitbucket.org" -> "https://%s/src/%s/%s",
+    "gitlab.com" -> "https://%s/blob/%s/%s"
+  )
+  val default = ("", "repo: %s ref_hash: %s file: %s")
+
+  def format(repo: String, ref_hash: String, file: String): String = {
+    val urlTemplateByRepo = services.find { case (h, _) => repo.startsWith(h) }.getOrElse(default)._2
+    val repoWithoutSuffix = repo.replaceFirst("\\.git$", "")
+
+    urlTemplateByRepo.format(repoWithoutSuffix, ref_hash, file)
+  }
+}
+
+case class RepoFile(repo: String, ref_hash: String, file: String, sha: String) {
+  override def toString(): String = URLFormatter.format(repo, ref_hash, file)
+}
 
 case class DuplicateBlobHash(sha: String, count: Long) {
   override def toString(): String = s"$sha ($count duplicates)"
@@ -222,7 +241,7 @@ object Gemini {
       .where(QueryBuilder.eq("blob_hash", sha))
 
     conn.execute(query).asScala.map { row =>
-      RepoFile(row.getString("repo"), row.getString("file_path"), row.getString("blob_hash"))
+      RepoFile(row.getString("repo"), row.getString("ref_hash"), row.getString("file_path"), row.getString("blob_hash"))
     }
   }
 
