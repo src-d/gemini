@@ -35,23 +35,18 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
     }
   }
 
-  def hashForRepos(repos: DataFrame): DataFrame = {
-    val headRefs = repos
+  def hashForRepos(repos: DataFrame): DataFrame =
+    repos
       .getReferences //TODO(bzz) replace \w .getHead() after https://github.com/src-d/engine/issues/255
       .filter("name = 'refs/heads/HEAD' OR name = 'HEAD'")
-      .withColumnRenamed("hash", "commit_hash")
-    val files = headRefs.getCommits.getFirstReferenceCommit.getFiles.select("file_hash", "commit_hash", "path")
-
-    val filesInRepos = files.join(headRefs, "commit_hash")
-
-    val filesToWrite = filesInRepos
-      .select("file_hash", "path", "repository_id")
-      .withColumnRenamed("file_hash", "blob_hash")
+      .getCommits
+      .getFirstReferenceCommit
+      .getTreeEntries
+      .getBlobs
+      .select("blob_id", "repository_id", "path")
+      .withColumnRenamed("blob_id", "blob_hash")
       .withColumnRenamed("repository_id", "repo")
       .withColumnRenamed("path", "file_path")
-
-    filesToWrite
-  }
 
   def save(files: DataFrame): Unit = {
     println(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
