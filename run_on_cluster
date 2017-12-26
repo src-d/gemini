@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Convenient script to run gemini on cluster
+
+# N.B:
+# make sure kubectl has the same version as server
+# for MacOs remove client and install like this:
+# brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/a9f7c11c63db20f3746e034849559ef266808cd1/Formula/kubernetes-cli.rb
+
+# create pod if not exists
+if ! kubectl get pods | grep gemini; then
+    kubectl create -f ./k8s/gemini-pod.yaml
+fi
+
+while ! kubectl get pods | grep "gemini.*Running"; do
+    sleep 1
+done
+
+# variables
+DB_HOST=scylladb
+
+case $1 in
+"hash")
+    kubectl exec gemini -- /bin/bash -c "MASTER=spark://p-spark-master:7077 /gemini/hash -h $DB_HOST $2"
+    ;;
+"query")
+    kubectl exec gemini -- /gemini/query -h $DB_HOST $2
+    ;;
+"report")
+    kubectl exec gemini -- /gemini/report -h $DB_HOST $2
+    ;;
+*)
+    # just get into container
+    kubectl exec -it gemini /bin/bash
+    ;;
+esac
