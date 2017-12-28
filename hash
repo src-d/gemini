@@ -42,9 +42,9 @@ sparkSubmit \
   --class "${app_class}" \
   --master "${MASTER:=local[*]}" \
   --name "${app_name}" \
-  --conf "spark.executor.memory=4g" \
-  --conf "spark.default.parallelism=8" \
+  --conf "spark.executor.memory=${SPARK_MEMORY:=4g}" \
+  --conf "spark.executor.cores=${SPARK_CORES:=1}" \
+  --conf "spark.default.parallelism=${SPARK_PARALLELISM:=8}" \
   --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j.properties" \
   "${jar}" \
   "$@"
-
