@@ -4,8 +4,8 @@ import com.datastax.driver.core.Cluster
 
 case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
                            port: Int = Gemini.defaultCassandraPort,
-                           mode: String = ReportSparkApp.defaultMode
-                          )
+                           mode: String = ReportSparkApp.defaultMode,
+                           verbose: Boolean = false)
 
 object ReportSparkApp extends App {
   val defaultMode = ""
@@ -23,6 +23,9 @@ object ReportSparkApp extends App {
     opt[Int]('p', "port")
       .action((x, c) => c.copy(port = x))
       .text("port is Cassandra port")
+    opt[Unit]('v', "verbose")
+      .action((_, c) => c.copy(verbose = true))
+      .text("producing more verbose debug output")
     opt[String]("mode")
       .valueName("use-group-by or condensed")
       .action((x, c) => c.copy(mode = x))
@@ -33,13 +36,15 @@ object ReportSparkApp extends App {
 
   parser.parse(args, ReportAppConfig()) match {
     case Some(config) =>
+      val log = Logger("gemini", config.verbose)
+
       //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
       val cluster = Cluster.builder()
         .addContactPoint(config.host)
         .withPort(config.port)
         .build()
       val cassandra = cluster.connect()
-      val gemini = Gemini(null)
+      val gemini = Gemini(null, log)
       gemini.applySchema(cassandra)
 
       val report = config.mode match {

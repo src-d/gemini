@@ -13,4 +13,7 @@ object Dependencies {
   lazy val cassandraSparkConnector = "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.6"
   lazy val cassandraDriverMetrics = "com.codahale.metrics" % "metrics-core" % "3.0.2"
   lazy val scopt = "com.github.scopt" %% "scopt" % "3.7.0"
+  lazy val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.5"
+  lazy val log4j12 = "log4j" % "log4j" % "1.2.17"
+  lazy val log4jBinding = "org.slf4j" % "slf4j-log4j12" % "1.7.25"
 }

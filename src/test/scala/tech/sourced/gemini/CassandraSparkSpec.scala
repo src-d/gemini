@@ -31,6 +31,8 @@ class CassandraSparkSpec extends FlatSpec
 
   useSparkConf(defaultConf)
 
+  val logger = Logger("gemini")
+
   override def beforeAll(): Unit = {
     super.beforeAll()
     session = CassandraConnector(defaultConf).openSession()
@@ -39,8 +41,8 @@ class CassandraSparkSpec extends FlatSpec
   }
 
   override def afterAll(): Unit = {
-    Gemini(null, UNIQUES).dropSchema(session)
-    Gemini(null, DUPLICATES).dropSchema(session)
+    Gemini(null, logger, UNIQUES).dropSchema(session)
+    Gemini(null, logger, DUPLICATES).dropSchema(session)
     super.afterAll()
     session.close()
   }
@@ -57,7 +59,7 @@ class CassandraSparkSpec extends FlatSpec
   )
 
   def prepareKeyspace(sivaPath: String, keyspace: String): Unit = {
-    val gemini = Gemini(sparkSession, keyspace)
+    val gemini = Gemini(sparkSession, logger, keyspace)
     gemini.dropSchema(session)
     gemini.applySchema(session)
     println("Hash")
@@ -71,7 +73,7 @@ class CassandraSparkSpec extends FlatSpec
   object Cassandra extends Tag("Cassandra")
 
   "Read from Database" should "return same results as written" in {
-    val gemini = Gemini(sparkSession, UNIQUES)
+    val gemini = Gemini(sparkSession, logger, UNIQUES)
 
     println("Query")
     val sha1 = gemini.query("LICENSE", session)
@@ -82,7 +84,7 @@ class CassandraSparkSpec extends FlatSpec
   }
 
   "Query for duplicates in single repository" should "return 2 files" in {
-    val gemini = Gemini(sparkSession, DUPLICATES)
+    val gemini = Gemini(sparkSession, logger, DUPLICATES)
 
     // 2 file in 9279be3cf07fb3cca4fc964b27acea57e0af461b.siva
     val sha1 = Gemini.findDuplicateItemForBlobHash("c4e5bcc8001f80acc238877174130845c5c39aa3", session, DUPLICATES)
@@ -92,7 +94,7 @@ class CassandraSparkSpec extends FlatSpec
   }
 
   "Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
-    val gemini = Gemini(sparkSession, DUPLICATES)
+    val gemini = Gemini(sparkSession, logger, DUPLICATES)
 
     println("Query")
     val report = gemini.reportCassandraCondensed(session).v
@@ -103,7 +105,7 @@ class CassandraSparkSpec extends FlatSpec
   }
 
   "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
-    val gemini = Gemini(sparkSession, DUPLICATES)
+    val gemini = Gemini(sparkSession, logger, DUPLICATES)
 
     println("Query")
     val detailedReport = gemini.reportCassandraGroupBy(session).v
@@ -114,7 +116,7 @@ class CassandraSparkSpec extends FlatSpec
   }
 
   "Detailed Report from Database" should "return duplicate files" in {
-    val gemini = Gemini(sparkSession, DUPLICATES)
+    val gemini = Gemini(sparkSession, logger, DUPLICATES)
 
     println("Query")
     val detailedReport = gemini.report(session).v
@@ -125,7 +127,7 @@ class CassandraSparkSpec extends FlatSpec
   }
 
   "Report from Databasew with unique files" should "return no duplicate files" in {
-    val gemini = Gemini(sparkSession, UNIQUES)
+    val gemini = Gemini(sparkSession, logger, UNIQUES)
 
     println("Query")
     val report = gemini.report(session)

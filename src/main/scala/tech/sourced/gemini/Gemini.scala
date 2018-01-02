@@ -8,12 +8,13 @@ import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.eclipse.jgit.lib.Constants.OBJ_BLOB
 import org.eclipse.jgit.lib.ObjectInserter
+import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
 
 import scala.collection.JavaConverters._
 import scala.io.Source
 
-class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
+class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
 
   import session.implicits._
 
@@ -54,7 +55,7 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
   }
 
   def save(files: DataFrame): Unit = {
-    println(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
+    log.info(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
     files.write
       .mode("append")
       .cassandraFormat("blob_hash_files", keyspace)
@@ -126,7 +127,7 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
   }
 
   def applySchema(session: Session): Unit = {
-    println("CQL: creating schema") //TODO(bzz): Log.Debug
+    log.debug("CQL: creating schema")
     Source
       .fromFile(Gemini.defaultSchemaFile)
       .getLines
@@ -134,14 +135,14 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
       .filter(!_.isEmpty)
       .foreach { line =>
         val cql = line.replace("__KEYSPACE__", keyspace)
-        println(s"CQL: $cql")
+        log.debug(s"CQL: $cql")
         session.execute(cql)
       }
-    println("CQL: Done. Schema created")
+    log.debug("CQL: Done. Schema created")
   }
 
   def dropSchema(session: Session): Unit = {
-    println("CQL: dropping schema") //TODO(bzz): Log.Debug
+    log.debug("CQL: dropping schema")
     session.execute(s"DROP KEYSPACE IF EXISTS $keyspace;")
   }
 }
@@ -161,7 +162,8 @@ object Gemini {
 
   val formatter = new ObjectInserter.Formatter
 
-  def apply(ss: SparkSession, keyspace: String = defautKeyspace): Gemini = new Gemini(ss, keyspace)
+  def apply(ss: SparkSession, log: Slf4jLogger = Logger("gemini"), keyspace: String = defautKeyspace): Gemini =
+    new Gemini(ss, log, keyspace)
 
   def computeSha1(file: File): String = {
     val in = new FileInputStream(file)
