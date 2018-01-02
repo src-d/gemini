@@ -18,12 +18,12 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
   import session.implicits._
 
-  def hash(reposPath: String, limit: Int = 0): DataFrame = {
+  def hash(reposPath: String, limit: Int = 0, format: String = "siva"): DataFrame = {
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }
 
-    val engine = Engine(session, reposPath)
+    val engine = Engine(session, reposPath, format)
 
     // engine.getRepositories.limit(n)...getFiles - doesn't work in engine now
     // https://github.com/src-d/engine/issues/267
