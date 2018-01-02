@@ -66,9 +66,6 @@ object HashSparkApp extends App with Logging {
         LogManager.getRootLogger().setLevel(Level.INFO)
       }
 
-      val repos = listRepositories(reposPath, spark.sparkContext.hadoopConfiguration, config.limit)
-      println(s"Hashing ${repos.length} repositories in: $reposPath\n\t" + (repos mkString "\n\t"))
-
       val gemini = Gemini(spark, log, "hashes")
       CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
         gemini.applySchema(cassandra)
@@ -79,16 +76,5 @@ object HashSparkApp extends App with Logging {
 
     case None =>
       System.exit(2)
-  }
-
-  private def listRepositories(path: String, conf: Configuration, limit: Int): Array[Path] = {
-    val paths = FileSystem.get(conf)
-      .listStatus(new Path(path))
-      .filter { file =>
-        file.isDirectory || file.getPath.getName.endsWith(".siva")
-      }
-      .map(_.getPath)
-
-    if (limit <= 0) paths else paths.take(limit)
   }
 }
