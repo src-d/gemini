@@ -86,8 +86,8 @@ object HashSparkApp extends App with Logging {
 
   private def printRepositories(reposPath: String, repos: Array[Path]): Unit = {
     println(s"Hashing ${repos.length} repositories in: $reposPath")
-    if (repos.length < printLimit) {
-      println(repos mkString "\n\t")
+    if (repos.length < printLimit && repos.length > 0) {
+      println("\t" + (repos mkString "\n\t"))
     }
   }
 
