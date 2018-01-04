@@ -1,5 +1,7 @@
 package tech.sourced.gemini
 
+import java.net.URI
+
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -82,7 +84,7 @@ object HashSparkApp extends App with Logging {
   }
 
   private def listRepositories(path: String, conf: Configuration, limit: Int): Array[Path] = {
-    val paths = FileSystem.get(conf)
+    val paths = FileSystem.get(new URI(path), conf)
       .listStatus(new Path(path))
       .filter { file =>
         file.isDirectory || file.getPath.getName.endsWith(".siva")
