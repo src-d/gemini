@@ -23,6 +23,7 @@ case class HashAppConfig(reposPath: String = "",
   */
 object HashSparkApp extends App with Logging {
   val repoFormats = Seq("siva", "bare", "standard")
+  val printLimit = 100
 
   val parser = new scopt.OptionParser[HashAppConfig]("./hash") {
     head("Gemini Hasher")
@@ -68,8 +69,8 @@ object HashSparkApp extends App with Logging {
         LogManager.getRootLogger().setLevel(Level.INFO)
       }
 
-      val repos = listRepositories(reposPath, spark.sparkContext.hadoopConfiguration, config.limit)
-      println(s"Hashing ${repos.length} repositories in: $reposPath\n\t" + (repos mkString "\n\t"))
+      val repos = listRepositories(reposPath, config.format, spark.sparkContext.hadoopConfiguration, config.limit)
+      printRepositories(reposPath, repos)
 
       val gemini = Gemini(spark, log, "hashes")
       CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
@@ -83,14 +84,29 @@ object HashSparkApp extends App with Logging {
       System.exit(2)
   }
 
-  private def listRepositories(path: String, conf: Configuration, limit: Int): Array[Path] = {
-    val paths = FileSystem.get(new URI(path), conf)
-      .listStatus(new Path(path))
-      .filter { file =>
-        file.isDirectory || file.getPath.getName.endsWith(".siva")
-      }
-      .map(_.getPath)
+  private def printRepositories(reposPath: String, repos: Array[Path]): Unit = {
+    println(s"Hashing ${repos.length} repositories in: $reposPath")
+    if (repos.length < printLimit) {
+      println(repos mkString "\n\t")
+    }
+  }
+
+  private def listRepositories(path: String, format: String, conf: Configuration, limit: Int): Array[Path] = {
+    val fs = FileSystem.get(new URI(path), conf)
+    val p = new Path(path)
+
+    val paths = format match {
+      case "siva" => findSivaRecursive(p, fs)
+      case _ => fs.listStatus(p).filter(_.isDirectory).map(_.getPath)
+    }
 
     if (limit <= 0) paths else paths.take(limit)
   }
+
+  // we don't filter files by extension here, because engine doesn't do it too
+  // it will try to process any file
+  private def findSivaRecursive(p: Path, fs: FileSystem): Array[Path] =
+    fs.listStatus(p).flatMap{ file =>
+      if (file.isDirectory) findSivaRecursive(file.getPath, fs) else Array(file.getPath)
+    }
 }
