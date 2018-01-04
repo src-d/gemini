@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# Convenient script to run gemini on cluster
+#
+# N.B:
+# make sure kubectl has the same version as server
+
+# variables
+declare -r DB_HOST='scylladb'
+declare -r SPARK_MASTER='spark://p-spark-master:7077'
+
+# create pod if not exists
+if ! kubectl get pods | grep gemini > /dev/null; then
+  kubectl create -f ./k8s/gemini-pod.yaml || exit 1
+fi
+
+while ! kubectl get pods | grep "gemini.*Running" > /dev/null; do
+  sleep 1
+done
+
+case $1 in
+  hash)
+    kubectl exec gemini -- /bin/bash -c "MASTER=$SPARK_MASTER /gemini/hash -h $DB_HOST ${@:2}"
+    ;;
+  query)
+    kubectl exec gemini -- /gemini/query -h $DB_HOST "${@:2}"
+    ;;
+  report)
+    kubectl exec gemini -- /gemini/report -h $DB_HOST "${@:2}"
+    ;;
+  bash)
+    kubectl exec gemini -it /bin/bash
+    ;;
+  *)
+    cat >&2 << END;
+Available commands:
+hash [options] <path> - hashes given set of Git repositories, either from container's FS or HDFS
+query [options] <path> - finds duplicate file among hashed repositories
+report [options] - shows all duplicated files among hashed repositories
+bash - opens bash inside gemini container on cluster
+END
+    ;;
+esac
