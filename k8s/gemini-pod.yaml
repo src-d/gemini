@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gemini
+  labels:
+    app: gemini
+spec:
+  containers:
+  - name: gemini
+    image: smacker/gemini
+    imagePullPolicy: Always
+  nodeSelector:
+    srcd.host/type: worker-applications
