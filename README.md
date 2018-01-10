@@ -40,7 +40,7 @@ docker exec -it some-scylla cqlsh
 ```
 ./hash   <path-to-repos-or-siva-files>
 ./query  <path-to-file>
-./report <path-to-repos-or-siva-files>
+./report
 ```
 
 By default, all commands are going to use
@@ -71,7 +71,7 @@ There is an example of a client in a Golang under [src/main/go](src/main/go)
 To find all duplicate files in all repositories run
 
 ```
-./report <path-to-repos-or-siva-files>
+./report
 ```
 
 All repositories must be [hashed](#hash) before.
