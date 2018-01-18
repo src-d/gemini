@@ -38,8 +38,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
   def hashForRepos(repos: DataFrame): DataFrame =
     repos
-      .getReferences //TODO(bzz) replace \w .getHead() after https://github.com/src-d/engine/issues/255
-      .filter("name = 'refs/heads/HEAD' OR name = 'HEAD'")
+      .getHEAD
       .getCommits
       .getFirstReferenceCommit
       .getTreeEntries
