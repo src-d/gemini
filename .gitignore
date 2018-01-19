@@ -8,3 +8,6 @@ target/
 metastore_db/
 scylla
 derby.log
+
+/Makefile.main
+/.ci

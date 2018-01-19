@@ -42,3 +42,13 @@ cache:
     - .spark-dist
     - /home/travis/.sbt
     - /home/travis/.ivy2
+
+deploy:
+  - provider: script
+    script: make docker-push-latest
+    on:
+      tags: true
+  - provider: script
+    script: make docker-push
+    on:
+      branch: experimental

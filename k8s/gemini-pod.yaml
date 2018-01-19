@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: gemini
-    image: smacker/gemini
+    image: srcd/gemini:experimental
     imagePullPolicy: Always
   nodeSelector:
     srcd.host/type: worker-applications
