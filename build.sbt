@@ -6,6 +6,8 @@ scalaVersion := "2.11.11"
 version := "0.0.1-SNAPSHOT"
 
 name := "gemini"
+// we need it to be able to run gemini from only jar files without src
+unmanagedBase := baseDirectory.value / "target"
 libraryDependencies ++= Seq(
   scalaTest % Test,
   scoverage % Test,
