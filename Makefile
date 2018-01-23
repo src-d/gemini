@@ -1,5 +1,6 @@
 # Package configuration
 PROJECT = gemini
+SBT = ./sbt
 
 # Including ci Makefile
 MAKEFILE = Makefile.main
@@ -11,3 +12,7 @@ $(MAKEFILE):
 	cp $(CI_FOLDER)/$(MAKEFILE) .;
 
 -include $(MAKEFILE)
+
+build:
+	$(SBT) assembly
+	$(SBT) package
