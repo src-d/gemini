@@ -29,21 +29,7 @@ matrix:
       - ./query ./LICENSE
       - ./report
     before_deploy:
-      # the list is quite huge, but we will improve it later
-      - mkdir -p gemini-$TRAVIS_TAG/target
-      - mkdir -p gemini-$TRAVIS_TAG/project
-      - mkdir -p gemini-$TRAVIS_TAG/src/main/resources
-      - cp target/*.jar gemini-$TRAVIS_TAG/target/
-      - cp sbt gemini-$TRAVIS_TAG/
-      - cp build.sbt gemini-$TRAVIS_TAG/
-      - cp hash gemini-$TRAVIS_TAG/
-      - cp query gemini-$TRAVIS_TAG/
-      - cp report gemini-$TRAVIS_TAG/
-      - cp project/build.properties gemini-$TRAVIS_TAG/project/
-      - cp project/Dependencies.scala gemini-$TRAVIS_TAG/project/
-      - cp project/plugins.sbt gemini-$TRAVIS_TAG/project/
-      - cp -r src/main/resources/* gemini-$TRAVIS_TAG/src/main/resources/
-      - tar -cvzf gemini_$TRAVIS_TAG.tar.gz gemini-$TRAVIS_TAG/
+      - VERSION=$TRAVIS_TAG ./scripts/release.sh
     deploy:
       - provider: releases
         api_key:
