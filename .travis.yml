@@ -15,7 +15,7 @@ matrix:
   include:
   - scala: 2.11.2
     script:
-      - ./scripts/wait-for-it.sh 127.0.0.1:9042 -- echo "Cassandra/ScyllaDB is up"
+      - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
       - ./sbt test
 
   - scala: 2.11.2
