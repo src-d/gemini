@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   engine % Compile,
   jgit % Compile,
   fixNetty,
-  cassandraDriverMetrics % Compile, //needed for using Driver \wo Spark from SparkConnector
+  cassandraDriverMetrics % Provided, //needed for using Driver \wo Spark from SparkConnector
   cassandraSparkConnector % Compile,
   scopt % Compile,
   slf4jApi % Compile,

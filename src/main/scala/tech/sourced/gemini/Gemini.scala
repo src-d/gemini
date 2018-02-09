@@ -40,7 +40,6 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     repos
       .getHEAD
       .getCommits
-      .getFirstReferenceCommit
       .getTreeEntries
       .getBlobs
       .select("blob_id", "repository_id", "commit_hash", "path")
