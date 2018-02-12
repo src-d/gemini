@@ -36,11 +36,9 @@ class Gemini(session: SparkSession, keyspace: String = Gemini.defautKeyspace) {
   }
 
   def hashForRepos(repos: DataFrame): DataFrame = {
-    val headRefs = repos
-      .getReferences //TODO(bzz) replace \w .getHead() after https://github.com/src-d/engine/issues/255
-      .filter("name = 'refs/heads/HEAD' OR name = 'HEAD'")
-      .withColumnRenamed("hash", "commit_hash")
-    val files = headRefs.getCommits.getFirstReferenceCommit.getFiles.select("file_hash", "commit_hash", "path")
+    val headRefs = repos.getHEAD.withColumnRenamed("hash", "commit_hash")
+    val files = headRefs.getCommits.getFirstReferenceCommit.getFiles
+      .select("file_hash", "commit_hash", "path")
 
     val filesInRepos = files.join(headRefs, "commit_hash")
 
