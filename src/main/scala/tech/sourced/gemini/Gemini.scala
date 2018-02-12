@@ -49,10 +49,11 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       .withColumnRenamed("path", "file_path")
 
   def save(files: DataFrame): Unit = {
-    log.info(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
+    val approxFileCount = files.rdd.countApprox(10000L)
+    log.info(s"Writing ${approxFileCount} files to DB")
     files.write
       .mode("append")
-      .cassandraFormat("blob_hash_files", keyspace)
+      .cassandraFormat(Gemini.defaultTable, keyspace)
       .save()
   }
 
@@ -171,6 +172,7 @@ object Gemini {
   val defaultCassandraPort: Int = 9042
   val defaultSchemaFile: String = "src/main/resources/schema.cql"
   val defautKeyspace: String = "hashes"
+  val defaultTable: String = "blob_hash_files"
 
   val formatter = new ObjectInserter.Formatter
 
@@ -193,7 +195,7 @@ object Gemini {
     * @return
     */
   def findAllDuplicateBlobHashes(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
-    val duplicatesCountCql = s"SELECT blob_hash, COUNT(*) as count FROM ${keyspace}.blob_hash_files GROUP BY blob_hash"
+    val duplicatesCountCql = s"SELECT blob_hash, COUNT(*) as count FROM ${keyspace}.${defaultTable} GROUP BY blob_hash"
     conn
       .execute(new SimpleStatement(duplicatesCountCql))
       .asScala
@@ -211,7 +213,7 @@ object Gemini {
     * @return
     */
   def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[Iterable[RepoFile]] = {
-    val distinctBlobHash = s"SELECT distinct blob_hash FROM ${keyspace}.blob_hash_files"
+    val distinctBlobHash = s"SELECT distinct blob_hash FROM ${keyspace}.${defaultTable}"
     conn
       .execute(new SimpleStatement(distinctBlobHash))
       .asScala
@@ -235,7 +237,7 @@ object Gemini {
   }
 
   def findDuplicateItemForBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
-    val query = QueryBuilder.select().all().from(keyspace, "blob_hash_files")
+    val query = QueryBuilder.select().all().from(keyspace, defaultTable)
       .where(QueryBuilder.eq("blob_hash", sha))
 
     conn.execute(query).asScala.map { row =>
