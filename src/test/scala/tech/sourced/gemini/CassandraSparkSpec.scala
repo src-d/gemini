@@ -140,7 +140,7 @@ class CassandraSparkSpec extends FlatSpec
 
   "Hash with limit" should "collect files only from limit repos" in {
     val gemini = Gemini(sparkSession)
-    val repos = gemini.hash("src/test/resources/siva", 1).select("repo").distinct().count()
+    val repos = gemini.hash("src/test/resources/siva", 1).select(Gemini.meta.repo).distinct().count()
     repos should be(1)
   }
 
