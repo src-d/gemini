@@ -54,7 +54,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     log.info(s"Writing ${approxFileCount} files to DB")
     files.write
       .mode("append")
-      .cassandraFormat(Gemini.defaultTable, keyspace)
+      .cassandraFormat(defaultTable, keyspace)
       .save()
   }
 
@@ -73,11 +73,11 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def query(inPath: String, conn: Session): ReportByLine = {
     val path = new File(inPath)
     if (path.isDirectory) {
-      ReportByLine(Gemini.findDuplicateProjects(path, conn, keyspace))
+      ReportByLine(findDuplicateProjects(path, conn, keyspace))
       //TODO: implement based on Apolo
       //findSimilarProjects(path)
     } else {
-      ReportByLine(Gemini.findDuplicateItemForFile(path, conn, keyspace))
+      ReportByLine(findDuplicateItemForFile(path, conn, keyspace))
       //TODO: implement based on Apolo
       //findSimilarFiles(path)
     }
@@ -91,7 +91,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @return
     */
   def report(conn: Session): ReportExpandedGroup = {
-    ReportExpandedGroup(Gemini.findAllDuplicateItems(conn, keyspace))
+    ReportExpandedGroup(findAllDuplicateItems(conn, keyspace))
   }
 
   /**
@@ -103,7 +103,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @return
     */
   def reportCassandraCondensed(conn: Session): ReportGrouped = {
-    ReportGrouped(Gemini.findAllDuplicateBlobHashes(conn, keyspace))
+    ReportGrouped(findAllDuplicateBlobHashes(conn, keyspace))
   }
 
   /**
@@ -117,7 +117,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def reportCassandraGroupBy(conn: Session): ReportExpandedGroup = {
     val duplicates = reportCassandraCondensed(conn).v
       .map { item =>
-        Gemini.findDuplicateItemForBlobHash(item.sha, conn, keyspace)
+        findDuplicateItemForBlobHash(item.sha, conn, keyspace)
       }
     ReportExpandedGroup(duplicates)
   }
@@ -125,7 +125,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def applySchema(session: Session): Unit = {
     log.debug("CQL: creating schema")
     Source
-      .fromFile(Gemini.defaultSchemaFile)
+      .fromFile(defaultSchemaFile)
       .getLines
       .map(_.trim)
       .filter(!_.isEmpty)
@@ -242,7 +242,7 @@ object Gemini {
   }
 
   def findDuplicateItemForFile(file: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
-    findDuplicateItemForBlobHash(Gemini.computeSha1(file), conn, keyspace)
+    findDuplicateItemForBlobHash(computeSha1(file), conn, keyspace)
   }
 
   def findDuplicateItemForBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
