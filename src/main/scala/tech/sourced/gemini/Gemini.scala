@@ -149,20 +149,20 @@ object URLFormatter {
     "bitbucket.org" -> "https://%s/src/%s/%s",
     "gitlab.com" -> "https://%s/blob/%s/%s"
   )
-  private val default = ("", "repo: %s ref_hash: %s file: %s")
+  private val default = ("", "repo: %s commit: %s path: %s")
 
-  def format(repo: String, ref_hash: String, file: String): String = {
+  def format(repo: String, commit: String, path: String): String = {
     val urlTemplateByRepo = services.find { case (h, _) => repo.startsWith(h) }.getOrElse(default)._2
     val repoWithoutSuffix = repo.replaceFirst("\\.git$", "")
 
-    urlTemplateByRepo.format(repoWithoutSuffix, ref_hash, file)
+    urlTemplateByRepo.format(repoWithoutSuffix, commit, path)
   }
 }
 
 case class Meta(sha: String, repo: String, commit: String, path: String)
 
-case class RepoFile(repo: String, ref_hash: String, file: String, sha: String) {
-  override def toString: String = URLFormatter.format(repo, ref_hash, file)
+case class RepoFile(repo: String, commit: String, path: String, sha: String) {
+  override def toString: String = URLFormatter.format(repo, commit, path)
 }
 
 case class DuplicateBlobHash(sha: String, count: Long) {

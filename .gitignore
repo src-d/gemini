@@ -4,6 +4,7 @@
 ~*
 target/
 .idea/
+.vscode
 
 metastore_db/
 scylla
