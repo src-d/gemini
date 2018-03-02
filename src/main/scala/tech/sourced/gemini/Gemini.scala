@@ -178,7 +178,7 @@ object Gemini {
   val defaultTable: String = "blob_hash_files"
 
   //TODO(bzz): switch to `tables("meta")`
-  val meta = Meta("blob_hash", "repo", "ref_hash", "file_path")
+  val meta = Meta("sha1", "repo", "commit", "path")
 
   val formatter = new ObjectInserter.Formatter
 
