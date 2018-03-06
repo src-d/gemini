@@ -16,9 +16,10 @@ import (
 
 // BlobHash is single blob inside a repository
 type BlobHash struct {
-	BlobHash string
-	Repo     string
-	FilePath string
+	Sha1   string
+	Commit string
+	Repo   string
+	Path   string
 }
 
 const (
@@ -42,11 +43,11 @@ func main() {
 	defer session.Close()
 
 	stmt, names := qb.Select(fmt.Sprintf("%s.%s", defaultKeyspace, defaultTable)).
-		Where(qb.In("blob_hash")).
+		Where(qb.In("sha1")).
 		ToCql()
 
 	q := gocqlx.Query(session.Query(stmt), names).BindMap(qb.M{
-		"blob_hash": []string{hash},
+		"sha1": []string{hash},
 	})
 	defer q.Release()
 
