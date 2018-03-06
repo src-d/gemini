@@ -53,11 +53,15 @@ func main() {
 
 	var similarHashes []BlobHash
 	if err := gocqlx.Select(&similarHashes, q.Query); err != nil {
-		log.Fatal("select:", err)
+		log.Fatalf("select: %v in %s", err, q.Query)
 	}
 
 	for _, hash := range similarHashes {
 		fmt.Printf("\t%+v\n", hash)
+	}
+
+	if len(similarHashes) == 0 {
+		os.Exit(2)
 	}
 }
 
