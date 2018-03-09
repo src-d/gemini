@@ -28,6 +28,8 @@ matrix:
       - ./hash src/test/resources/siva || travis_terminate 1
       - ./query ./LICENSE
       - ./report
+      - go get ./src/main/go/... || true
+      - go run ./src/main/go/query.go ./LICENSE
     before_deploy:
       - VERSION=$TRAVIS_TAG ./scripts/release.sh
     deploy:

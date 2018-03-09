@@ -16,6 +16,7 @@ import scala.io.Source
 
 class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
 
+  import Gemini._
   import session.implicits._
 
   def hash(reposPath: String, limit: Int = 0, format: String = "siva"): DataFrame = {
@@ -43,16 +44,17 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       .getTreeEntries
       .getBlobs
       .select("blob_id", "repository_id", "commit_hash", "path")
-      .withColumnRenamed("blob_id", "blob_hash")
-      .withColumnRenamed("repository_id", "repo")
-      .withColumnRenamed("commit_hash", "ref_hash")
-      .withColumnRenamed("path", "file_path")
+      .withColumnRenamed("blob_id", meta.sha)
+      .withColumnRenamed("repository_id", meta.repo)
+      .withColumnRenamed("commit_hash", meta.commit)
+      .withColumnRenamed("path", meta.path)
 
   def save(files: DataFrame): Unit = {
-    log.info(s"Writing ${files.rdd.countApprox(10000L)} files to DB")
+    val approxFileCount = files.rdd.countApprox(10000L)
+    log.info(s"Writing $approxFileCount files to DB")
     files.write
       .mode("append")
-      .cassandraFormat("blob_hash_files", keyspace)
+      .cassandraFormat(defaultTable, keyspace)
       .save()
   }
 
@@ -71,11 +73,11 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def query(inPath: String, conn: Session): ReportByLine = {
     val path = new File(inPath)
     if (path.isDirectory) {
-      ReportByLine(Gemini.findDuplicateProjects(path, conn, keyspace))
+      ReportByLine(findDuplicateProjects(path, conn, keyspace))
       //TODO: implement based on Apolo
       //findSimilarProjects(path)
     } else {
-      ReportByLine(Gemini.findDuplicateItemForFile(path, conn, keyspace))
+      ReportByLine(findDuplicateItemForFile(path, conn, keyspace))
       //TODO: implement based on Apolo
       //findSimilarFiles(path)
     }
@@ -89,7 +91,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @return
     */
   def report(conn: Session): ReportExpandedGroup = {
-    ReportExpandedGroup(Gemini.findAllDuplicateItems(conn, keyspace))
+    ReportExpandedGroup(findAllDuplicateItems(conn, keyspace))
   }
 
   /**
@@ -101,7 +103,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @return
     */
   def reportCassandraCondensed(conn: Session): ReportGrouped = {
-    ReportGrouped(Gemini.findAllDuplicateBlobHashes(conn, keyspace))
+    ReportGrouped(findAllDuplicateBlobHashes(conn, keyspace))
   }
 
   /**
@@ -115,7 +117,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def reportCassandraGroupBy(conn: Session): ReportExpandedGroup = {
     val duplicates = reportCassandraCondensed(conn).v
       .map { item =>
-        Gemini.findDuplicateItemForBlobHash(item.sha, conn, keyspace)
+        findDuplicateItemForBlobHash(item.sha, conn, keyspace)
       }
     ReportExpandedGroup(duplicates)
   }
@@ -123,7 +125,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def applySchema(session: Session): Unit = {
     log.debug("CQL: creating schema")
     Source
-      .fromFile(Gemini.defaultSchemaFile)
+      .fromFile(defaultSchemaFile)
       .getLines
       .map(_.trim)
       .filter(!_.isEmpty)
@@ -142,27 +144,29 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 }
 
 object URLFormatter {
-  val services = Map(
+  private val services = Map(
     "github.com" -> "https://%s/blob/%s/%s",
     "bitbucket.org" -> "https://%s/src/%s/%s",
     "gitlab.com" -> "https://%s/blob/%s/%s"
   )
-  val default = ("", "repo: %s ref_hash: %s file: %s")
+  private val default = ("", "repo: %s commit: %s path: %s")
 
-  def format(repo: String, ref_hash: String, file: String): String = {
+  def format(repo: String, commit: String, path: String): String = {
     val urlTemplateByRepo = services.find { case (h, _) => repo.startsWith(h) }.getOrElse(default)._2
     val repoWithoutSuffix = repo.replaceFirst("\\.git$", "")
 
-    urlTemplateByRepo.format(repoWithoutSuffix, ref_hash, file)
+    urlTemplateByRepo.format(repoWithoutSuffix, commit, path)
   }
 }
 
-case class RepoFile(repo: String, ref_hash: String, file: String, sha: String) {
-  override def toString(): String = URLFormatter.format(repo, ref_hash, file)
+case class Meta(sha: String, repo: String, commit: String, path: String)
+
+case class RepoFile(repo: String, commit: String, path: String, sha: String) {
+  override def toString: String = URLFormatter.format(repo, commit, path)
 }
 
 case class DuplicateBlobHash(sha: String, count: Long) {
-  override def toString(): String = s"$sha ($count duplicates)"
+  override def toString: String = s"$sha ($count duplicates)"
 }
 
 object Gemini {
@@ -171,6 +175,10 @@ object Gemini {
   val defaultCassandraPort: Int = 9042
   val defaultSchemaFile: String = "src/main/resources/schema.cql"
   val defautKeyspace: String = "hashes"
+  val defaultTable: String = "blob_hash_files"
+
+  //TODO(bzz): switch to `tables("meta")`
+  val meta = Meta("sha1", "repo", "commit", "path")
 
   val formatter = new ObjectInserter.Formatter
 
@@ -193,13 +201,15 @@ object Gemini {
     * @return
     */
   def findAllDuplicateBlobHashes(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
-    val duplicatesCountCql = s"SELECT blob_hash, COUNT(*) as count FROM ${keyspace}.blob_hash_files GROUP BY blob_hash"
+    val hash = meta.sha
+    val dupCount = "count"
+    val duplicatesCountCql = s"SELECT $hash, COUNT(*) as $dupCount FROM $keyspace.$defaultTable GROUP BY $hash"
     conn
       .execute(new SimpleStatement(duplicatesCountCql))
       .asScala
-      .filter(_.getLong("count") > 1)
+      .filter(_.getLong(dupCount) > 1)
       .map { r =>
-        DuplicateBlobHash(r.getString("blob_hash"), r.getLong("count"))
+        DuplicateBlobHash(r.getString(meta.sha), r.getLong(dupCount))
       }
   }
 
@@ -211,12 +221,13 @@ object Gemini {
     * @return
     */
   def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[Iterable[RepoFile]] = {
-    val distinctBlobHash = s"SELECT distinct blob_hash FROM ${keyspace}.blob_hash_files"
+    val hash = meta.sha
+    val distinctBlobHash = s"SELECT distinct $hash FROM $keyspace.$defaultTable"
     conn
       .execute(new SimpleStatement(distinctBlobHash))
       .asScala
       .flatMap { r =>
-        val dupes = findDuplicateItemForBlobHash(r.getString("blob_hash"), conn, keyspace)
+        val dupes = findDuplicateItemForBlobHash(r.getString(hash), conn, keyspace)
         if (dupes.size > 1) {
           List(dupes)
         } else {
@@ -231,15 +242,15 @@ object Gemini {
   }
 
   def findDuplicateItemForFile(file: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
-    findDuplicateItemForBlobHash(Gemini.computeSha1(file), conn, keyspace)
+    findDuplicateItemForBlobHash(computeSha1(file), conn, keyspace)
   }
 
   def findDuplicateItemForBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
-    val query = QueryBuilder.select().all().from(keyspace, "blob_hash_files")
-      .where(QueryBuilder.eq("blob_hash", sha))
+    val query = QueryBuilder.select().all().from(keyspace, defaultTable)
+      .where(QueryBuilder.eq(meta.sha, sha))
 
     conn.execute(query).asScala.map { row =>
-      RepoFile(row.getString("repo"), row.getString("ref_hash"), row.getString("file_path"), row.getString("blob_hash"))
+      RepoFile(row.getString(meta.repo), row.getString(meta.commit), row.getString(meta.path), row.getString(meta.sha))
     }
   }
 

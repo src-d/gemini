@@ -48,8 +48,8 @@ object QueryApp extends App {
 
       val similar = gemini.query(file, cassandra).v
 
-      cassandra.close
-      cluster.close
+      cassandra.close()
+      cluster.close()
 
       if (similar.isEmpty) {
         println(s"No duplicates of $file found.")

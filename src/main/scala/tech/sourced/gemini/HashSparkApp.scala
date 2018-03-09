@@ -66,7 +66,7 @@ object HashSparkApp extends App with Logging {
         .getOrCreate()
 
       if (config.verbose) {
-        LogManager.getRootLogger().setLevel(Level.INFO)
+        LogManager.getRootLogger.setLevel(Level.INFO)
       }
 
       val repos = listRepositories(reposPath, config.format, spark.sparkContext.hadoopConfiguration, config.limit)

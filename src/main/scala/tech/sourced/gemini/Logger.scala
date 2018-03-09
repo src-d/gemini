@@ -7,7 +7,7 @@ import org.slf4j.{Logger => Slf4jLogger}
 object Logger {
   def apply(name: String, verbose: Boolean = false): Slf4jLogger = {
     if (verbose) {
-      LogManager.getRootLogger().setLevel(Level.INFO)
+      LogManager.getRootLogger.setLevel(Level.INFO)
     }
     LoggerFactory.getLogger(name)
   }

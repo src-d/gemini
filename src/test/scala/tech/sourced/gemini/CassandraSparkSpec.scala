@@ -82,7 +82,7 @@ class CassandraSparkSpec extends FlatSpec
     sha1.v should not be empty
     sha1.v.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
     sha1.v.head.repo should be("null/Users/alex/src-d/gemini")
-    sha1.v.head.ref_hash should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
+    sha1.v.head.commit should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
   }
 
   "Query for duplicates in single repository" should "return 2 files" in {
@@ -113,7 +113,7 @@ class CassandraSparkSpec extends FlatSpec
     val detailedReport = gemini.reportCassandraGroupBy(session).v
     println("Done")
 
-    val duplicatedFileNames = detailedReport map (_.head.file)
+    val duplicatedFileNames = detailedReport map (_.head.path)
     duplicatedFileNames.toSeq should contain theSameElementsAs expectedDuplicateFiles
   }
 
@@ -124,7 +124,7 @@ class CassandraSparkSpec extends FlatSpec
     val detailedReport = gemini.report(session).v
     println("Done")
 
-    val duplicatedFileNames = detailedReport map (_.head.file)
+    val duplicatedFileNames = detailedReport map (_.head.path)
     duplicatedFileNames.toSeq should contain theSameElementsAs expectedDuplicateFiles
   }
 
@@ -140,7 +140,7 @@ class CassandraSparkSpec extends FlatSpec
 
   "Hash with limit" should "collect files only from limit repos" in {
     val gemini = Gemini(sparkSession)
-    val repos = gemini.hash("src/test/resources/siva", 1).select("repo").distinct().count()
+    val repos = gemini.hash("src/test/resources/siva", 1).select(Gemini.meta.repo).distinct().count()
     repos should be(1)
   }
 

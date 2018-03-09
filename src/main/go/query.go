@@ -14,11 +14,18 @@ import (
 	"github.com/scylladb/gocqlx/qb"
 )
 
+// BlobHash is single blob inside a repository
 type BlobHash struct {
-	BlobHash string
-	Repo     string
-	FilePath string
+	Sha1   string
+	Commit string
+	Repo   string
+	Path   string
 }
+
+const (
+	defaultKeyspace = "hashes"
+	defaultTable    = "blob_hash_files"
+)
 
 func main() {
 	flag.Parse()
@@ -35,22 +42,26 @@ func main() {
 	session := connect()
 	defer session.Close()
 
-	stmt, names := qb.Select("hashes.blob_hash_files").
-		Where(qb.In("blob_hash")).
+	stmt, names := qb.Select(fmt.Sprintf("%s.%s", defaultKeyspace, defaultTable)).
+		Where(qb.In("sha1")).
 		ToCql()
 
 	q := gocqlx.Query(session.Query(stmt), names).BindMap(qb.M{
-		"blob_hash": []string{hash},
+		"sha1": []string{hash},
 	})
 	defer q.Release()
 
 	var similarHashes []BlobHash
 	if err := gocqlx.Select(&similarHashes, q.Query); err != nil {
-		log.Fatal("select:", err)
+		log.Fatalf("select: %v in %s", err, q.Query)
 	}
 
 	for _, hash := range similarHashes {
 		fmt.Printf("\t%+v\n", hash)
+	}
+
+	if len(similarHashes) == 0 {
+		os.Exit(2)
 	}
 }
 
@@ -58,7 +69,7 @@ func main() {
 func connect() *gocql.Session {
 	node := "127.0.0.1"
 	cluster := gocql.NewCluster(node)
-	cluster.Keyspace = "hashes"
+	cluster.Keyspace = defaultKeyspace
 	session, err := cluster.CreateSession()
 	if err != nil {
 		log.Fatalf("Can not create connection to %s, %v", node, err)
@@ -75,7 +86,7 @@ func sha1hash(file string) string {
 
 	f, err := os.Open(file)
 	if err != nil {
-		log.Fatal("Can not open a file %s", file, err)
+		log.Fatalf("Can not open a file %s, err:+%v", file, err)
 	}
 	defer f.Close()
 
