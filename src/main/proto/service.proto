@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
+
+// Feature Extractor Service
+service FeatureExtractor {
+  // Extract identifiers weighted set
+  rpc Identifiers (IdentifiersRequest) returns (FeaturesReply) {}
+  // Extract literals weighted set
+  rpc Literals (LiteralsRequest) returns (FeaturesReply) {}
+  // Extract uast2seq weighted set
+  rpc Uast2seq (Uast2seqRequest) returns (FeaturesReply) {}
+}
+
+// The identifiers request message containing extractor configuration and uast.
+message IdentifiersRequest {
+  gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
+  int32 docfreqThreshold = 2;
+  int32 weight = 3;
+  bool splitStem = 4;
+}
+
+// The literals request message containing extractor configuration and uast.
+message LiteralsRequest {
+  gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
+  int32 docfreqThreshold = 2;
+  int32 weight = 3;
+}
+
+// The uast2seq request message containing extractor configuration and uast.
+message Uast2seqRequest {
+  gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
+  int32 docfreqThreshold = 2;
+  int32 weight = 3;
+}
+
+message Feature {
+  string name = 1;
+  float weight = 2;
+}
+
+// The response message containing the features
+message FeaturesReply {
+  repeated Feature features = 1;
+}
