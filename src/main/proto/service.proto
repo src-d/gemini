@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package tech.sourced.featurext;
+
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
 
