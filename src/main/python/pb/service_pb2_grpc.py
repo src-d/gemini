@@ -15,17 +15,17 @@ class FeatureExtractorStub(object):
       channel: A grpc.Channel.
     """
     self.Identifiers = channel.unary_unary(
-        '/FeatureExtractor/Identifiers',
+        '/tech.sourced.featurext.FeatureExtractor/Identifiers',
         request_serializer=service__pb2.IdentifiersRequest.SerializeToString,
         response_deserializer=service__pb2.FeaturesReply.FromString,
         )
     self.Literals = channel.unary_unary(
-        '/FeatureExtractor/Literals',
+        '/tech.sourced.featurext.FeatureExtractor/Literals',
         request_serializer=service__pb2.LiteralsRequest.SerializeToString,
         response_deserializer=service__pb2.FeaturesReply.FromString,
         )
     self.Uast2seq = channel.unary_unary(
-        '/FeatureExtractor/Uast2seq',
+        '/tech.sourced.featurext.FeatureExtractor/Uast2seq',
         request_serializer=service__pb2.Uast2seqRequest.SerializeToString,
         response_deserializer=service__pb2.FeaturesReply.FromString,
         )
@@ -76,5 +76,5 @@ def add_FeatureExtractorServicer_to_server(servicer, server):
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
-      'FeatureExtractor', rpc_method_handlers)
+      'tech.sourced.featurext.FeatureExtractor', rpc_method_handlers)
   server.add_generic_rpc_handlers((generic_handler,))

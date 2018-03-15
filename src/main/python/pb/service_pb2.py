@@ -20,9 +20,9 @@ gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2 = importlib.i
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='service.proto',
-  package='',
+  package='tech.sourced.featurext',
   syntax='proto3',
-  serialized_pb=_b('\n\rservice.proto\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a+gopkg.in/bblfsh/sdk.v1/uast/generated.proto\"\x82\x01\n\x12IdentifiersRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\x12\x11\n\tsplitStem\x18\x04 \x01(\x08\"l\n\x0fLiteralsRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"l\n\x0fUast2seqRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"\'\n\x07\x46\x65\x61ture\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06weight\x18\x02 \x01(\x02\"+\n\rFeaturesReply\x12\x1a\n\x08\x66\x65\x61tures\x18\x01 \x03(\x0b\x32\x08.Feature2\xa8\x01\n\x10\x46\x65\x61tureExtractor\x12\x34\n\x0bIdentifiers\x12\x13.IdentifiersRequest\x1a\x0e.FeaturesReply\"\x00\x12.\n\x08Literals\x12\x10.LiteralsRequest\x1a\x0e.FeaturesReply\"\x00\x12.\n\x08Uast2seq\x12\x10.Uast2seqRequest\x1a\x0e.FeaturesReply\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\rservice.proto\x12\x16tech.sourced.featurext\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a+gopkg.in/bblfsh/sdk.v1/uast/generated.proto\"\x82\x01\n\x12IdentifiersRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\x12\x11\n\tsplitStem\x18\x04 \x01(\x08\"l\n\x0fLiteralsRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"l\n\x0fUast2seqRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"\'\n\x07\x46\x65\x61ture\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06weight\x18\x02 \x01(\x02\"B\n\rFeaturesReply\x12\x31\n\x08\x66\x65\x61tures\x18\x01 \x03(\x0b\x32\x1f.tech.sourced.featurext.Feature2\xb2\x02\n\x10\x46\x65\x61tureExtractor\x12\x62\n\x0bIdentifiers\x12*.tech.sourced.featurext.IdentifiersRequest\x1a%.tech.sourced.featurext.FeaturesReply\"\x00\x12\\\n\x08Literals\x12\'.tech.sourced.featurext.LiteralsRequest\x1a%.tech.sourced.featurext.FeaturesReply\"\x00\x12\\\n\x08Uast2seq\x12\'.tech.sourced.featurext.Uast2seqRequest\x1a%.tech.sourced.featurext.FeaturesReply\"\x00\x62\x06proto3')
   ,
   dependencies=[github_dot_com_dot_gogo_dot_protobuf_dot_gogoproto_dot_gogo__pb2.DESCRIPTOR,gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2.DESCRIPTOR,])
 
@@ -31,34 +31,34 @@ DESCRIPTOR = _descriptor.FileDescriptor(
 
 _IDENTIFIERSREQUEST = _descriptor.Descriptor(
   name='IdentifiersRequest',
-  full_name='IdentifiersRequest',
+  full_name='tech.sourced.featurext.IdentifiersRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='uast', full_name='IdentifiersRequest.uast', index=0,
+      name='uast', full_name='tech.sourced.featurext.IdentifiersRequest.uast', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='docfreqThreshold', full_name='IdentifiersRequest.docfreqThreshold', index=1,
+      name='docfreqThreshold', full_name='tech.sourced.featurext.IdentifiersRequest.docfreqThreshold', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='weight', full_name='IdentifiersRequest.weight', index=2,
+      name='weight', full_name='tech.sourced.featurext.IdentifiersRequest.weight', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='splitStem', full_name='IdentifiersRequest.splitStem', index=3,
+      name='splitStem', full_name='tech.sourced.featurext.IdentifiersRequest.splitStem', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -76,34 +76,34 @@ _IDENTIFIERSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=110,
-  serialized_end=240,
+  serialized_start=134,
+  serialized_end=264,
 )
 
 
 _LITERALSREQUEST = _descriptor.Descriptor(
   name='LiteralsRequest',
-  full_name='LiteralsRequest',
+  full_name='tech.sourced.featurext.LiteralsRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='uast', full_name='LiteralsRequest.uast', index=0,
+      name='uast', full_name='tech.sourced.featurext.LiteralsRequest.uast', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='docfreqThreshold', full_name='LiteralsRequest.docfreqThreshold', index=1,
+      name='docfreqThreshold', full_name='tech.sourced.featurext.LiteralsRequest.docfreqThreshold', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='weight', full_name='LiteralsRequest.weight', index=2,
+      name='weight', full_name='tech.sourced.featurext.LiteralsRequest.weight', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -121,34 +121,34 @@ _LITERALSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=242,
-  serialized_end=350,
+  serialized_start=266,
+  serialized_end=374,
 )
 
 
 _UAST2SEQREQUEST = _descriptor.Descriptor(
   name='Uast2seqRequest',
-  full_name='Uast2seqRequest',
+  full_name='tech.sourced.featurext.Uast2seqRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='uast', full_name='Uast2seqRequest.uast', index=0,
+      name='uast', full_name='tech.sourced.featurext.Uast2seqRequest.uast', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='docfreqThreshold', full_name='Uast2seqRequest.docfreqThreshold', index=1,
+      name='docfreqThreshold', full_name='tech.sourced.featurext.Uast2seqRequest.docfreqThreshold', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='weight', full_name='Uast2seqRequest.weight', index=2,
+      name='weight', full_name='tech.sourced.featurext.Uast2seqRequest.weight', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -166,27 +166,27 @@ _UAST2SEQREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=352,
-  serialized_end=460,
+  serialized_start=376,
+  serialized_end=484,
 )
 
 
 _FEATURE = _descriptor.Descriptor(
   name='Feature',
-  full_name='Feature',
+  full_name='tech.sourced.featurext.Feature',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='Feature.name', index=0,
+      name='name', full_name='tech.sourced.featurext.Feature.name', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='weight', full_name='Feature.weight', index=1,
+      name='weight', full_name='tech.sourced.featurext.Feature.weight', index=1,
       number=2, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
@@ -204,20 +204,20 @@ _FEATURE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=462,
-  serialized_end=501,
+  serialized_start=486,
+  serialized_end=525,
 )
 
 
 _FEATURESREPLY = _descriptor.Descriptor(
   name='FeaturesReply',
-  full_name='FeaturesReply',
+  full_name='tech.sourced.featurext.FeaturesReply',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='features', full_name='FeaturesReply.features', index=0,
+      name='features', full_name='tech.sourced.featurext.FeaturesReply.features', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -235,8 +235,8 @@ _FEATURESREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=503,
-  serialized_end=546,
+  serialized_start=527,
+  serialized_end=593,
 )
 
 _IDENTIFIERSREQUEST.fields_by_name['uast'].message_type = gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2._NODE
@@ -253,35 +253,35 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 IdentifiersRequest = _reflection.GeneratedProtocolMessageType('IdentifiersRequest', (_message.Message,), dict(
   DESCRIPTOR = _IDENTIFIERSREQUEST,
   __module__ = 'service_pb2'
-  # @@protoc_insertion_point(class_scope:IdentifiersRequest)
+  # @@protoc_insertion_point(class_scope:tech.sourced.featurext.IdentifiersRequest)
   ))
 _sym_db.RegisterMessage(IdentifiersRequest)
 
 LiteralsRequest = _reflection.GeneratedProtocolMessageType('LiteralsRequest', (_message.Message,), dict(
   DESCRIPTOR = _LITERALSREQUEST,
   __module__ = 'service_pb2'
-  # @@protoc_insertion_point(class_scope:LiteralsRequest)
+  # @@protoc_insertion_point(class_scope:tech.sourced.featurext.LiteralsRequest)
   ))
 _sym_db.RegisterMessage(LiteralsRequest)
 
 Uast2seqRequest = _reflection.GeneratedProtocolMessageType('Uast2seqRequest', (_message.Message,), dict(
   DESCRIPTOR = _UAST2SEQREQUEST,
   __module__ = 'service_pb2'
-  # @@protoc_insertion_point(class_scope:Uast2seqRequest)
+  # @@protoc_insertion_point(class_scope:tech.sourced.featurext.Uast2seqRequest)
   ))
 _sym_db.RegisterMessage(Uast2seqRequest)
 
 Feature = _reflection.GeneratedProtocolMessageType('Feature', (_message.Message,), dict(
   DESCRIPTOR = _FEATURE,
   __module__ = 'service_pb2'
-  # @@protoc_insertion_point(class_scope:Feature)
+  # @@protoc_insertion_point(class_scope:tech.sourced.featurext.Feature)
   ))
 _sym_db.RegisterMessage(Feature)
 
 FeaturesReply = _reflection.GeneratedProtocolMessageType('FeaturesReply', (_message.Message,), dict(
   DESCRIPTOR = _FEATURESREPLY,
   __module__ = 'service_pb2'
-  # @@protoc_insertion_point(class_scope:FeaturesReply)
+  # @@protoc_insertion_point(class_scope:tech.sourced.featurext.FeaturesReply)
   ))
 _sym_db.RegisterMessage(FeaturesReply)
 
@@ -289,16 +289,16 @@ _sym_db.RegisterMessage(FeaturesReply)
 
 _FEATUREEXTRACTOR = _descriptor.ServiceDescriptor(
   name='FeatureExtractor',
-  full_name='FeatureExtractor',
+  full_name='tech.sourced.featurext.FeatureExtractor',
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=549,
-  serialized_end=717,
+  serialized_start=596,
+  serialized_end=902,
   methods=[
   _descriptor.MethodDescriptor(
     name='Identifiers',
-    full_name='FeatureExtractor.Identifiers',
+    full_name='tech.sourced.featurext.FeatureExtractor.Identifiers',
     index=0,
     containing_service=None,
     input_type=_IDENTIFIERSREQUEST,
@@ -307,7 +307,7 @@ _FEATUREEXTRACTOR = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='Literals',
-    full_name='FeatureExtractor.Literals',
+    full_name='tech.sourced.featurext.FeatureExtractor.Literals',
     index=1,
     containing_service=None,
     input_type=_LITERALSREQUEST,
@@ -316,7 +316,7 @@ _FEATUREEXTRACTOR = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='Uast2seq',
-    full_name='FeatureExtractor.Uast2seq',
+    full_name='tech.sourced.featurext.FeatureExtractor.Uast2seq',
     index=2,
     containing_service=None,
     input_type=_UAST2SEQREQUEST,
