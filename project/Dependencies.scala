@@ -16,4 +16,6 @@ object Dependencies {
   lazy val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.5"
   lazy val log4j12 = "log4j" % "log4j" % "1.2.17"
   lazy val log4jBinding = "org.slf4j" % "slf4j-log4j12" % "1.7.25"
+  lazy val scalapb = "com.thesamet.scalapb" %% "scalapb-runtime" % "0.7.1"
+  lazy val scalapbGrpc = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % "0.7.1"
 }
