@@ -107,6 +107,11 @@ Tests (with embedded Cassandra)
 ./sbt test
 ```
 
+To generate gRPC code for Feature Extractors from `src/main/proto/*.proto` files:
+```
+./src/main/resources/generate_from_proto.sh
+```
+
 ## License
 
 Copyright (C) 2017 source{d}.
