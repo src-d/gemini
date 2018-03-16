@@ -14,9 +14,9 @@ from server import _get_server
 
 
 class TestServer(unittest.TestCase):
-    port = 0
     server = None
     uast = None
+    stub = None
 
     def setUp(self):
         with open('fixtures/server.py.proto', 'rb') as f:
@@ -24,21 +24,30 @@ class TestServer(unittest.TestCase):
             node.ParseFromString(f.read())
             self.uast = node
 
-        self.port = get_open_port()
-        self.server = _get_server(self.port)
+        port = get_open_port()
+        self.server = _get_server(port)
         self.server.start()
+
+        channel = grpc.insecure_channel("localhost:%d" % port)
+        self.stub = service_pb2_grpc.FeatureExtractorStub(channel)
 
     def tearDown(self):
         self.server.stop(0)
 
     def test_Identifiers(self):
-        channel = grpc.insecure_channel("localhost:%d" % self.port)
-        stub = service_pb2_grpc.FeatureExtractorStub(channel)
-        response = stub.Identifiers(service_pb2.IdentifiersRequest(
+        response = self.stub.Identifiers(service_pb2.IdentifiersRequest(
             docfreqThreshold=5, splitStem=False, uast=self.uast))
 
         self.assertEqual(len(response.features), 49)
         self.assertEqual(response.features[0].name, 'i.sys')
+        self.assertEqual(response.features[0].weight, 1)
+
+    def test_Literals(self):
+        response = self.stub.Literals(service_pb2.LiteralsRequest(
+            docfreqThreshold=5, uast=self.uast))
+
+        self.assertEqual(len(response.features), 16)
+        self.assertEqual(response.features[0].name, 'l.3b286224b098296c')
         self.assertEqual(response.features[0].weight, 1)
 
 
