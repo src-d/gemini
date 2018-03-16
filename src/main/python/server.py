@@ -8,6 +8,7 @@ import logging
 import time
 
 import grpc
+from sourced.ml.extractors import IdentifiersBagExtractor
 
 import pb.service_pb2 as service_pb2
 import pb.service_pb2_grpc as service_pb2_grpc
@@ -16,15 +17,24 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 class Service(service_pb2_grpc.FeatureExtractorServicer):
-    pass
+    """Feature Extractor Service"""
+
+    def Identifiers(self, request, context):
+        """Extract identifiers weighted set"""
+
+        id_extractor = IdentifiersBagExtractor(
+            docfreq_threshold=request.docfreqThreshold, split_stem=request.splitStem)
+
+        features = [service_pb2.Feature(name=f[0], weight=f[1])
+                    for f in id_extractor.extract(request.uast)]
+
+        return service_pb2.FeaturesReply(features=features)
 
 
 def serve(port):
     logger = logging.getLogger('feature-extractor')
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    service_pb2_grpc.add_FeatureExtractorServicer_to_server(Service(), server)
-    server.add_insecure_port('[::]:%d' % port)
+    server = _get_server(port)
     server.start()
     logger.info("server started on port %d" % port)
 
@@ -35,6 +45,13 @@ def serve(port):
             time.sleep(_ONE_DAY_IN_SECONDS)
     except KeyboardInterrupt:
         server.stop(0)
+
+
+def _get_server(port):
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    service_pb2_grpc.add_FeatureExtractorServicer_to_server(Service(), server)
+    server.add_insecure_port('[::]:%d' % port)
+    return server
 
 
 if __name__ == '__main__':
