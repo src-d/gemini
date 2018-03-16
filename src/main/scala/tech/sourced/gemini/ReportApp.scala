@@ -4,10 +4,10 @@ import com.datastax.driver.core.Cluster
 
 case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
                            port: Int = Gemini.defaultCassandraPort,
-                           mode: String = ReportSparkApp.defaultMode,
+                           mode: String = ReportApp.defaultMode,
                            verbose: Boolean = false)
 
-object ReportSparkApp extends App {
+object ReportApp extends App {
   val defaultMode = ""
   val groupByMode = "use-group-by"
   val condensedMode = "condensed"
