@@ -50,6 +50,15 @@ class TestServer(unittest.TestCase):
         self.assertEqual(response.features[0].name, 'l.3b286224b098296c')
         self.assertEqual(response.features[0].weight, 1)
 
+    def test_Uast2seq(self):
+        response = self.stub.Uast2seq(service_pb2.Uast2seqRequest(
+            docfreqThreshold=5, uast=self.uast))
+
+        self.assertEqual(len(response.features), 207)
+        self.assertEqual(
+            response.features[0].name, 's.alias>NoopLine>PreviousNoops>Import>Str')
+        self.assertEqual(response.features[0].weight, 1)
+
 
 def get_open_port():
     import socket

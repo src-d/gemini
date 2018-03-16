@@ -9,7 +9,7 @@ import os
 import time
 
 import grpc
-from sourced.ml.extractors import IdentifiersBagExtractor, LiteralsBagExtractor
+from sourced.ml.extractors import IdentifiersBagExtractor, LiteralsBagExtractor, UastSeqBagExtractor
 
 import pb.service_pb2 as service_pb2
 import pb.service_pb2_grpc as service_pb2_grpc
@@ -32,6 +32,14 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
         """Extract literals weighted set"""
 
         extractor = LiteralsBagExtractor(
+            docfreq_threshold=request.docfreqThreshold)
+
+        return self._create_response(extractor.extract(request.uast))
+
+    def Uast2seq(self, request, context):
+        """Extract uast2seq weighted set"""
+
+        extractor = UastSeqBagExtractor(
             docfreq_threshold=request.docfreqThreshold)
 
         return self._create_response(extractor.extract(request.uast))
