@@ -4,6 +4,7 @@ sys.path.append('./pb')
 
 from concurrent import futures
 import argparse
+import logging
 import time
 
 import grpc
@@ -19,10 +20,13 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
 
 
 def serve(port):
+    logger = logging.getLogger('feature-extractor')
+
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     service_pb2_grpc.add_FeatureExtractorServicer_to_server(Service(), server)
     server.add_insecure_port('[::]:%d' % port)
     server.start()
+    logger.info("server started on port %d" % port)
 
     # since server.start() will not block,
     # a sleep-loop is added to keep alive
@@ -39,4 +43,5 @@ if __name__ == '__main__':
                         help="server listen port")
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO)
     serve(args.port)
