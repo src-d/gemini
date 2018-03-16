@@ -39,8 +39,8 @@ def serve(port):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Feature Extractor Service.')
-    parser.add_argument("--port", type=int, default=9001,
-                        help="server listen port")
+    parser.add_argument(
+        "--port", type=int, default=9001, help="server listen port")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
