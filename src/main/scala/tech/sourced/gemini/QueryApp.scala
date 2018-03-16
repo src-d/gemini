@@ -46,7 +46,7 @@ object QueryApp extends App {
       val gemini = Gemini(null, log)
       gemini.applySchema(cassandra)
 
-      val similar = gemini.query(file, cassandra).v
+      val similar = gemini.query(file, cassandra)
 
       cassandra.close()
       cluster.close()

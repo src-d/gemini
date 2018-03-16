@@ -48,9 +48,9 @@ object ReportApp extends App {
       gemini.applySchema(cassandra)
 
       val report = config.mode match {
-        case `defaultMode` => gemini.report(cassandra)
-        case `condensedMode` => gemini.reportCassandraCondensed(cassandra)
-        case `groupByMode` => gemini.reportCassandraGroupBy(cassandra)
+        case `defaultMode` => ReportExpandedGroup(gemini.report(cassandra))
+        case `condensedMode` => ReportGrouped(gemini.reportCassandraCondensed(cassandra))
+        case `groupByMode` => ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
       }
 
       cassandra.close()
@@ -72,5 +72,20 @@ object ReportApp extends App {
         }
     }
   }
+
+  sealed abstract class Report(v: Iterable[Any]) {
+    def empty(): Boolean = {
+      v.isEmpty
+    }
+
+    def size(): Int = v.size
+  }
+
+  case class ReportByLine(v: Iterable[RepoFile]) extends Report(v)
+
+  case class ReportGrouped(v: Iterable[DuplicateBlobHash]) extends Report(v)
+
+  case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)
+
 
 }
