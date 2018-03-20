@@ -4,3 +4,6 @@ metastore_db/
 scylla
 derby.log
 Dockerfile
+src/main/python/.pytest_cache/
+src/main/python/__pycache__/
+.pyenv

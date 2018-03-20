@@ -9,6 +9,7 @@ target/
 metastore_db/
 scylla
 derby.log
+.pytest_cache/
 
 /Makefile.main
 /.ci
