@@ -6,7 +6,7 @@ E_BUILD_FAILED=142
 jar="target/gemini-0.0.1-SNAPSHOT.jar"
 build_command="./sbt package"
 
-app_class="tech.sourced.gemini.ReportSparkApp"
+app_class="tech.sourced.gemini.ReportApp"
 
 hash java >/dev/null 2>&1 || { echo "Please install Java" >&2; exit 1; }
 
