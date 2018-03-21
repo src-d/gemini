@@ -3,7 +3,7 @@
 //
 // Protofile syntax: PROTO3
 
-package tech.sourced.featurext
+package tech.sourced.featurext.generated
 
 /** The literals request message containing extractor configuration and uast.
   */
@@ -49,7 +49,7 @@ final case class LiteralsRequest(
         }
       };
     }
-    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.LiteralsRequest = {
+    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.generated.LiteralsRequest = {
       var __uast = this.uast
       var __docfreqThreshold = this.docfreqThreshold
       var __weight = this.weight
@@ -67,7 +67,7 @@ final case class LiteralsRequest(
           case tag => _input__.skipField(tag)
         }
       }
-      tech.sourced.featurext.LiteralsRequest(
+      tech.sourced.featurext.generated.LiteralsRequest(
           uast = __uast,
           docfreqThreshold = __docfreqThreshold,
           weight = __weight
@@ -100,24 +100,24 @@ final case class LiteralsRequest(
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
-    def companion = tech.sourced.featurext.LiteralsRequest
+    def companion = tech.sourced.featurext.generated.LiteralsRequest
 }
 
-object LiteralsRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.featurext.LiteralsRequest] {
-  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[tech.sourced.featurext.LiteralsRequest] = this
-  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): tech.sourced.featurext.LiteralsRequest = {
+object LiteralsRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.LiteralsRequest] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.LiteralsRequest] = this
+  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): tech.sourced.featurext.generated.LiteralsRequest = {
     require(__fieldsMap.keys.forall(_.getContainingType() == javaDescriptor), "FieldDescriptor does not match message type.")
     val __fields = javaDescriptor.getFields
-    tech.sourced.featurext.LiteralsRequest(
+    tech.sourced.featurext.generated.LiteralsRequest(
       __fieldsMap.get(__fields.get(0)).asInstanceOf[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.Node]],
       __fieldsMap.getOrElse(__fields.get(1), 0).asInstanceOf[_root_.scala.Int],
       __fieldsMap.getOrElse(__fields.get(2), 0).asInstanceOf[_root_.scala.Int]
     )
   }
-  implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.LiteralsRequest] = _root_.scalapb.descriptors.Reads{
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.generated.LiteralsRequest] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
-      tech.sourced.featurext.LiteralsRequest(
+      tech.sourced.featurext.generated.LiteralsRequest(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).flatMap(_.as[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.Node]]),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Int]).getOrElse(0),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Int]).getOrElse(0)
@@ -135,9 +135,9 @@ object LiteralsRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.fe
   }
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
-  lazy val defaultInstance = tech.sourced.featurext.LiteralsRequest(
+  lazy val defaultInstance = tech.sourced.featurext.generated.LiteralsRequest(
   )
-  implicit class LiteralsRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.LiteralsRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.LiteralsRequest](_l) {
+  implicit class LiteralsRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.LiteralsRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.generated.LiteralsRequest](_l) {
     def uast: _root_.scalapb.lenses.Lens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.Node] = field(_.getUast)((c_, f_) => c_.copy(uast = Option(f_)))
     def optionalUast: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[gopkg.in.bblfsh.sdk.v1.uast.Node]] = field(_.uast)((c_, f_) => c_.copy(uast = f_))
     def docfreqThreshold: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.docfreqThreshold)((c_, f_) => c_.copy(docfreqThreshold = f_))

@@ -103,7 +103,7 @@ scalastyleSources in Compile := {
   val fSep = java.io.File.separator
   val dirsNameToExclude = List(
     "com" + fSep + "google",
-    "tech" + fSep + "sourced" + fSep + "featurext",
+    "tech" + fSep + "sourced" + fSep + "featurext" + fSep + "generated",
     "gopkg" + fSep + "in"
   )
   scalaSourceFiles.filterNot(f => dirsNameToExclude.exists(dir => f.getAbsolutePath.contains(dir)))

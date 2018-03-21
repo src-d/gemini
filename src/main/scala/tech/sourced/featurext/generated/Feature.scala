@@ -3,7 +3,7 @@
 //
 // Protofile syntax: PROTO3
 
-package tech.sourced.featurext
+package tech.sourced.featurext.generated
 
 @SerialVersionUID(0L)
 final case class Feature(
@@ -40,7 +40,7 @@ final case class Feature(
         }
       };
     }
-    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.Feature = {
+    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.generated.Feature = {
       var __name = this.name
       var __weight = this.weight
       var _done__ = false
@@ -55,7 +55,7 @@ final case class Feature(
           case tag => _input__.skipField(tag)
         }
       }
-      tech.sourced.featurext.Feature(
+      tech.sourced.featurext.generated.Feature(
           name = __name,
           weight = __weight
       )
@@ -82,23 +82,23 @@ final case class Feature(
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
-    def companion = tech.sourced.featurext.Feature
+    def companion = tech.sourced.featurext.generated.Feature
 }
 
-object Feature extends scalapb.GeneratedMessageCompanion[tech.sourced.featurext.Feature] {
-  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[tech.sourced.featurext.Feature] = this
-  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): tech.sourced.featurext.Feature = {
+object Feature extends scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.Feature] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.Feature] = this
+  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): tech.sourced.featurext.generated.Feature = {
     require(__fieldsMap.keys.forall(_.getContainingType() == javaDescriptor), "FieldDescriptor does not match message type.")
     val __fields = javaDescriptor.getFields
-    tech.sourced.featurext.Feature(
+    tech.sourced.featurext.generated.Feature(
       __fieldsMap.getOrElse(__fields.get(0), "").asInstanceOf[_root_.scala.Predef.String],
       __fieldsMap.getOrElse(__fields.get(1), 0.0f).asInstanceOf[_root_.scala.Float]
     )
   }
-  implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.Feature] = _root_.scalapb.descriptors.Reads{
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.generated.Feature] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
-      tech.sourced.featurext.Feature(
+      tech.sourced.featurext.generated.Feature(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Predef.String]).getOrElse(""),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Float]).getOrElse(0.0f)
       )
@@ -109,9 +109,9 @@ object Feature extends scalapb.GeneratedMessageCompanion[tech.sourced.featurext.
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
-  lazy val defaultInstance = tech.sourced.featurext.Feature(
+  lazy val defaultInstance = tech.sourced.featurext.generated.Feature(
   )
-  implicit class FeatureLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.Feature]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.Feature](_l) {
+  implicit class FeatureLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.Feature]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.generated.Feature](_l) {
     def name: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Predef.String] = field(_.name)((c_, f_) => c_.copy(name = f_))
     def weight: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Float] = field(_.weight)((c_, f_) => c_.copy(weight = f_))
   }
