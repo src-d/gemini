@@ -26,10 +26,10 @@ matrix:
       - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
       - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
       - ./hash src/test/resources/siva || travis_terminate 1
-      - ./query ./LICENSE
+      - ./query ./src/test/resources/LICENSE
       - ./report
       - go get ./src/main/go/... || true
-      - go run ./src/main/go/query.go ./LICENSE
+      - go run ./src/main/go/query.go ./src/test/resources/LICENSE
     before_deploy:
       - VERSION=$TRAVIS_TAG ./scripts/release.sh
     deploy:
@@ -61,10 +61,10 @@ matrix:
       - ./scripts/start_apache_spark_cluster.sh "127.0.0.1" "7077" || travis_terminate 1
       - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
       - ./hash src/test/resources/siva || travis_terminate 1
-      - ./query ./LICENSE
+      - ./query ./src/test/resources/LICENSE
       - ./report
       - go get ./src/main/go/... || true
-      - go run ./src/main/go/query.go ./LICENSE
+      - go run ./src/main/go/query.go ./src/test/resources/LICENSE
 
   - scala: 2.11.2
     env: STYLE_CHECK=true

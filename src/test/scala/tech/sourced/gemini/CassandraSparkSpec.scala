@@ -76,7 +76,7 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, UNIQUES)
 
     println("Query")
-    val sha1 = gemini.query("LICENSE", session)
+    val sha1 = gemini.query("src/test/resources/LICENSE", session)
     println("Done")
 
     sha1 should not be empty
