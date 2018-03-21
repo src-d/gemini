@@ -55,6 +55,7 @@ matrix:
     script: ./sbt scalastyle
 
   - scala: 2.11.2
+    env: FE_PYTHON_TEST=true
     script:
       - docker build -t srcd/gemini-fe -f FE.Dockerfile .
       - docker run --rm -e PYTHONHASHSEED=0 srcd/gemini-fe pytest -v
