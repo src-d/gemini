@@ -70,15 +70,15 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param conn   Database connection
     * @return
     */
-  def query(inPath: String, conn: Session): ReportByLine = {
+  def query(inPath: String, conn: Session): Iterable[RepoFile] = {
     val path = new File(inPath)
     if (path.isDirectory) {
-      ReportByLine(findDuplicateProjects(path, conn, keyspace))
-      //TODO: implement based on Apolo
+      findDuplicateProjects(path, conn, keyspace)
+      //TODO: implement based on Apollo
       //findSimilarProjects(path)
     } else {
-      ReportByLine(findDuplicateItemForFile(path, conn, keyspace))
-      //TODO: implement based on Apolo
+      findDuplicateItemForFile(path, conn, keyspace)
+      //TODO: implement based on Apollo
       //findSimilarFiles(path)
     }
   }
@@ -90,8 +90,8 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param conn Database connections
     * @return
     */
-  def report(conn: Session): ReportExpandedGroup = {
-    ReportExpandedGroup(findAllDuplicateItems(conn, keyspace))
+  def report(conn: Session): Iterable[Iterable[RepoFile]] = {
+    findAllDuplicateItems(conn, keyspace)
   }
 
   /**
@@ -102,8 +102,8 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param conn Database connections
     * @return
     */
-  def reportCassandraCondensed(conn: Session): ReportGrouped = {
-    ReportGrouped(findAllDuplicateBlobHashes(conn, keyspace))
+  def reportCassandraCondensed(conn: Session): Iterable[DuplicateBlobHash] = {
+    findAllDuplicateBlobHashes(conn, keyspace)
   }
 
   /**
@@ -114,12 +114,11 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param conn Database connections
     * @return
     */
-  def reportCassandraGroupBy(conn: Session): ReportExpandedGroup = {
-    val duplicates = reportCassandraCondensed(conn).v
+  def reportCassandraGroupBy(conn: Session): Iterable[Iterable[RepoFile]] = {
+    reportCassandraCondensed(conn)
       .map { item =>
         findDuplicateItemForBlobHash(item.sha, conn, keyspace)
       }
-    ReportExpandedGroup(duplicates)
   }
 
   def applySchema(session: Session): Unit = {
@@ -256,16 +255,3 @@ object Gemini {
 
 }
 
-sealed abstract class Report(v: Iterable[Any]) {
-  def empty(): Boolean = {
-    v.isEmpty
-  }
-
-  def size(): Int = v.size
-}
-
-case class ReportByLine(v: Iterable[RepoFile]) extends Report(v)
-
-case class ReportGrouped(v: Iterable[DuplicateBlobHash]) extends Report(v)
-
-case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)
