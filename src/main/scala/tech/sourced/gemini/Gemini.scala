@@ -144,6 +144,14 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       }
   }
 
+  def findConnectedComponents(conn: Session): Map[Int, Set[Int]] = {
+    val cc = new DBConnectedComponents(log, conn, "hashtables", keyspace)
+    val buckets = cc.makeBuckets()
+    val elsToBuckets = cc.elementsToBuckets(buckets)
+
+    cc.findInBuckets(buckets, elsToBuckets)
+  }
+
   def applySchema(session: Session): Unit = {
     log.debug("CQL: creating schema")
     Source
@@ -277,6 +285,5 @@ object Gemini {
       RepoFile(row.getString(meta.repo), row.getString(meta.commit), row.getString(meta.path), row.getString(meta.sha))
     }
   }
-
 }
 

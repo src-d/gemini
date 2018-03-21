@@ -47,6 +47,9 @@ object ReportApp extends App {
       val gemini = Gemini(null, log)
       gemini.applySchema(cassandra)
 
+      gemini.findConnectedComponents(cassandra)
+      System.exit(2)
+
       val report = config.mode match {
         case `defaultMode` => ReportExpandedGroup(gemini.report(cassandra))
         case `condensedMode` => ReportGrouped(gemini.reportCassandraCondensed(cassandra))
