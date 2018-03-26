@@ -672,12 +672,3 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
-
-========================================================================
-BSD-style licenses
-========================================================================
-
-The following components are provided under a BSD-style license. See project link for details.
-
-(BSD 3 Clause) protocol buffers (https://github.com/google/protobuf)
-(BSD 2 Clause) gogoprotobuf (https://github.com/gogo/protobuf)

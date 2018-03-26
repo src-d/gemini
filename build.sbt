@@ -17,6 +17,8 @@ libraryDependencies ++= Seq(
   fixNewerHadoopClient % Provided, //due to newer v. of guava
 
   scalaLib % Compile,
+  scalapb % Compile,
+  scalapbGrpc % Compile,
   engine % Compile,
   jgit % Compile,
   fixNetty,
@@ -32,13 +34,16 @@ assemblyJarName in assembly := s"${name.value}-uber.jar"
 
 assemblyMergeStrategy in assembly := {
   case "META-INF/io.netty.versions.properties" => MergeStrategy.last
+  // engine uses bblfsh client scala, which also uses scalapb but different version
+  case PathList("scalapb", xs @ _*) => MergeStrategy.first
+  case PathList("com", "trueaccord", "lenses", xs @ _*) => MergeStrategy.first
+  case PathList("com", "google", "protobuf", xs @ _*) => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
 }
 
 assemblyShadeRules in assembly := Seq(
-  ShadeRule.rename("com.google.common.**" -> "com.google.shadedcommon.@1").inAll,
   ShadeRule.rename("io.netty.**" -> "io.shadednetty.@1").inAll
 )
 
@@ -90,4 +95,16 @@ publishTo := {
   } else {
     Some("releases" at nexus + "service/local/staging/deploy/maven2")
   }
+}
+
+scalastyleSources in Compile := {
+  // all .scala files in "src/main/scala"
+  val scalaSourceFiles = ((scalaSource in Compile).value ** "*.scala").get
+  val fSep = java.io.File.separator
+  val dirsNameToExclude = List(
+    "com" + fSep + "google",
+    "tech" + fSep + "sourced" + fSep + "featurext" + fSep + "generated",
+    "gopkg" + fSep + "in"
+  )
+  scalaSourceFiles.filterNot(f => dirsNameToExclude.exists(dir => f.getAbsolutePath.contains(dir)))
 }
