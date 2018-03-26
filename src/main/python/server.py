@@ -24,7 +24,9 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
         """Extract identifiers weighted set"""
 
         extractor = IdentifiersBagExtractor(
-            docfreq_threshold=request.docfreqThreshold, split_stem=request.splitStem)
+            docfreq_threshold=request.docfreqThreshold,
+            split_stem=request.splitStem,
+            weight=request.weight or 1)
 
         return self._create_response(extractor.extract(request.uast))
 
@@ -32,7 +34,8 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
         """Extract literals weighted set"""
 
         extractor = LiteralsBagExtractor(
-            docfreq_threshold=request.docfreqThreshold)
+            docfreq_threshold=request.docfreqThreshold,
+            weight=request.weight or 1)
 
         return self._create_response(extractor.extract(request.uast))
 
@@ -40,7 +43,8 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
         """Extract uast2seq weighted set"""
 
         extractor = UastSeqBagExtractor(
-            docfreq_threshold=request.docfreqThreshold)
+            docfreq_threshold=request.docfreqThreshold,
+            weight=request.weight or 1)
 
         return self._create_response(extractor.extract(request.uast))
 
