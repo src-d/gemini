@@ -9,7 +9,7 @@ CI_FOLDER = .ci
 
 # Python configuration
 YAPF = yapf
-PYTHON_LINT_DIRS = src/main/python
+PYTHON_LINT_DIRS = src/main/python src/test/resources/weighted-minhash
 YAPF_CMD = $(YAPF) --recursive $(PYTHON_LINT_DIRS) --parallel --exclude '*/pb/*'
 
 $(MAKEFILE):

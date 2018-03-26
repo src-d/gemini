@@ -79,6 +79,15 @@ matrix:
       - docker run -p 9001:9001 -e PYTHONHASHSEED=0 -d srcd/gemini-fe
       - ./sbt "test-only * -- -n tags.FEIntegration"
 
+  - scala: 2.11.2
+    env: PYTHON_LINT_TESTS=true
+    before_install:
+      - sudo apt-get -qq update
+      - sudo apt-get -y install python3-pip
+      - pip3 install --user yapf
+    script:
+      - make lint-python
+
 before_script:
  - ./scripts/start_docker_db.sh
  - ./scripts/start_docker_bblfsh.sh
