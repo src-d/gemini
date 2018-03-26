@@ -17,15 +17,17 @@ src/main/proto/gopkg.in/bblfsh/sdk.v1/uast/generated.proto
 
 # Scala client
 
-echo "Downloading scalapbc"
-wget https://github.com/scalapb/ScalaPB/releases/download/v0.7.1/scalapbc-0.7.1.zip
-unzip scalapbc-0.7.1.zip
+SCALAPBC_VERSION=0.7.1
+SCALAPBC_NAME=scalapbc-$SCALAPBC_VERSION
+if [[ ! -f "${SCALAPBC_NAME}/bin/scalapbc" ]]; then
+    echo "Downloading scalapbc"
+    wget "https://github.com/scalapb/ScalaPB/releases/download/v${SCALAPBC_VERSION}/${SCALAPBC_NAME}.zip"
+    unzip ${SCALAPBC_NAME}.zip
+fi;
+
 echo "Generating Scala code from .proto to src/main/scala"
-scalapbc-0.7.1/bin/scalapbc -Isrc/main/proto \
+${SCALAPBC_NAME}/bin/scalapbc -Isrc/main/proto \
 --scala_out=flat_package,grpc:src/main/scala \
 src/main/proto/service.proto \
 src/main/proto/github.com/gogo/protobuf/gogoproto/gogo.proto \
 src/main/proto/gopkg.in/bblfsh/sdk.v1/uast/generated.proto
-echo "Cleanup"
-rm scalapbc-0.7.1.zip
-rm -rf scalapbc-0.7.1
