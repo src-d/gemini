@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
   scopt % Compile,
   slf4jApi % Compile,
   log4j12 % Compile,
-  log4jBinding % Compile
+  log4jBinding % Compile,
+  commonsMath % Compile
 )
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 assemblyJarName in assembly := s"${name.value}-uber.jar"

@@ -19,4 +19,5 @@ object Dependencies {
   lazy val scalapb = "com.thesamet.scalapb" %% "scalapb-runtime" % "0.7.1"
   lazy val scalapbGrpc = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % "0.7.1"
   lazy val ioGrpc = "io.grpc" % "grpc-netty" % "1.10.0"
+  lazy val commonsMath = "org.apache.commons" % "commons-math3" % "3.6.1"
 }
