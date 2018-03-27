@@ -6,6 +6,7 @@ import tech.sourced.featurext.generated._
 import gopkg.in.bblfsh.sdk.v1.uast.Node
 import java.nio.file.{Files, Paths}
 
+@tags.FEIntegration
 class ClientSpec extends FlatSpec
   with Matchers
   with BeforeAndAfterAll {
