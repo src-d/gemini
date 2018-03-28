@@ -27,7 +27,7 @@ fi;
 
 echo "Generating Scala code from .proto to src/main/scala"
 ${SCALAPBC_NAME}/bin/scalapbc -Isrc/main/proto \
---scala_out=flat_package,grpc:src/main/scala \
+--scala_out=grpc:src/main/scala \
 src/main/proto/service.proto \
 src/main/proto/github.com/gogo/protobuf/gogoproto/gogo.proto \
 src/main/proto/gopkg.in/bblfsh/sdk.v1/uast/generated.proto

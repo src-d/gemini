@@ -3,15 +3,15 @@
 //
 // Protofile syntax: PROTO3
 
-package gopkg.in.bblfsh.sdk.v1.uast
+package gopkg.in.bblfsh.sdk.v1.uast.generated
 
 object GeneratedProto extends _root_.scalapb.GeneratedFileObject {
   lazy val dependencies: Seq[_root_.scalapb.GeneratedFileObject] = Seq(
-    com.google.protobuf.GogoProto
+    com.google.protobuf.gogo.GogoProto
   )
   lazy val messagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq(
-    gopkg.in.bblfsh.sdk.v1.uast.Node,
-    gopkg.in.bblfsh.sdk.v1.uast.Position
+    gopkg.in.bblfsh.sdk.v1.uast.generated.Node,
+    gopkg.in.bblfsh.sdk.v1.uast.generated.Position
   )
   private lazy val ProtoBytes: Array[Byte] =
       scalapb.Encoding.fromBase64(scala.collection.Seq(
@@ -75,7 +75,7 @@ object GeneratedProto extends _root_.scalapb.GeneratedFileObject {
   lazy val javaDescriptor: com.google.protobuf.Descriptors.FileDescriptor = {
     val javaProto = com.google.protobuf.DescriptorProtos.FileDescriptorProto.parseFrom(ProtoBytes)
     com.google.protobuf.Descriptors.FileDescriptor.buildFrom(javaProto, Array(
-      com.google.protobuf.GogoProto.javaDescriptor
+      com.google.protobuf.gogo.GogoProto.javaDescriptor
     ))
   }
   @deprecated("Use javaDescriptor instead. In a future version this will refer to scalaDescriptor.", "ScalaPB 0.5.47")
