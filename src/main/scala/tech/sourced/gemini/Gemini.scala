@@ -13,9 +13,14 @@ import org.eclipse.jgit.lib.Constants.OBJ_BLOB
 import org.eclipse.jgit.lib.ObjectInserter
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
+import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
+import tech.sourced.featurext.generated.service.{Feature, IdentifiersRequest, LiteralsRequest, Uast2seqRequest}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, SECONDS}
 import scala.io.Source
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
 
@@ -73,24 +78,29 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param conn   Database connection
     * @return
     */
-  def query(inPath: String, conn: Session, bblfshClient: BblfshClient): Iterable[RepoFile] = {
+  def query(inPath: String,
+            conn: Session,
+            bblfshClient: BblfshClient,
+            feClient: FeatureExtractor): Iterable[RepoFile] = {
     val path = new File(inPath)
     if (path.isDirectory) {
       findDuplicateProjects(path, conn, keyspace)
       //TODO: implement based on Apollo
       //findSimilarProjects(path)
     } else {
-      findSimilarForFile(path, bblfshClient)
+      findSimilarForFile(path, bblfshClient, feClient)
       findDuplicateItemForFile(path, conn, keyspace)
     }
   }
 
   // TODO: should return something later
-  def findSimilarForFile(file: File, client: BblfshClient): Unit = {
-    val uast = extractUAST(file, client)
+  def findSimilarForFile(file: File, bblfshClient: BblfshClient, feClient: FeatureExtractor): Unit = {
+    val uast = extractUAST(file, bblfshClient)
     if (uast.isDefined) {
       log.info(s"uast received: ${uast.toString}")
-      // TODO: extract features, calculate minhash, find similar
+      val features = extractFeatures(feClient, uast.get)
+      log.info(s"features: ${features.toString}")
+      // TODO: calculate minhash, find similar
     }
   }
 
@@ -104,6 +114,21 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     }
 
     resp.uast
+  }
+
+  def extractFeatures(client: FeatureExtractor, uast: Node): Iterable[Feature] = {
+    val idRequest = IdentifiersRequest(uast=Some(uast), docfreqThreshold=5)
+    val litRequest = LiteralsRequest(uast=Some(uast), docfreqThreshold=5)
+    val uast2seqRequest = Uast2seqRequest(uast=Some(uast), docfreqThreshold=5)
+    client.identifiers(idRequest)
+
+    val features = for {
+      idResponse <- client.identifiers(idRequest)
+      litResponse <- client.literals(litRequest)
+      uast2seqResponse <- client.uast2Seq(uast2seqRequest)
+    } yield idResponse.features ++ litResponse.features ++ uast2seqResponse.features
+
+    Await.result(features, Duration(30, SECONDS))
   }
 
   /**
@@ -200,6 +225,8 @@ object Gemini {
   val defaultTable: String = "blob_hash_files"
   val defaultBblfshHost: String = "127.0.0.1"
   val defaultBblfshPort: Int = 9432
+  val defaultFeHost: String = "127.0.0.1"
+  val defaultFePort: Int = 9001
 
   //TODO(bzz): switch to `tables("meta")`
   val meta = Meta("sha1", "repo", "commit", "path")

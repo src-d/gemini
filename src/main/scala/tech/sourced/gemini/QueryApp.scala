@@ -1,13 +1,17 @@
 package tech.sourced.gemini
 
 import com.datastax.driver.core.Cluster
+import io.grpc.ManagedChannelBuilder
 import org.bblfsh.client.BblfshClient
+import tech.sourced.featurext.generated.service.FeatureExtractorGrpc
 
 case class QueryAppConfig(file: String = "",
                           host: String = Gemini.defaultCassandraHost,
                           port: Int = Gemini.defaultCassandraPort,
                           bblfshHost: String = Gemini.defaultBblfshHost,
                           bblfshPort: Int = Gemini.defaultBblfshPort,
+                          feHost: String = Gemini.defaultFeHost,
+                          fePort: Int = Gemini.defaultFePort,
                           verbose: Boolean = false)
 
 /**
@@ -30,6 +34,12 @@ object QueryApp extends App {
     opt[Int]("bblfsh-port")
       .action((x, c) => c.copy(bblfshPort = x))
       .text("port is babelfish server port")
+    opt[String]("features-extractor-host")
+      .action((x, c) => c.copy(feHost = x))
+      .text("host is features-extractor server host")
+    opt[Int]("features-extractor-port")
+      .action((x, c) => c.copy(bblfshPort = x))
+      .text("port is features-extractor server port")
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
@@ -55,8 +65,10 @@ object QueryApp extends App {
       val gemini = Gemini(null, log)
       gemini.applySchema(cassandra)
 
-      val client = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
-      val similar = gemini.query(file, cassandra, client)
+      val bblfshClient = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
+      val channel = ManagedChannelBuilder.forAddress(config.feHost, config.fePort).usePlaintext(true).build()
+      val feClient = FeatureExtractorGrpc.stub(channel)
+      val similar = gemini.query(file, cassandra, bblfshClient, feClient)
 
       cassandra.close()
       cluster.close()

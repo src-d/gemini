@@ -2,10 +2,13 @@ package tech.sourced.gemini
 
 import com.datastax.driver.core.Session
 import com.datastax.spark.connector.cql.CassandraConnector
+import io.grpc.ManagedChannelBuilder
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.bblfsh.client.BblfshClient
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Tag}
+import tech.sourced.featurext.generated.service.FeatureExtractorGrpc
+import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
 
 class CassandraSparkSpec extends FlatSpec
   with Matchers
@@ -21,6 +24,7 @@ class CassandraSparkSpec extends FlatSpec
 
   var session: Session = _
   var bblfshClient: BblfshClient = _
+  var feClient: FeatureExtractor = _
 
   val defaultConf: SparkConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", Gemini.defaultCassandraHost)
@@ -41,6 +45,11 @@ class CassandraSparkSpec extends FlatSpec
     prepareKeyspace("src/test/resources/siva/unique-files", UNIQUES)
     prepareKeyspace("src/test/resources/siva/duplicate-files", DUPLICATES)
     bblfshClient = BblfshClient.apply(Gemini.defaultBblfshHost, Gemini.defaultBblfshPort)
+    val channel = ManagedChannelBuilder
+      .forAddress(Gemini.defaultFeHost, Gemini.defaultFePort)
+      .usePlaintext(true)
+      .build()
+    feClient = FeatureExtractorGrpc.stub(channel)
   }
 
   override def afterAll(): Unit = {
@@ -79,7 +88,7 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, UNIQUES)
 
     println("Query")
-    val sha1 = gemini.query("src/test/resources/LICENSE", session, bblfshClient)
+    val sha1 = gemini.query("src/test/resources/LICENSE", session, bblfshClient, feClient)
     println("Done")
 
     sha1 should not be empty
