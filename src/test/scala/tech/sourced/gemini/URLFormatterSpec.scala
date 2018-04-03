@@ -2,8 +2,7 @@ package tech.sourced.gemini
 
 import org.scalatest.{FlatSpec, Matchers}
 
-class URLFormatterSpec extends FlatSpec
-  with Matchers {
+class URLFormatterSpec extends FlatSpec with Matchers {
 
   "URLFormatter" should "format correctly" in {
     case class Input(repo: String, commit: String, path: String)

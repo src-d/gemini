@@ -27,7 +27,9 @@ object HashSparkApp extends App with Logging {
 
   val parser = new scopt.OptionParser[HashAppConfig]("./hash") {
     head("Gemini Hasher")
-    note("Hashes given set of Git repositories, either from FS or as .siva files.")
+    note(
+      "Hashes given set of Git repositories, either from FS or as .siva files."
+    )
 
     opt[String]('h', "host")
       .action((x, c) => c.copy(host = x))
@@ -41,8 +43,10 @@ object HashSparkApp extends App with Logging {
     opt[String]('f', "format")
       .valueName(repoFormats.mkString(" | "))
       .withFallback(() => "siva")
-      .validate(x =>
-        if (repoFormats contains x) success else failure(s"format must be one of " + repoFormats.mkString(" | "))
+      .validate(
+        x =>
+          if (repoFormats contains x) success
+          else failure(s"format must be one of " + repoFormats.mkString(" | "))
       )
       .action((x, c) => c.copy(format = x))
       .text("format of the stored repositories")
@@ -52,14 +56,17 @@ object HashSparkApp extends App with Logging {
     arg[String]("<path-to-git-repos>")
       .required()
       .action((x, c) => c.copy(reposPath = x))
-      .text("path to git repositories. Clones in local FS or Siva files in HDFS are supported.")
+      .text(
+        "path to git repositories. Clones in local FS or Siva files in HDFS are supported."
+      )
   }
 
   parser.parse(args, HashAppConfig()) match {
     case Some(config) =>
       val reposPath = config.reposPath
 
-      val spark = SparkSession.builder()
+      val spark = SparkSession
+        .builder()
         .master(Properties.envOrElse("MASTER", "local[*]"))
         .config("spark.cassandra.connection.host", config.host)
         .config("spark.cassandra.connection.port", config.port)
@@ -69,7 +76,12 @@ object HashSparkApp extends App with Logging {
         LogManager.getRootLogger.setLevel(Level.INFO)
       }
 
-      val repos = listRepositories(reposPath, config.format, spark.sparkContext.hadoopConfiguration, config.limit)
+      val repos = listRepositories(
+        reposPath,
+        config.format,
+        spark.sparkContext.hadoopConfiguration,
+        config.limit
+      )
       printRepositories(reposPath, repos)
 
       val gemini = Gemini(spark, log, "hashes")
@@ -91,13 +103,16 @@ object HashSparkApp extends App with Logging {
     }
   }
 
-  private def listRepositories(path: String, format: String, conf: Configuration, limit: Int): Array[Path] = {
+  private def listRepositories(path: String,
+                               format: String,
+                               conf: Configuration,
+                               limit: Int): Array[Path] = {
     val fs = FileSystem.get(new URI(path), conf)
     val p = new Path(path)
 
     val paths = format match {
       case "siva" => findSivaRecursive(p, fs)
-      case _ => fs.listStatus(p).filter(_.isDirectory).map(_.getPath)
+      case _      => fs.listStatus(p).filter(_.isDirectory).map(_.getPath)
     }
 
     if (limit <= 0) paths else paths.take(limit)
@@ -106,7 +121,8 @@ object HashSparkApp extends App with Logging {
   // we don't filter files by extension here, because engine doesn't do it too
   // it will try to process any file
   private def findSivaRecursive(p: Path, fs: FileSystem): Array[Path] =
-    fs.listStatus(p).flatMap{ file =>
-      if (file.isDirectory) findSivaRecursive(file.getPath, fs) else Array(file.getPath)
+    fs.listStatus(p).flatMap { file =>
+      if (file.isDirectory) findSivaRecursive(file.getPath, fs)
+      else Array(file.getPath)
     }
 }

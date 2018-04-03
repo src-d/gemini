@@ -6,11 +6,12 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Tag}
 
-class CassandraSparkSpec extends FlatSpec
-  with Matchers
-  with BaseSparkSpec
-  with Logging
-  with BeforeAndAfterAll {
+class CassandraSparkSpec
+    extends FlatSpec
+    with Matchers
+    with BaseSparkSpec
+    with Logging
+    with BeforeAndAfterAll {
 
   //to start Embedded Cassandra:
   // with SparkTemplate with EmbeddedCassandra
@@ -22,7 +23,10 @@ class CassandraSparkSpec extends FlatSpec
 
   val defaultConf: SparkConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", Gemini.defaultCassandraHost)
-    .set("spark.cassandra.connection.port", Gemini.defaultCassandraPort.toString)
+    .set(
+      "spark.cassandra.connection.port",
+      Gemini.defaultCassandraPort.toString
+    )
     .set("spark.cassandra.connection.keep_alive_ms", "5000")
     .set("spark.cassandra.connection.timeout_ms", "30000")
     .set("spark.ui.showConsoleProgress", "false")
@@ -89,7 +93,11 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, DUPLICATES)
 
     // 2 file in 9279be3cf07fb3cca4fc964b27acea57e0af461b.siva
-    val sha1 = Gemini.findDuplicateItemForBlobHash("c4e5bcc8001f80acc238877174130845c5c39aa3", session, DUPLICATES)
+    val sha1 = Gemini.findDuplicateItemForBlobHash(
+      "c4e5bcc8001f80acc238877174130845c5c39aa3",
+      session,
+      DUPLICATES
+    )
 
     sha1 should not be empty
     sha1.size shouldEqual 2
@@ -140,7 +148,11 @@ class CassandraSparkSpec extends FlatSpec
 
   "Hash with limit" should "collect files only from limit repos" in {
     val gemini = Gemini(sparkSession)
-    val repos = gemini.hash("src/test/resources/siva", 1).select(Gemini.meta.repo).distinct().count()
+    val repos = gemini
+      .hash("src/test/resources/siva", 1)
+      .select(Gemini.meta.repo)
+      .distinct()
+      .count()
     repos should be(1)
   }
 

@@ -14,8 +14,10 @@ object ReportApp extends App {
 
   val parser = new scopt.OptionParser[ReportAppConfig]("./report") {
     head("Gemini Report")
-    note("Finds duplicated files among hashed repositories." +
-      "It uses as many queries as distinct files are stored in the database")
+    note(
+      "Finds duplicated files among hashed repositories." +
+        "It uses as many queries as distinct files are stored in the database"
+    )
 
     opt[String]('h', "host")
       .action((x, c) => c.copy(host = x))
@@ -29,9 +31,11 @@ object ReportApp extends App {
     opt[String]("mode")
       .valueName("use-group-by or condensed")
       .action((x, c) => c.copy(mode = x))
-      .text("Only for Apache Cassandra database\n" +
-        "use-group-by - use as many queries as unique duplicate files are found, plus one.\n" +
-        "condensed - use only one query to find the duplicates.")
+      .text(
+        "Only for Apache Cassandra database\n" +
+          "use-group-by - use as many queries as unique duplicate files are found, plus one.\n" +
+          "condensed - use only one query to find the duplicates."
+      )
   }
 
   parser.parse(args, ReportAppConfig()) match {
@@ -39,7 +43,8 @@ object ReportApp extends App {
       val log = Logger("gemini", config.verbose)
 
       //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
-      val cluster = Cluster.builder()
+      val cluster = Cluster
+        .builder()
         .addContactPoint(config.host)
         .withPort(config.port)
         .build()
@@ -49,8 +54,10 @@ object ReportApp extends App {
 
       val report = config.mode match {
         case `defaultMode` => ReportExpandedGroup(gemini.report(cassandra))
-        case `condensedMode` => ReportGrouped(gemini.reportCassandraCondensed(cassandra))
-        case `groupByMode` => ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
+        case `condensedMode` =>
+          ReportGrouped(gemini.reportCassandraCondensed(cassandra))
+        case `groupByMode` =>
+          ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
       }
 
       cassandra.close()
@@ -64,7 +71,8 @@ object ReportApp extends App {
   def print(report: Report): Unit = {
     report match {
       case e if e.empty() => println(s"No duplicates found.")
-      case ReportGrouped(v) => println(s"Duplicates found:\n\t" + (v mkString "\n\t"))
+      case ReportGrouped(v) =>
+        println(s"Duplicates found:\n\t" + (v mkString "\n\t"))
       case ReportExpandedGroup(v) =>
         v.foreach { item =>
           val count = item.size
@@ -85,7 +93,7 @@ object ReportApp extends App {
 
   case class ReportGrouped(v: Iterable[DuplicateBlobHash]) extends Report(v)
 
-  case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)
-
+  case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]])
+      extends Report(v)
 
 }
