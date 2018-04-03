@@ -16,18 +16,8 @@ matrix:
   - scala: 2.11.2
     script:
       - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
-      - ./sbt "test-only * -- -l tags.FEIntegration -l tech.sourced.tags.PythonDep"
-
-  - scala: 2.11.2
-    env: PYTHON_DEPENDENCY_TESTS=true
-    before_install:
-      - sudo apt-get -qq update
-      - sudo apt-get -y install python3-pip python-dev
-      - sudo pip3 install -r ./src/test/resources/weighted-minhash/requirements.txt
-    before_script:
-      - ./src/test/resources/weighted-minhash/weighted_minhash_test.py
-    script:
-      - ./sbt "test-only -- -n tech.sourced.tags.PythonDep"
+      - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
+      - ./sbt "test-only * -- -l tags.FEIntegration"
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
