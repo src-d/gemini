@@ -14,14 +14,20 @@ import tech.sourced.engine._
 import scala.collection.JavaConverters._
 import scala.io.Source
 
-class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
+class Gemini(session: SparkSession,
+             log: Slf4jLogger,
+             keyspace: String = Gemini.defautKeyspace) {
 
   import Gemini._
   import session.implicits._
 
-  def hash(reposPath: String, limit: Int = 0, format: String = "siva"): DataFrame = {
+  def hash(reposPath: String,
+           limit: Int = 0,
+           format: String = "siva"): DataFrame = {
     if (session == null) {
-      throw new UnsupportedOperationException("Hashing requires a SparkSession.")
+      throw new UnsupportedOperationException(
+        "Hashing requires a SparkSession."
+      )
     }
 
     val engine = Engine(session, reposPath, format)
@@ -32,17 +38,14 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     if (limit <= 0) {
       hashForRepos(engine.getRepositories)
     } else {
-      val repoIds = engine.getRepositories.limit(limit).select($"id").collect().map(_ (0))
+      val repoIds =
+        engine.getRepositories.limit(limit).select($"id").collect().map(_(0))
       hashForRepos(engine.getRepositories.filter($"id".isin(repoIds: _*)))
     }
   }
 
   def hashForRepos(repos: DataFrame): DataFrame =
-    repos
-      .getHEAD
-      .getCommits
-      .getTreeEntries
-      .getBlobs
+    repos.getHEAD.getCommits.getTreeEntries.getBlobs
       .select("blob_id", "repository_id", "commit_hash", "path")
       .withColumnRenamed("blob_id", meta.sha)
       .withColumnRenamed("repository_id", meta.repo)
@@ -151,7 +154,8 @@ object URLFormatter {
   private val default = ("", "repo: %s commit: %s path: %s")
 
   def format(repo: String, commit: String, path: String): String = {
-    val urlTemplateByRepo = services.find { case (h, _) => repo.startsWith(h) }.getOrElse(default)._2
+    val urlTemplateByRepo =
+      services.find { case (h, _) => repo.startsWith(h) }.getOrElse(default)._2
     val repoWithoutSuffix = repo.replaceFirst("\\.git$", "")
 
     urlTemplateByRepo.format(repoWithoutSuffix, commit, path)
@@ -181,7 +185,9 @@ object Gemini {
 
   val formatter = new ObjectInserter.Formatter
 
-  def apply(ss: SparkSession, log: Slf4jLogger = Logger("gemini"), keyspace: String = defautKeyspace): Gemini =
+  def apply(ss: SparkSession,
+            log: Slf4jLogger = Logger("gemini"),
+            keyspace: String = defautKeyspace): Gemini =
     new Gemini(ss, log, keyspace)
 
   def computeSha1(file: File): String = {
@@ -199,10 +205,14 @@ object Gemini {
     * @param keyspace Keyspace under data is stored
     * @return
     */
-  def findAllDuplicateBlobHashes(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
+  def findAllDuplicateBlobHashes(
+    conn: Session,
+    keyspace: String
+  ): Iterable[DuplicateBlobHash] = {
     val hash = meta.sha
     val dupCount = "count"
-    val duplicatesCountCql = s"SELECT $hash, COUNT(*) as $dupCount FROM $keyspace.$defaultTable GROUP BY $hash"
+    val duplicatesCountCql =
+      s"SELECT $hash, COUNT(*) as $dupCount FROM $keyspace.$defaultTable GROUP BY $hash"
     conn
       .execute(new SimpleStatement(duplicatesCountCql))
       .asScala
@@ -219,14 +229,16 @@ object Gemini {
     * @param keyspace Keyspace under data is stored
     * @return
     */
-  def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[Iterable[RepoFile]] = {
+  def findAllDuplicateItems(conn: Session,
+                            keyspace: String): Iterable[Iterable[RepoFile]] = {
     val hash = meta.sha
     val distinctBlobHash = s"SELECT distinct $hash FROM $keyspace.$defaultTable"
     conn
       .execute(new SimpleStatement(distinctBlobHash))
       .asScala
       .flatMap { r =>
-        val dupes = findDuplicateItemForBlobHash(r.getString(hash), conn, keyspace)
+        val dupes =
+          findDuplicateItemForBlobHash(r.getString(hash), conn, keyspace)
         if (dupes.size > 1) {
           List(dupes)
         } else {
@@ -235,23 +247,38 @@ object Gemini {
       }
   }
 
-  def findDuplicateProjects(in: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
+  def findDuplicateProjects(in: File,
+                            conn: Session,
+                            keyspace: String): Iterable[RepoFile] = {
     //TODO(bzz): project is duplicate if it has all it's files in some other projects
-    throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
+    throw new UnsupportedOperationException(
+      "Finding duplicate repositories is no implemented yet."
+    )
   }
 
-  def findDuplicateItemForFile(file: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
+  def findDuplicateItemForFile(file: File,
+                               conn: Session,
+                               keyspace: String): Iterable[RepoFile] = {
     findDuplicateItemForBlobHash(computeSha1(file), conn, keyspace)
   }
 
-  def findDuplicateItemForBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
-    val query = QueryBuilder.select().all().from(keyspace, defaultTable)
+  def findDuplicateItemForBlobHash(sha: String,
+                                   conn: Session,
+                                   keyspace: String): Iterable[RepoFile] = {
+    val query = QueryBuilder
+      .select()
+      .all()
+      .from(keyspace, defaultTable)
       .where(QueryBuilder.eq(meta.sha, sha))
 
     conn.execute(query).asScala.map { row =>
-      RepoFile(row.getString(meta.repo), row.getString(meta.commit), row.getString(meta.path), row.getString(meta.sha))
+      RepoFile(
+        row.getString(meta.repo),
+        row.getString(meta.commit),
+        row.getString(meta.path),
+        row.getString(meta.sha)
+      )
     }
   }
 
 }
-

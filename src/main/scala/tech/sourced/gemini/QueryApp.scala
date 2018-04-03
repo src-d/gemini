@@ -38,7 +38,8 @@ object QueryApp extends App {
       println(s"Query duplicate files to: $file")
 
       //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
-      val cluster = Cluster.builder()
+      val cluster = Cluster
+        .builder()
         .addContactPoint(config.host)
         .withPort(config.port)
         .build()

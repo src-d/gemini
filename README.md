@@ -112,6 +112,18 @@ To generate gRPC code for Feature Extractors from `src/main/proto/*.proto` files
 ./src/main/resources/generate_from_proto.sh
 ```
 
+This project uses [scalafmt](http://scalameta.org/scalafmt) formatting. You can configure IntelliJ IDEA to use the same formatting configuration. To do so, follow the [scalafmt instructions](http://scalameta.org/scalafmt/#IntelliJ).
+
+To check if the code follows the project style, use the linters
+```
+make lint-scala
+```
+
+To fix formatting issues, use the formatters
+```
+make format-scala
+```
+
 ## License
 
 Copyright (C) 2017 source{d}.
