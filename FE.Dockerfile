@@ -2,7 +2,7 @@ FROM python:3
 
 WORKDIR /usr/src/app
 
-COPY src/main/python/requirements.txt ./
+COPY src/main/python/feature-extractor/requirements.txt ./
 
 RUN apt-get update && \
     apt-get install -y --no-install-suggests --no-install-recommends libsnappy-dev && \
@@ -13,6 +13,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY src/main/python .
+COPY src/main/python/feature-extractor .
 
 CMD [ "python", "./server.py" ]
