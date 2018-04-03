@@ -59,6 +59,22 @@ class TestServer(unittest.TestCase):
             response.features[0].name, 's.alias>NoopLine>PreviousNoops>Import>Str')
         self.assertEqual(response.features[0].weight, 1)
 
+    def test_with_weight(self):
+        response = self.stub.Identifiers(service_pb2.IdentifiersRequest(
+            docfreqThreshold=5, splitStem=False, uast=self.uast, weight=2))
+
+        self.assertEqual(response.features[0].weight, 2)
+
+        response = self.stub.Literals(service_pb2.LiteralsRequest(
+            docfreqThreshold=5, uast=self.uast, weight=2))
+
+        self.assertEqual(response.features[0].weight, 2)
+
+        response = self.stub.Uast2seq(service_pb2.Uast2seqRequest(
+            docfreqThreshold=5, uast=self.uast, weight=2))
+
+        self.assertEqual(response.features[0].weight, 2)
+
 
 def get_open_port():
     import socket
