@@ -1,6 +1,7 @@
 from collections import defaultdict
 from itertools import chain
 import logging
+
 from igraph import Graph
 import numpy
 
@@ -10,20 +11,32 @@ def detect_communities(cc,
                        edges="linear",
                        algorithm="walktrap",
                        algorithm_params={}):
-    """
-    Runs Community Detection analysis on the given connected components.
-    :param cc: numpy.ndarray with the connected components
-    :param buckets_matrix: scipy.sparse.csr_matrix with the buckets
-    :param edges: The method to generate the graph's edges:
-        - linear: linear and fast, but may not fit some of the CD algorithms, or all to all within a bucket
-        - quadratic: slow, but surely fits all the algorithms.
-    :param algorithm: The community detection algorithm to apply.
-    :param algorithm_params: Parameters for the algorithm (**kwargs, JSON format).
-    :return: JSON with data, indptr
+    """Runs Community Detection analysis on the given connected components.
+
+    Based largely on the Apollo detect_communities() code from
+    https://github.com/src-d/apollo/blob/6b370b5f34ba9e31cf3310e70a2eff35dd978faa/apollo/graph.py#L191
+
+    Args:
+        cc: list with the connected components
+        buckets_matrix: scipy.sparse.csr_matrix with the buckets
+        edges: The method to generate the graph's edges:
+            - linear: linear and fast, but may not fit some of the CD
+                algorithms, or all to all within a bucket
+            - quadratic: slow, but surely fits all the algorithms.
+        algorithm: The community detection algorithm to apply.
+        algorithm_params: Parameters for the algorithm (**kwargs, JSON format).
+    
+    Returns:
+        A JSON with data, indptr
     """
 
+    if edges != "linear" and edges != "quadratic":
+        raise ValueError(
+            "edges arg: expected one of 'linear', 'quadratic', received '%s'" %
+            (edges))
+
     log = logging.getLogger("community-detector")
-    log.info("Building the connected components")
+    log.debug("Building the connected components")
 
     ccs = defaultdict(list)
 
@@ -33,12 +46,12 @@ def detect_communities(cc,
     buckindices = buckets_matrix.indices
     buckindptr = buckets_matrix.indptr
     total_nvertices = buckets_matrix.shape[0]
-    linear = edges in ("linear", "1")
+    linear = (edges == "linear")
     graphs = []
     communities = []
 
     if not linear:
-        log.info("Transposing the matrix")
+        log.debug("Transposing the matrix")
         buckmat_csc = buckets_matrix.T.tocsr()
 
     fat_ccs = []
@@ -51,7 +64,7 @@ def detect_communities(cc,
             continue
         fat_ccs.append(vertices)
 
-    log.info("Building %d graphs", len(fat_ccs))
+    log.debug("Building %d graphs", len(fat_ccs))
 
     for vertices in fat_ccs:
         if linear:
@@ -89,17 +102,17 @@ def detect_communities(cc,
         graph.edge_weights = weights
         graphs.append(graph)
 
-    log.info("Launching the community detection")
+    log.debug("Launching the community detection")
     detector = CommunityDetector(algorithm=algorithm, config=algorithm_params)
 
     communities.extend(chain.from_iterable((detector(g) for g in graphs)))
 
-    log.info("Overall communities: %d", len(communities))
-    log.info("Average community size: %.1f",
-             numpy.mean([len(c) for c in communities]))
-    log.info("Median community size: %.1f",
-             numpy.median([len(c) for c in communities]))
-    log.info("Max community size: %d", max(map(len, communities)))
+    log.debug("Overall communities: %d", len(communities))
+    log.debug("Average community size: %.1f",
+              numpy.mean([len(c) for c in communities]))
+    log.debug("Median community size: %.1f",
+              numpy.median([len(c) for c in communities]))
+    log.debug("Max community size: %d", max(map(len, communities)))
 
     # Replaces CommunitiesModel().construct(communities, ccsmodel.id_to_element).save(output)
     size = sum(map(len, communities))
@@ -115,6 +128,12 @@ def detect_communities(cc,
 
 
 class CommunityDetector:
+    """Class to initialize the graph community algorithm and its arguments
+
+    Copied from the Apollo code
+    https://github.com/src-d/apollo/blob/6b370b5f34ba9e31cf3310e70a2eff35dd978faa/apollo/graph.py#L267
+    """
+
     def __init__(self, algorithm, config):
         self.algorithm = algorithm
         self.config = config

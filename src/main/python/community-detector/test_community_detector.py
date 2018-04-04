@@ -1,7 +1,9 @@
 import unittest
+
 import numpy
 from numpy.testing import assert_array_equal
 from scipy.sparse import csr_matrix
+
 from community_detector import detect_communities
 
 
@@ -12,7 +14,7 @@ def build_csr_matrix(input):
         shape=input['id_to_buckets_shape'])
 
 
-class TestServer(unittest.TestCase):
+class TestCommunityDetector(unittest.TestCase):
     def test_detect_communities(self):
         # Read npz input
         with numpy.load('fixtures/input.npz') as input:
@@ -20,7 +22,7 @@ class TestServer(unittest.TestCase):
             cc = input['id_to_cc']
 
         # Call community_detector
-        result = detect_communities(cc, buckets)
+        result = detect_communities(cc.tolist(), buckets)
 
         # Read npz output
         with numpy.load('fixtures/output.npz') as output:
