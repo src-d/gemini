@@ -112,6 +112,11 @@ To generate gRPC code for Feature Extractors from `src/main/proto/*.proto` files
 ./src/main/resources/generate_from_proto.sh
 ```
 
+To generate protobuf messages fixtures you may use [bblfsh-sdk-tools](https://github.com/bblfsh/sdk):
+```
+bblfsh-sdk-tools fixtures -p .proto -l <LANG> <path-to-source-code-file>
+```
+
 ## License
 
 Copyright (C) 2017 source{d}.

@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
 
   scalaLib % Compile,
   scalapb % Compile,
+  ioGrpc % Compile,
   scalapbGrpc % Compile,
   engine % Compile,
   jgit % Compile,

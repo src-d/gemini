@@ -16,7 +16,7 @@ matrix:
   - scala: 2.11.2
     script:
       - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
-      - ./sbt test
+      - ./sbt "test-only * -- -l tags.FEIntegration"
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
@@ -75,7 +75,8 @@ matrix:
     script:
       - docker build -t srcd/gemini-fe -f FE.Dockerfile .
       - docker run --rm -e PYTHONHASHSEED=0 srcd/gemini-fe pytest -v
-      # add here tests using scala client later
+      - docker run -p 9001:9001 -e PYTHONHASHSEED=0 -d srcd/gemini-fe
+      - ./sbt "test-only * -- -n tags.FEIntegration"
 
 before_script:
  - ./scripts/start_docker.sh
