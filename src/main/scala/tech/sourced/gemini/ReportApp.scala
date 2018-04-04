@@ -6,6 +6,7 @@ import org.apache.hadoop.fs.Path
 import com.datastax.driver.core.Cluster
 import org.apache.avro.SchemaBuilder
 import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
+import org.apache.hadoop.conf.Configuration
 import org.apache.parquet.avro.AvroParquetWriter
 
 case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
@@ -116,9 +117,14 @@ object ReportApp extends App {
     val parquetFile = new File(outputPath)
     parquetFile.delete()
 
+    // make it compatible with python
+    val parquetConf = new Configuration()
+    parquetConf.setBoolean("parquet.avro.write-old-list-structure", false)
+
     val parquetFilePath = new Path(outputPath)
     val writer = AvroParquetWriter.builder[GenericRecord](parquetFilePath)
       .withSchema(schema)
+      .withConf(parquetConf)
       .build()
 
     cc.foreach { case (_, elements) =>
