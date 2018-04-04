@@ -21,10 +21,22 @@ public class WeightedMinHash {
     protected double[][] lnCs;
     protected double[][] betas;
 
+    /**
+     * Initializes a WeightedMinHash
+     *
+     * @param dim the number of dimensions in the input. i.e. size of the weight vector to hash
+     */
     public WeightedMinHash(int dim) {
         this(dim, 128, 1);
     }
 
+    /**
+     * Initializes a WeightedMinHash
+     *
+     * @param dim number of dimensions in the input. i.e. size of the weight vector to hash
+     * @param sampleSize number of samples to use to initialize the weighted MinHash
+     * @param seed random generator seed for reproducible results
+     */
     public WeightedMinHash(int dim, int sampleSize, long seed) {
         this.dim = dim;
         this.sampleSize = sampleSize;
@@ -73,6 +85,12 @@ public class WeightedMinHash {
         this.betas = betas;
     }
 
+    /**
+     * Calculates the weighted MinHash for the given weighted vector
+     *
+     * @param values weighted vector
+     * @return weighted MinHash
+     */
     public long[][] hash(double[] values) {
         if (values.length != dim) {
             throw new IllegalArgumentException("input dimension mismatch, expected " + dim);
