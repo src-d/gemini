@@ -3,19 +3,19 @@
 //
 // Protofile syntax: PROTO3
 
-package tech.sourced.featurext.generated
+package tech.sourced.featurext.generated.service
 
 object ServiceProto extends _root_.scalapb.GeneratedFileObject {
   lazy val dependencies: Seq[_root_.scalapb.GeneratedFileObject] = Seq(
-    com.google.protobuf.GogoProto,
-    gopkg.in.bblfsh.sdk.v1.uast.GeneratedProto
+    com.google.protobuf.gogo.GogoProto,
+    gopkg.in.bblfsh.sdk.v1.uast.generated.GeneratedProto
   )
   lazy val messagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq(
-    tech.sourced.featurext.generated.IdentifiersRequest,
-    tech.sourced.featurext.generated.LiteralsRequest,
-    tech.sourced.featurext.generated.Uast2seqRequest,
-    tech.sourced.featurext.generated.Feature,
-    tech.sourced.featurext.generated.FeaturesReply
+    tech.sourced.featurext.generated.service.IdentifiersRequest,
+    tech.sourced.featurext.generated.service.LiteralsRequest,
+    tech.sourced.featurext.generated.service.Uast2seqRequest,
+    tech.sourced.featurext.generated.service.Feature,
+    tech.sourced.featurext.generated.service.FeaturesReply
   )
   private lazy val ProtoBytes: Array[Byte] =
       scalapb.Encoding.fromBase64(scala.collection.Seq(
@@ -43,8 +43,8 @@ object ServiceProto extends _root_.scalapb.GeneratedFileObject {
   lazy val javaDescriptor: com.google.protobuf.Descriptors.FileDescriptor = {
     val javaProto = com.google.protobuf.DescriptorProtos.FileDescriptorProto.parseFrom(ProtoBytes)
     com.google.protobuf.Descriptors.FileDescriptor.buildFrom(javaProto, Array(
-      com.google.protobuf.GogoProto.javaDescriptor,
-      gopkg.in.bblfsh.sdk.v1.uast.GeneratedProto.javaDescriptor
+      com.google.protobuf.gogo.GogoProto.javaDescriptor,
+      gopkg.in.bblfsh.sdk.v1.uast.generated.GeneratedProto.javaDescriptor
     ))
   }
   @deprecated("Use javaDescriptor instead. In a future version this will refer to scalaDescriptor.", "ScalaPB 0.5.47")

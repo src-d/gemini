@@ -3,7 +3,7 @@
 //
 // Protofile syntax: PROTO3
 
-package gopkg.in.bblfsh.sdk.v1.uast
+package gopkg.in.bblfsh.sdk.v1.uast.generated
 
 sealed trait Role extends _root_.scalapb.GeneratedEnum {
   type EnumType = Role
@@ -125,7 +125,7 @@ sealed trait Role extends _root_.scalapb.GeneratedEnum {
   def isArithmetic: _root_.scala.Boolean = false
   def isRelational: _root_.scala.Boolean = false
   def isVariable: _root_.scala.Boolean = false
-  def companion: _root_.scalapb.GeneratedEnumCompanion[Role] = gopkg.in.bblfsh.sdk.v1.uast.Role
+  def companion: _root_.scalapb.GeneratedEnumCompanion[Role] = gopkg.in.bblfsh.sdk.v1.uast.generated.Role
 }
 
 object Role extends _root_.scalapb.GeneratedEnumCompanion[Role] {

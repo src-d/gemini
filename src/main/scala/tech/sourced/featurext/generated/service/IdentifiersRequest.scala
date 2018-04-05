@@ -3,13 +3,13 @@
 //
 // Protofile syntax: PROTO3
 
-package tech.sourced.featurext.generated
+package tech.sourced.featurext.generated.service
 
 /** The identifiers request message containing extractor configuration and uast.
   */
 @SerialVersionUID(0L)
 final case class IdentifiersRequest(
-    uast: scala.Option[gopkg.in.bblfsh.sdk.v1.uast.Node] = None,
+    uast: scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node] = None,
     docfreqThreshold: _root_.scala.Int = 0,
     weight: _root_.scala.Int = 0,
     splitStem: _root_.scala.Boolean = false
@@ -57,7 +57,7 @@ final case class IdentifiersRequest(
         }
       };
     }
-    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.generated.IdentifiersRequest = {
+    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.generated.service.IdentifiersRequest = {
       var __uast = this.uast
       var __docfreqThreshold = this.docfreqThreshold
       var __weight = this.weight
@@ -68,7 +68,7 @@ final case class IdentifiersRequest(
         _tag__ match {
           case 0 => _done__ = true
           case 10 =>
-            __uast = Option(_root_.scalapb.LiteParser.readMessage(_input__, __uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.Node.defaultInstance)))
+            __uast = Option(_root_.scalapb.LiteParser.readMessage(_input__, __uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.generated.Node.defaultInstance)))
           case 16 =>
             __docfreqThreshold = _input__.readInt32()
           case 24 =>
@@ -78,16 +78,16 @@ final case class IdentifiersRequest(
           case tag => _input__.skipField(tag)
         }
       }
-      tech.sourced.featurext.generated.IdentifiersRequest(
+      tech.sourced.featurext.generated.service.IdentifiersRequest(
           uast = __uast,
           docfreqThreshold = __docfreqThreshold,
           weight = __weight,
           splitStem = __splitStem
       )
     }
-    def getUast: gopkg.in.bblfsh.sdk.v1.uast.Node = uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.Node.defaultInstance)
+    def getUast: gopkg.in.bblfsh.sdk.v1.uast.generated.Node = uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.generated.Node.defaultInstance)
     def clearUast: IdentifiersRequest = copy(uast = None)
-    def withUast(__v: gopkg.in.bblfsh.sdk.v1.uast.Node): IdentifiersRequest = copy(uast = Option(__v))
+    def withUast(__v: gopkg.in.bblfsh.sdk.v1.uast.generated.Node): IdentifiersRequest = copy(uast = Option(__v))
     def withDocfreqThreshold(__v: _root_.scala.Int): IdentifiersRequest = copy(docfreqThreshold = __v)
     def withWeight(__v: _root_.scala.Int): IdentifiersRequest = copy(weight = __v)
     def withSplitStem(__v: _root_.scala.Boolean): IdentifiersRequest = copy(splitStem = __v)
@@ -118,26 +118,26 @@ final case class IdentifiersRequest(
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
-    def companion = tech.sourced.featurext.generated.IdentifiersRequest
+    def companion = tech.sourced.featurext.generated.service.IdentifiersRequest
 }
 
-object IdentifiersRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.IdentifiersRequest] {
-  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.IdentifiersRequest] = this
-  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): tech.sourced.featurext.generated.IdentifiersRequest = {
+object IdentifiersRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.service.IdentifiersRequest] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[tech.sourced.featurext.generated.service.IdentifiersRequest] = this
+  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): tech.sourced.featurext.generated.service.IdentifiersRequest = {
     require(__fieldsMap.keys.forall(_.getContainingType() == javaDescriptor), "FieldDescriptor does not match message type.")
     val __fields = javaDescriptor.getFields
-    tech.sourced.featurext.generated.IdentifiersRequest(
-      __fieldsMap.get(__fields.get(0)).asInstanceOf[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.Node]],
+    tech.sourced.featurext.generated.service.IdentifiersRequest(
+      __fieldsMap.get(__fields.get(0)).asInstanceOf[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]],
       __fieldsMap.getOrElse(__fields.get(1), 0).asInstanceOf[_root_.scala.Int],
       __fieldsMap.getOrElse(__fields.get(2), 0).asInstanceOf[_root_.scala.Int],
       __fieldsMap.getOrElse(__fields.get(3), false).asInstanceOf[_root_.scala.Boolean]
     )
   }
-  implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.generated.IdentifiersRequest] = _root_.scalapb.descriptors.Reads{
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.generated.service.IdentifiersRequest] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
-      tech.sourced.featurext.generated.IdentifiersRequest(
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).flatMap(_.as[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.Node]]),
+      tech.sourced.featurext.generated.service.IdentifiersRequest(
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).flatMap(_.as[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]]),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Int]).getOrElse(0),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Int]).getOrElse(0),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(4).get).map(_.as[_root_.scala.Boolean]).getOrElse(false)
@@ -149,17 +149,17 @@ object IdentifiersRequest extends scalapb.GeneratedMessageCompanion[tech.sourced
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
-      case 1 => __out = gopkg.in.bblfsh.sdk.v1.uast.Node
+      case 1 => __out = gopkg.in.bblfsh.sdk.v1.uast.generated.Node
     }
     __out
   }
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
-  lazy val defaultInstance = tech.sourced.featurext.generated.IdentifiersRequest(
+  lazy val defaultInstance = tech.sourced.featurext.generated.service.IdentifiersRequest(
   )
-  implicit class IdentifiersRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.IdentifiersRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.generated.IdentifiersRequest](_l) {
-    def uast: _root_.scalapb.lenses.Lens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.Node] = field(_.getUast)((c_, f_) => c_.copy(uast = Option(f_)))
-    def optionalUast: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[gopkg.in.bblfsh.sdk.v1.uast.Node]] = field(_.uast)((c_, f_) => c_.copy(uast = f_))
+  implicit class IdentifiersRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.service.IdentifiersRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.generated.service.IdentifiersRequest](_l) {
+    def uast: _root_.scalapb.lenses.Lens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.generated.Node] = field(_.getUast)((c_, f_) => c_.copy(uast = Option(f_)))
+    def optionalUast: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]] = field(_.uast)((c_, f_) => c_.copy(uast = f_))
     def docfreqThreshold: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.docfreqThreshold)((c_, f_) => c_.copy(docfreqThreshold = f_))
     def weight: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.weight)((c_, f_) => c_.copy(weight = f_))
     def splitStem: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Boolean] = field(_.splitStem)((c_, f_) => c_.copy(splitStem = f_))

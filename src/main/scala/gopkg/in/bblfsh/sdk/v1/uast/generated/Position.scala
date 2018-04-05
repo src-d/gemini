@@ -3,7 +3,7 @@
 //
 // Protofile syntax: PROTO3
 
-package gopkg.in.bblfsh.sdk.v1.uast
+package gopkg.in.bblfsh.sdk.v1.uast.generated
 
 /** Position represents a position in a source code file.
   */
@@ -50,7 +50,7 @@ final case class Position(
         }
       };
     }
-    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): gopkg.in.bblfsh.sdk.v1.uast.Position = {
+    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): gopkg.in.bblfsh.sdk.v1.uast.generated.Position = {
       var __offset = this.offset
       var __line = this.line
       var __col = this.col
@@ -68,7 +68,7 @@ final case class Position(
           case tag => _input__.skipField(tag)
         }
       }
-      gopkg.in.bblfsh.sdk.v1.uast.Position(
+      gopkg.in.bblfsh.sdk.v1.uast.generated.Position(
           offset = __offset,
           line = __line,
           col = __col
@@ -102,24 +102,24 @@ final case class Position(
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
-    def companion = gopkg.in.bblfsh.sdk.v1.uast.Position
+    def companion = gopkg.in.bblfsh.sdk.v1.uast.generated.Position
 }
 
-object Position extends scalapb.GeneratedMessageCompanion[gopkg.in.bblfsh.sdk.v1.uast.Position] {
-  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[gopkg.in.bblfsh.sdk.v1.uast.Position] = this
-  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): gopkg.in.bblfsh.sdk.v1.uast.Position = {
+object Position extends scalapb.GeneratedMessageCompanion[gopkg.in.bblfsh.sdk.v1.uast.generated.Position] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[gopkg.in.bblfsh.sdk.v1.uast.generated.Position] = this
+  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): gopkg.in.bblfsh.sdk.v1.uast.generated.Position = {
     require(__fieldsMap.keys.forall(_.getContainingType() == javaDescriptor), "FieldDescriptor does not match message type.")
     val __fields = javaDescriptor.getFields
-    gopkg.in.bblfsh.sdk.v1.uast.Position(
+    gopkg.in.bblfsh.sdk.v1.uast.generated.Position(
       __fieldsMap.getOrElse(__fields.get(0), 0).asInstanceOf[_root_.scala.Int],
       __fieldsMap.getOrElse(__fields.get(1), 0).asInstanceOf[_root_.scala.Int],
       __fieldsMap.getOrElse(__fields.get(2), 0).asInstanceOf[_root_.scala.Int]
     )
   }
-  implicit def messageReads: _root_.scalapb.descriptors.Reads[gopkg.in.bblfsh.sdk.v1.uast.Position] = _root_.scalapb.descriptors.Reads{
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[gopkg.in.bblfsh.sdk.v1.uast.generated.Position] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
-      gopkg.in.bblfsh.sdk.v1.uast.Position(
+      gopkg.in.bblfsh.sdk.v1.uast.generated.Position(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Int]).getOrElse(0),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Int]).getOrElse(0),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Int]).getOrElse(0)
@@ -131,9 +131,9 @@ object Position extends scalapb.GeneratedMessageCompanion[gopkg.in.bblfsh.sdk.v1
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
-  lazy val defaultInstance = gopkg.in.bblfsh.sdk.v1.uast.Position(
+  lazy val defaultInstance = gopkg.in.bblfsh.sdk.v1.uast.generated.Position(
   )
-  implicit class PositionLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.Position]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.Position](_l) {
+  implicit class PositionLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.generated.Position]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.generated.Position](_l) {
     def offset: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.offset)((c_, f_) => c_.copy(offset = f_))
     def line: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.line)((c_, f_) => c_.copy(line = f_))
     def col: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.col)((c_, f_) => c_.copy(col = f_))

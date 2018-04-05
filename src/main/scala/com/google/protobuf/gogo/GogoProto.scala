@@ -3,7 +3,7 @@
 //
 // Protofile syntax: PROTO2
 
-package com.google.protobuf
+package com.google.protobuf.gogo
 
 object GogoProto extends _root_.scalapb.GeneratedFileObject {
   lazy val dependencies: Seq[_root_.scalapb.GeneratedFileObject] = Seq(
