@@ -52,34 +52,33 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
     */
   def makeBuckets(): List[List[Int]] = {
     val (buckets, elementIds) = getHashtables()
-      .foldLeft(List[List[Int]](), mutable.Map[String, Int]()) {
-        (result, hashtable) =>
+      .foldLeft(List[List[Int]](), mutable.Map[String, Int]()) { (result, hashtable) =>
 
-          var (buckets, elementIds) = result
-          val prevBucketsSize = buckets.size
-          var band: Option[ByteBuffer] = None
-          var bucket = List[Int]()
+        var (buckets, elementIds) = result
+        val prevBucketsSize = buckets.size
+        var band: Option[ByteBuffer] = None
+        var bucket = List[Int]()
 
-          getHashValues(hashtable).foreach { case FileHash(sha1, value) =>
-            val elId = elementIds.getOrElseUpdate(sha1, elementIds.size)
-            if (!band.contains(value)) {
-              if (band.isDefined) {
-                buckets = buckets :+ bucket
-                bucket = List[Int]()
-              }
-              band = Some(value)
+        getHashValues(hashtable).foreach { case FileHash(sha1, value) =>
+          val elId = elementIds.getOrElseUpdate(sha1, elementIds.size)
+          if (!band.contains(value)) {
+            if (band.isDefined) {
+              buckets = buckets :+ bucket
+              bucket = List[Int]()
             }
-            bucket = bucket :+ elId
+            band = Some(value)
           }
+          bucket = bucket :+ elId
+        }
 
-          if (bucket.nonEmpty) {
-            buckets = buckets :+ bucket
-          }
+        if (bucket.nonEmpty) {
+          buckets = buckets :+ bucket
+        }
 
-          val bucketsSize = buckets.size - prevBucketsSize
-          log.info(s"Fetched $hashtable, $bucketsSize buckets")
+        val bucketsSize = buckets.size - prevBucketsSize
+        log.info(s"Fetched $hashtable, $bucketsSize buckets")
 
-          (buckets, elementIds)
+        (buckets, elementIds)
       }
 
     log.info(s"Number of buckets: ${buckets.size}")
@@ -113,15 +112,15 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
     *  - make the list of unvisited buckets
     *  - make a map of connected components (groupId -> list of elements)
     *
-    *  loop:
+    * loop:
     *  - visit last unvisited bucket
     *  - create a new connected components group and put elements of the bucket there
     *  - iterate over elements of the bucket
     *  - if an element appears in another bucket add elements of that bucket to the cc group
-    *    and mark bucket as visited
+    * and mark bucket as visited
     *  - repeat
     *
-    * @param buckets List of buckets
+    * @param buckets          List of buckets
     * @param elementToBuckets Map of elements to bucket indices
     * @return
     */
