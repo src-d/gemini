@@ -16,6 +16,7 @@ matrix:
   - scala: 2.11.2
     script:
       - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
+      - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
       - ./sbt "test-only * -- -l tags.FEIntegration"
 
   - scala: 2.11.2
