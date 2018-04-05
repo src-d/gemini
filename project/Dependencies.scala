@@ -16,6 +16,14 @@ object Dependencies {
   lazy val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.5"
   lazy val log4j12 = "log4j" % "log4j" % "1.2.17"
   lazy val log4jBinding = "org.slf4j" % "slf4j-log4j12" % "1.7.25"
+  lazy val avro = "org.apache.avro" % "avro" % "1.7.7"
+  lazy val parquetAvro = "org.apache.parquet" % "parquet-avro" % "1.9.0"
+  // same version as in spark and exclude conflict dependencies with cassandra driver
+  // similar to:
+  // https://github.com/datastax/spark-cassandra-connector/blob/v2.0.6/project/SparkCassandraConnectorBuild.scala#L184
+  lazy val hadoopCommon = ("org.apache.hadoop" % "hadoop-common" % "2.6.5")
+    .exclude("com.sun.jersey", "jersey-server")
+    .exclude("commons-beanutils", "commons-beanutils-core")
   lazy val scalapb = "com.thesamet.scalapb" %% "scalapb-runtime" % "0.7.1"
   lazy val scalapbGrpc = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % "0.7.1"
   lazy val ioGrpc = "io.grpc" % "grpc-netty" % "1.10.0"

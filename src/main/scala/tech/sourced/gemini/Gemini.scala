@@ -144,6 +144,12 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       }
   }
 
+  /**
+    * Return connected components from DB hashtables
+    *
+    * @param conn Database connections
+    * @return
+    */
   def findConnectedComponents(conn: Session): Map[Int, Set[Int]] = {
     val cc = new DBConnectedComponents(log, conn, "hashtables", keyspace)
     val buckets = cc.makeBuckets()
