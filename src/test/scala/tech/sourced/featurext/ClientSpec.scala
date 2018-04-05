@@ -2,8 +2,8 @@ package tech.sourced.featurext;
 
 import io.grpc.ManagedChannelBuilder
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import tech.sourced.featurext.generated._
-import gopkg.in.bblfsh.sdk.v1.uast.Node
+import tech.sourced.featurext.generated.service._
+import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
 import java.nio.file.{Files, Paths}
 
 @tags.FEIntegration
