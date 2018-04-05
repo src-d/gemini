@@ -1,10 +1,13 @@
 package tech.sourced.gemini
 
 import com.datastax.driver.core.Cluster
+import org.bblfsh.client.BblfshClient
 
 case class QueryAppConfig(file: String = "",
                           host: String = Gemini.defaultCassandraHost,
                           port: Int = Gemini.defaultCassandraPort,
+                          bblfshHost: String = Gemini.defaultBblfshHost,
+                          bblfshPort: Int = Gemini.defaultBblfshPort,
                           verbose: Boolean = false)
 
 /**
@@ -21,6 +24,12 @@ object QueryApp extends App {
     opt[Int]('p', "port")
       .action((x, c) => c.copy(port = x))
       .text("port is Cassandra port")
+    opt[String]("bblfsh-host")
+      .action((x, c) => c.copy(bblfshHost = x))
+      .text("host is babelfish server host")
+    opt[Int]("bblfsh-port")
+      .action((x, c) => c.copy(bblfshPort = x))
+      .text("port is babelfish server port")
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
@@ -46,7 +55,8 @@ object QueryApp extends App {
       val gemini = Gemini(null, log)
       gemini.applySchema(cassandra)
 
-      val similar = gemini.query(file, cassandra)
+      val client = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
+      val similar = gemini.query(file, cassandra, client)
 
       cassandra.close()
       cluster.close()
