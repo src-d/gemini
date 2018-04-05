@@ -4,6 +4,7 @@ import com.datastax.driver.core.Session
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
+import org.bblfsh.client.BblfshClient
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Tag}
 
 class CassandraSparkSpec extends FlatSpec
@@ -19,6 +20,7 @@ class CassandraSparkSpec extends FlatSpec
   // + spark-cassandra-connector/blob/master/spark-cassandra-connector/src/it/resources/cassandra-3.2.yaml.template
 
   var session: Session = _
+  var bblfshClient: BblfshClient = _
 
   val defaultConf: SparkConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", Gemini.defaultCassandraHost)
@@ -38,6 +40,7 @@ class CassandraSparkSpec extends FlatSpec
     session = CassandraConnector(defaultConf).openSession()
     prepareKeyspace("src/test/resources/siva/unique-files", UNIQUES)
     prepareKeyspace("src/test/resources/siva/duplicate-files", DUPLICATES)
+    bblfshClient = BblfshClient.apply(Gemini.defaultBblfshHost, Gemini.defaultBblfshPort)
   }
 
   override def afterAll(): Unit = {
@@ -76,7 +79,7 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, UNIQUES)
 
     println("Query")
-    val sha1 = gemini.query("src/test/resources/LICENSE", session)
+    val sha1 = gemini.query("src/test/resources/LICENSE", session, bblfshClient)
     println("Done")
 
     sha1 should not be empty

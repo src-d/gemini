@@ -1,11 +1,14 @@
 package tech.sourced.gemini
 
 import java.io.{File, FileInputStream}
+import java.nio.file.Files
 
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.{Session, SimpleStatement}
+import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.bblfsh.client.BblfshClient
 import org.eclipse.jgit.lib.Constants.OBJ_BLOB
 import org.eclipse.jgit.lib.ObjectInserter
 import org.slf4j.{Logger => Slf4jLogger}
@@ -70,17 +73,37 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param conn   Database connection
     * @return
     */
-  def query(inPath: String, conn: Session): Iterable[RepoFile] = {
+  def query(inPath: String, conn: Session, bblfshClient: BblfshClient): Iterable[RepoFile] = {
     val path = new File(inPath)
     if (path.isDirectory) {
       findDuplicateProjects(path, conn, keyspace)
       //TODO: implement based on Apollo
       //findSimilarProjects(path)
     } else {
+      findSimilarForFile(path, bblfshClient)
       findDuplicateItemForFile(path, conn, keyspace)
-      //TODO: implement based on Apollo
-      //findSimilarFiles(path)
     }
+  }
+
+  // TODO: should return something later
+  def findSimilarForFile(file: File, client: BblfshClient): Unit = {
+    val uast = extractUAST(file, client)
+    if (uast.isDefined) {
+      log.info(s"uast received: ${uast.toString}")
+      // TODO: extract features, calculate minhash, find similar
+    }
+  }
+
+  def extractUAST(file: File, client: BblfshClient): Option[Node] = {
+    val byteArray = Files.readAllBytes(file.toPath)
+
+    val resp = client.parse(file.getName, new String(byteArray))
+    if (resp.errors.nonEmpty) {
+      val errors = resp.errors.mkString(",")
+      log.error(s"bblfsh errors: ${errors}")
+    }
+
+    resp.uast
   }
 
   /**
@@ -175,6 +198,8 @@ object Gemini {
   val defaultSchemaFile: String = "src/main/resources/schema.cql"
   val defautKeyspace: String = "hashes"
   val defaultTable: String = "blob_hash_files"
+  val defaultBblfshHost: String = "127.0.0.1"
+  val defaultBblfshPort: Int = 9432
 
   //TODO(bzz): switch to `tables("meta")`
   val meta = Meta("sha1", "repo", "commit", "path")

@@ -80,7 +80,8 @@ matrix:
       - ./sbt "test-only * -- -n tags.FEIntegration"
 
 before_script:
- - ./scripts/start_docker.sh
+ - ./scripts/start_docker_db.sh
+ - ./scripts/start_docker_bblfsh.sh
 
 after_failure:
  - docker logs db
