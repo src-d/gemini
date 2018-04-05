@@ -91,3 +91,4 @@ cache:
     - .spark-dist
     - /home/travis/.sbt
     - /home/travis/.ivy2
+    - /home/travis/bblfsh-drivers

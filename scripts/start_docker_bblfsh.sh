@@ -10,7 +10,8 @@ set -ev
 
 if [[ -z "${STYLE_CHECK}" ]]; then
   echo "Starting Docker image ${image}"
-  docker run --name bblfshd --privileged -p 9432:9432 -d "${image}"
+  mkdir -p $HOME/bblfsh-drivers
+  docker run -v $HOME/bblfsh-drivers:/var/lib/bblfshd --name bblfshd --privileged -p 9432:9432 -d "${image}"
 
   if [[ "$?" -ne 0 ]]; then
     echo "Unable to start Docker ${file_list}" >&2
