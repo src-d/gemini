@@ -35,43 +35,47 @@ class TestServer(unittest.TestCase):
         self.server.stop(0)
 
     def test_Identifiers(self):
-        response = self.stub.Identifiers(service_pb2.IdentifiersRequest(
-            docfreqThreshold=5, splitStem=False, uast=self.uast))
+        response = self.stub.Identifiers(
+            service_pb2.IdentifiersRequest(
+                docfreqThreshold=5, splitStem=False, uast=self.uast))
 
         self.assertEqual(len(response.features), 49)
         self.assertEqual(response.features[0].name, 'i.sys')
         self.assertEqual(response.features[0].weight, 1)
 
     def test_Literals(self):
-        response = self.stub.Literals(service_pb2.LiteralsRequest(
-            docfreqThreshold=5, uast=self.uast))
+        response = self.stub.Literals(
+            service_pb2.LiteralsRequest(docfreqThreshold=5, uast=self.uast))
 
         self.assertEqual(len(response.features), 16)
         self.assertEqual(response.features[0].name, 'l.3b286224b098296c')
         self.assertEqual(response.features[0].weight, 1)
 
     def test_Uast2seq(self):
-        response = self.stub.Uast2seq(service_pb2.Uast2seqRequest(
-            docfreqThreshold=5, uast=self.uast))
+        response = self.stub.Uast2seq(
+            service_pb2.Uast2seqRequest(docfreqThreshold=5, uast=self.uast))
 
         self.assertEqual(len(response.features), 207)
-        self.assertEqual(
-            response.features[0].name, 's.alias>NoopLine>PreviousNoops>Import>Str')
+        self.assertEqual(response.features[0].name,
+                         's.alias>NoopLine>PreviousNoops>Import>Str')
         self.assertEqual(response.features[0].weight, 1)
 
     def test_with_weight(self):
-        response = self.stub.Identifiers(service_pb2.IdentifiersRequest(
-            docfreqThreshold=5, splitStem=False, uast=self.uast, weight=2))
+        response = self.stub.Identifiers(
+            service_pb2.IdentifiersRequest(
+                docfreqThreshold=5, splitStem=False, uast=self.uast, weight=2))
 
         self.assertEqual(response.features[0].weight, 2)
 
-        response = self.stub.Literals(service_pb2.LiteralsRequest(
-            docfreqThreshold=5, uast=self.uast, weight=2))
+        response = self.stub.Literals(
+            service_pb2.LiteralsRequest(
+                docfreqThreshold=5, uast=self.uast, weight=2))
 
         self.assertEqual(response.features[0].weight, 2)
 
-        response = self.stub.Uast2seq(service_pb2.Uast2seqRequest(
-            docfreqThreshold=5, uast=self.uast, weight=2))
+        response = self.stub.Uast2seq(
+            service_pb2.Uast2seqRequest(
+                docfreqThreshold=5, uast=self.uast, weight=2))
 
         self.assertEqual(response.features[0].weight, 2)
 
