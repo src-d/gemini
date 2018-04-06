@@ -49,8 +49,9 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
         return self._create_response(extractor.extract(request.uast))
 
     def _create_response(self, f_iter):
-        features = [service_pb2.Feature(
-            name=f[0], weight=f[1]) for f in f_iter]
+        features = [
+            service_pb2.Feature(name=f[0], weight=f[1]) for f in f_iter
+        ]
 
         return service_pb2.FeaturesReply(features=features)
 

@@ -6,11 +6,14 @@ import os
 
 dirname = os.path.dirname(__file__)
 
+
 def write_csv_int(name, arr):
     numpy.savetxt("%s/csv/%s" % (dirname, name), arr, fmt="%u", delimiter=",")
 
+
 def write_csv_float(name, arr):
     numpy.savetxt("%s/csv/%s" % (dirname, name), arr, delimiter=",")
+
 
 def tiny_test():
     v1 = [1, 0, 0, 0, 3, 4, 5, 0, 0, 0, 0, 6, 7, 8, 0, 0, 0, 0, 0, 0, 9, 10, 4]
@@ -25,6 +28,7 @@ def tiny_test():
     write_csv_int("tiny-data.csv", [v1, v2])
     write_csv_int("tiny-hashes-0.csv", bgen.minhash(v1).hashvalues)
     write_csv_int("tiny-hashes-1.csv", bgen.minhash(v2).hashvalues)
+
 
 def big_test():
     numpy.random.seed(0)
@@ -43,7 +47,8 @@ def big_test():
     c = 0
     for line in data:
         write_csv_int("big-hashes-%d.csv" % c, bgen.minhash(line).hashvalues)
-        c = c+1
+        c = c + 1
+
 
 os.makedirs("%s/csv" % dirname, exist_ok=True)
 
