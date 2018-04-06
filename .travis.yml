@@ -69,7 +69,7 @@ matrix:
 
   - scala: 2.11.2
     env: STYLE_CHECK=true
-    script: ./sbt scalastyle
+    script: make lint-scala
 
   - scala: 2.11.2
     env: FE_PYTHON_TEST=true
