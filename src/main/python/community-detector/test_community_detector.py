@@ -1,10 +1,13 @@
 import unittest
+import os
 
 import numpy
 from numpy.testing import assert_array_equal
 from scipy.sparse import csr_matrix
 
 from community_detector import detect_communities
+
+dirname = os.path.dirname(__file__)
 
 
 def build_csr_matrix(input):
@@ -17,7 +20,7 @@ def build_csr_matrix(input):
 class TestCommunityDetector(unittest.TestCase):
     def test_detect_communities(self):
         # Read npz input
-        with numpy.load('fixtures/input.npz') as input:
+        with numpy.load("%s/fixtures/input.npz" % (dirname)) as input:
             buckets = build_csr_matrix(input)
             cc = input['id_to_cc']
 
@@ -25,7 +28,7 @@ class TestCommunityDetector(unittest.TestCase):
         result = detect_communities(cc.tolist(), buckets)
 
         # Read npz output
-        with numpy.load('fixtures/output.npz') as output:
+        with numpy.load("%s/fixtures/output.npz" % (dirname)) as output:
             fixture_data = output['data']
             fixture_indptr = output['indptr']
 

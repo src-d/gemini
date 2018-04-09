@@ -88,6 +88,16 @@ matrix:
     script:
       - make lint-python
 
+  - scala: 2.11.2
+    env: PYTHON_LIB_TESTS=true
+    before_install:
+      - sudo apt-get -qq update
+      - sudo apt-get -y install python3-pip
+      - sudo pip3 install --upgrade pip setuptools wheel
+      - pip3 install --user --only-binary=numpy,scipy -r src/main/python/community-detector/requirements.txt pytest
+    script:
+      - pytest -v src/main/python/community-detector
+
 before_script:
  - ./scripts/start_docker_db.sh
  - ./scripts/start_docker_bblfsh.sh
