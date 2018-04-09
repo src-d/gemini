@@ -148,7 +148,8 @@ class CommunityDetector:
             kwargs = {"weights": graph.edge_weights}
         if self.algorithm == "edge_betweenness":
             kwargs["directed"] = False
-        result = action(**kwargs, **self.config)
+        kwargs.update(self.config)
+        result = action(**kwargs)
 
         if hasattr(result, "as_clustering"):
             result = result.as_clustering()
