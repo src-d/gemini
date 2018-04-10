@@ -8,9 +8,9 @@ set -e
 
 echo "Installing grpcio"
 pip3 install grpcio==1.10.0 grpcio-tools==1.10.0
-echo "Generating Python code from .proto to src/main/python/pb"
+echo "Generating Python code from .proto to src/main/python/feature-extractor/pb"
 python3 -m grpc_tools.protoc -Isrc/main/proto \
---python_out=src/main/python/pb --grpc_python_out=src/main/python/pb \
+--python_out=src/main/python/feature-extractor/pb --grpc_python_out=src/main/python/feature-extractor/pb \
 src/main/proto/service.proto \
 src/main/proto/github.com/gogo/protobuf/gogoproto/gogo.proto \
 src/main/proto/gopkg.in/bblfsh/sdk.v1/uast/generated.proto
