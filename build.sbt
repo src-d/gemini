@@ -102,3 +102,6 @@ publishTo := {
     Some("releases" at nexus + "service/local/staging/deploy/maven2")
   }
 }
+
+// Show diffs for sbt scalafmt::test
+scalafmtShowDiff in (ThisBuild, scalafmt) := true
