@@ -48,11 +48,8 @@ def main():
     try:
         handler = args.handler
     except AttributeError:
+        handler = lambda _: parser.print_usage()
 
-        def print_usage(_):
-            parser.print_usage()
-
-        handler = print_usage
     handler(args)
 
     # Load the 'apollo cmd' output, save it as output.npz

@@ -10,19 +10,19 @@ from community_detector import detect_communities
 dirname = os.path.dirname(__file__)
 
 
-def build_csr_matrix(input):
+def build_csr_matrix(input_npz):
     return csr_matrix(
-        (input['id_to_buckets_data'], input['id_to_buckets_indices'],
-         input['id_to_buckets_indptr']),
-        shape=input['id_to_buckets_shape'])
+        (input_npz['id_to_buckets_data'], input_npz['id_to_buckets_indices'],
+         input_npz['id_to_buckets_indptr']),
+        shape=input_npz['id_to_buckets_shape'])
 
 
 class TestCommunityDetector(unittest.TestCase):
     def test_detect_communities(self):
         # Read npz input
-        with numpy.load("%s/fixtures/input.npz" % (dirname)) as input:
-            buckets = build_csr_matrix(input)
-            cc = input['id_to_cc']
+        with numpy.load("%s/fixtures/input.npz" % (dirname)) as input_npz:
+            buckets = build_csr_matrix(input_npz)
+            cc = input_npz['id_to_cc']
 
         # Call community_detector
         result = detect_communities(cc.tolist(), buckets)
