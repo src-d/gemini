@@ -406,7 +406,7 @@ object Gemini {
   val defaultCassandraPort: Int = 9042
   val defaultSchemaFile: String = "src/main/resources/schema.cql"
   val defautKeyspace: String = "hashes"
-  val defaultTable: String = "blob_hash_files"
+  val defaultTable: String = "meta"
   val defaultBblfshHost: String = "127.0.0.1"
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"

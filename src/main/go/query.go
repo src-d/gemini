@@ -24,7 +24,7 @@ type BlobHash struct {
 
 const (
 	defaultKeyspace = "hashes"
-	defaultTable    = "blob_hash_files"
+	defaultTable    = "meta"
 )
 
 func main() {
