@@ -130,13 +130,13 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, UNIQUES)
 
     println("Query")
-    val sha1 = gemini.query("src/test/resources/LICENSE", session, bblfshClient, feClient)
+    val (duplicates, _) = gemini.query("src/test/resources/LICENSE", session, bblfshClient, feClient)
     println("Done")
 
-    sha1 should not be empty
-    sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
-    sha1.head.repo should be("null/Users/alex/src-d/gemini")
-    sha1.head.commit should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
+    duplicates should not be empty
+    duplicates.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
+    duplicates.head.repo should be("null/Users/alex/src-d/gemini")
+    duplicates.head.commit should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
   }
 
   "Query for duplicates in single repository" should "return 2 files" in {
