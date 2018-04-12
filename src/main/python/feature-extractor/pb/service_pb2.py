@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='service.proto',
   package='tech.sourced.featurext.generated',
   syntax='proto3',
-  serialized_pb=_b('\n\rservice.proto\x12 tech.sourced.featurext.generated\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a+gopkg.in/bblfsh/sdk.v1/uast/generated.proto\"\x82\x01\n\x12IdentifiersRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\x12\x11\n\tsplitStem\x18\x04 \x01(\x08\"l\n\x0fLiteralsRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"l\n\x0fUast2seqRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"\'\n\x07\x46\x65\x61ture\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06weight\x18\x02 \x01(\x02\"L\n\rFeaturesReply\x12;\n\x08\x66\x65\x61tures\x18\x01 \x03(\x0b\x32).tech.sourced.featurext.generated.Feature2\xee\x02\n\x10\x46\x65\x61tureExtractor\x12v\n\x0bIdentifiers\x12\x34.tech.sourced.featurext.generated.IdentifiersRequest\x1a/.tech.sourced.featurext.generated.FeaturesReply\"\x00\x12p\n\x08Literals\x12\x31.tech.sourced.featurext.generated.LiteralsRequest\x1a/.tech.sourced.featurext.generated.FeaturesReply\"\x00\x12p\n\x08Uast2seq\x12\x31.tech.sourced.featurext.generated.Uast2seqRequest\x1a/.tech.sourced.featurext.generated.FeaturesReply\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\rservice.proto\x12 tech.sourced.featurext.generated\x1a-github.com/gogo/protobuf/gogoproto/gogo.proto\x1a+gopkg.in/bblfsh/sdk.v1/uast/generated.proto\"\x82\x01\n\x12IdentifiersRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\x12\x11\n\tsplitStem\x18\x04 \x01(\x08\"l\n\x0fLiteralsRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"l\n\x0fUast2seqRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"l\n\x0fGraphletRequest\x12/\n\x04uast\x18\x01 \x01(\x0b\x32!.gopkg.in.bblfsh.sdk.v1.uast.Node\x12\x18\n\x10\x64ocfreqThreshold\x18\x02 \x01(\x05\x12\x0e\n\x06weight\x18\x03 \x01(\x05\"\'\n\x07\x46\x65\x61ture\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06weight\x18\x02 \x01(\x02\"L\n\rFeaturesReply\x12;\n\x08\x66\x65\x61tures\x18\x01 \x03(\x0b\x32).tech.sourced.featurext.generated.Feature2\xe0\x03\n\x10\x46\x65\x61tureExtractor\x12v\n\x0bIdentifiers\x12\x34.tech.sourced.featurext.generated.IdentifiersRequest\x1a/.tech.sourced.featurext.generated.FeaturesReply\"\x00\x12p\n\x08Literals\x12\x31.tech.sourced.featurext.generated.LiteralsRequest\x1a/.tech.sourced.featurext.generated.FeaturesReply\"\x00\x12p\n\x08Uast2seq\x12\x31.tech.sourced.featurext.generated.Uast2seqRequest\x1a/.tech.sourced.featurext.generated.FeaturesReply\"\x00\x12p\n\x08Graphlet\x12\x31.tech.sourced.featurext.generated.GraphletRequest\x1a/.tech.sourced.featurext.generated.FeaturesReply\"\x00\x62\x06proto3')
   ,
   dependencies=[github_dot_com_dot_gogo_dot_protobuf_dot_gogoproto_dot_gogo__pb2.DESCRIPTOR,gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2.DESCRIPTOR,])
 
@@ -171,6 +171,51 @@ _UAST2SEQREQUEST = _descriptor.Descriptor(
 )
 
 
+_GRAPHLETREQUEST = _descriptor.Descriptor(
+  name='GraphletRequest',
+  full_name='tech.sourced.featurext.generated.GraphletRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='uast', full_name='tech.sourced.featurext.generated.GraphletRequest.uast', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='docfreqThreshold', full_name='tech.sourced.featurext.generated.GraphletRequest.docfreqThreshold', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='weight', full_name='tech.sourced.featurext.generated.GraphletRequest.weight', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=496,
+  serialized_end=604,
+)
+
+
 _FEATURE = _descriptor.Descriptor(
   name='Feature',
   full_name='tech.sourced.featurext.generated.Feature',
@@ -204,8 +249,8 @@ _FEATURE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=496,
-  serialized_end=535,
+  serialized_start=606,
+  serialized_end=645,
 )
 
 
@@ -235,17 +280,19 @@ _FEATURESREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=537,
-  serialized_end=613,
+  serialized_start=647,
+  serialized_end=723,
 )
 
 _IDENTIFIERSREQUEST.fields_by_name['uast'].message_type = gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2._NODE
 _LITERALSREQUEST.fields_by_name['uast'].message_type = gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2._NODE
 _UAST2SEQREQUEST.fields_by_name['uast'].message_type = gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2._NODE
+_GRAPHLETREQUEST.fields_by_name['uast'].message_type = gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2._NODE
 _FEATURESREPLY.fields_by_name['features'].message_type = _FEATURE
 DESCRIPTOR.message_types_by_name['IdentifiersRequest'] = _IDENTIFIERSREQUEST
 DESCRIPTOR.message_types_by_name['LiteralsRequest'] = _LITERALSREQUEST
 DESCRIPTOR.message_types_by_name['Uast2seqRequest'] = _UAST2SEQREQUEST
+DESCRIPTOR.message_types_by_name['GraphletRequest'] = _GRAPHLETREQUEST
 DESCRIPTOR.message_types_by_name['Feature'] = _FEATURE
 DESCRIPTOR.message_types_by_name['FeaturesReply'] = _FEATURESREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -271,6 +318,13 @@ Uast2seqRequest = _reflection.GeneratedProtocolMessageType('Uast2seqRequest', (_
   ))
 _sym_db.RegisterMessage(Uast2seqRequest)
 
+GraphletRequest = _reflection.GeneratedProtocolMessageType('GraphletRequest', (_message.Message,), dict(
+  DESCRIPTOR = _GRAPHLETREQUEST,
+  __module__ = 'service_pb2'
+  # @@protoc_insertion_point(class_scope:tech.sourced.featurext.generated.GraphletRequest)
+  ))
+_sym_db.RegisterMessage(GraphletRequest)
+
 Feature = _reflection.GeneratedProtocolMessageType('Feature', (_message.Message,), dict(
   DESCRIPTOR = _FEATURE,
   __module__ = 'service_pb2'
@@ -293,8 +347,8 @@ _FEATUREEXTRACTOR = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=616,
-  serialized_end=982,
+  serialized_start=726,
+  serialized_end=1206,
   methods=[
   _descriptor.MethodDescriptor(
     name='Identifiers',
@@ -320,6 +374,15 @@ _FEATUREEXTRACTOR = _descriptor.ServiceDescriptor(
     index=2,
     containing_service=None,
     input_type=_UAST2SEQREQUEST,
+    output_type=_FEATURESREPLY,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Graphlet',
+    full_name='tech.sourced.featurext.generated.FeatureExtractor.Graphlet',
+    index=3,
+    containing_service=None,
+    input_type=_GRAPHLETREQUEST,
     output_type=_FEATURESREPLY,
     options=None,
   ),
