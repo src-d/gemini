@@ -14,7 +14,7 @@ import org.eclipse.jgit.lib.ObjectInserter
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
-import tech.sourced.featurext.generated.service.{Feature, IdentifiersRequest, LiteralsRequest, Uast2seqRequest}
+import tech.sourced.featurext.generated.service._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -119,14 +119,14 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def extractFeatures(client: FeatureExtractor, uast: Node): Iterable[Feature] = {
     val idRequest = IdentifiersRequest(uast=Some(uast), docfreqThreshold=5)
     val litRequest = LiteralsRequest(uast=Some(uast), docfreqThreshold=5)
-    val uast2seqRequest = Uast2seqRequest(uast=Some(uast), docfreqThreshold=5)
+    val graphletRequest = GraphletRequest(uast=Some(uast), docfreqThreshold=5)
     client.identifiers(idRequest)
 
     val features = for {
       idResponse <- client.identifiers(idRequest)
       litResponse <- client.literals(litRequest)
-      uast2seqResponse <- client.uast2Seq(uast2seqRequest)
-    } yield idResponse.features ++ litResponse.features ++ uast2seqResponse.features
+      graphletResponse <- client.graphlet(graphletRequest)
+    } yield idResponse.features ++ litResponse.features ++ graphletResponse.features
 
     Await.result(features, Duration(30, SECONDS))
   }

@@ -57,4 +57,14 @@ class ClientSpec extends FlatSpec
     reply.features(0).name should be("s.alias>NoopLine>PreviousNoops>Import>Str")
     reply.features(0).weight should be(1)
   }
+
+  "graphlet call" should "return correct response" in {
+    val request = GraphletRequest(docfreqThreshold=5, uast=Some(uast))
+    val reply = blockingStub.graphlet(request)
+
+    // check correct shape of response
+    reply.features.size should be(106)
+    reply.features(1).name should be("g.Module_If_Compare_If.body")
+    reply.features(0).weight should be(1)
+  }
 }
