@@ -172,15 +172,15 @@ class CassandraSparkSpec extends FlatSpec
       .start()
 
     val gemini = Gemini(sparkSession, logger, SIMILARITIES)
-
-    val file = new File("src/test/resources/models.py")
     val channel = ManagedChannelBuilder.forAddress("localhost", server.getPort).usePlaintext(true).build()
     val bblfshStub = BblfshClient("localhost", server.getPort)
     val feStub = FeatureExtractorGrpc.stub(channel)
 
-    val similar =
+    // full duplicate
+    val dupFile = new File("src/test/resources/models.py")
+    var similar =
       gemini.findSimilarForFile(
-        file,
+        dupFile,
         session,
         bblfshStub,
         feStub,
@@ -191,7 +191,26 @@ class CassandraSparkSpec extends FlatSpec
 
     similar shouldBe defined
 
-    val similarV = similar.get
+    var similarV = similar.get
+    similarV.size shouldEqual 1
+    similarV(0) shouldEqual "27d04fa39c89110c32bc8728a02ce910cdac7b5f"
+
+    // modified file
+    val similarFile = new File("src/test/resources/models.py")
+    similar =
+      gemini.findSimilarForFile(
+        similarFile,
+        session,
+        bblfshStub,
+        feStub,
+        "src/test/resources/docfreq.json",
+        "src/test/resources/params.json",
+        9,
+        13)
+
+    similar shouldBe defined
+
+    similarV = similar.get
     similarV.size shouldEqual 1
     similarV(0) shouldEqual "27d04fa39c89110c32bc8728a02ce910cdac7b5f"
 
