@@ -4,6 +4,54 @@ import logging
 
 from igraph import Graph
 import numpy
+from scipy.sparse import csr_matrix
+
+
+def build_matrix(id_to_buckets):
+    """Builds a CSR matrix from a list of lists of buckets
+
+    Same code as in Apollo ConnectedComponentsModel.
+    https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L28
+
+    Args:
+        id_to_buckets: list of lists of buckets. The index is the element id
+
+    Returns:
+        A scipy.sparse.csr_matrix with the same contents
+    """
+
+    data = numpy.ones(sum(map(len, id_to_buckets)), dtype=numpy.uint8)
+    indices = numpy.zeros(len(data), dtype=numpy.uint32)
+    indptr = numpy.zeros(len(id_to_buckets) + 1, dtype=numpy.uint32)
+    pos = 0
+    for i, element in enumerate(id_to_buckets):
+        indices[pos:(pos + len(element))] = element
+        pos += len(element)
+        indptr[i + 1] = pos
+    return csr_matrix((data, indices, indptr))
+
+
+def build_id_to_cc(connected_components, length):
+    """Builds a ndarray that associates element id to a connected component
+
+    Same code as in Apollo ConnectedComponentsModel.
+    https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L28
+
+    Args:
+        connected_components: list of tuples (connected-component, element ids)
+        length: number of elements
+
+    Returns:
+        A 1 dimension ndarray. The index will be the element id, and the
+            value is the connected component
+    """
+
+    id_to_cc = numpy.zeros(length, dtype=numpy.uint32)
+    for cc, ids in connected_components:
+        for id_ in ids:
+            id_to_cc[id_] = cc
+
+    return id_to_cc
 
 
 def detect_communities(cc,
@@ -17,8 +65,12 @@ def detect_communities(cc,
     https://github.com/src-d/apollo/blob/6b370b5f34ba9e31cf3310e70a2eff35dd978faa/apollo/graph.py#L191
 
     Args:
-        cc: list with the connected components
-        buckets_matrix: scipy.sparse.csr_matrix with the buckets
+        cc: list with the connected components. Index is the element id, the
+            value is the connected component
+        buckets_matrix: scipy.sparse.csr_matrix with the buckets. One row for
+            each element, with a column for each bucket. If the element is in a
+            bucket, the corresponding row,column (element id, bucket id) is 1,
+            0 otherwise
         edges: The method to generate the graph's edges:
             - linear: linear and fast, but may not fit some of the CD
                 algorithms, or all to all within a bucket

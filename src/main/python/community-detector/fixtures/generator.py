@@ -24,18 +24,22 @@ def main():
         id_to_buckets_shape=ccsmodel.id_to_buckets.shape)
 
     if DEBUG_CSV:
-        numpy.savetxt("./csv/id_to_cc.csv", ccsmodel.id_to_cc, delimiter=",")
+        numpy.savetxt(
+            "./csv/id_to_cc.csv", ccsmodel.id_to_cc, fmt='%u', delimiter=",")
         numpy.savetxt(
             "./csv/id_to_buckets_data.csv",
             ccsmodel.id_to_buckets.data,
+            fmt='%u',
             delimiter=",")
         numpy.savetxt(
             "./csv/id_to_buckets_indices.csv",
             ccsmodel.id_to_buckets.indices,
+            fmt='%u',
             delimiter=",")
         numpy.savetxt(
             "./csv/id_to_buckets_indptr.csv",
             ccsmodel.id_to_buckets.indptr,
+            fmt='%u',
             delimiter=",")
 
     # Call 'apollo cmd', save output to communities.asdf
