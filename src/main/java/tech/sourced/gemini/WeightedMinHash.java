@@ -77,7 +77,7 @@ public class WeightedMinHash {
         }
     }
 
-    protected WeightedMinHash(int dim, int sampleSize, double[][] rs, double[][] lnCs, double[][] betas) {
+    WeightedMinHash(int dim, int sampleSize, double[][] rs, double[][] lnCs, double[][] betas) {
         this.dim = dim;
         this.sampleSize = sampleSize;
         this.rs = rs;

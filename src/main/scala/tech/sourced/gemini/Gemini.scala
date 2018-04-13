@@ -17,10 +17,12 @@ import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtr
 import tech.sourced.featurext.generated.service._
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.io.Source
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.parsing.json._
 
 class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
 
@@ -81,39 +83,109 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def query(inPath: String,
             conn: Session,
             bblfshClient: BblfshClient,
-            feClient: FeatureExtractor): Iterable[RepoFile] = {
+            feClient: FeatureExtractor,
+            docFreqPath: String = "",
+            paramsFilePath: String = "", // TODO remove when we implement hash
+            htNum: Int = 0,
+            bandSize: Int = 0): Iterable[RepoFile] = {
     val path = new File(inPath)
     if (path.isDirectory) {
       findDuplicateProjects(path, conn, keyspace)
       //TODO: implement based on Apollo
       //findSimilarProjects(path)
     } else {
-      findSimilarForFile(path, bblfshClient, feClient)
+      if (docFreqPath != "" && paramsFilePath != "") {
+        // TODO implement correct CLI output
+        findSimilarForFile(path, conn, bblfshClient, feClient, docFreqPath, paramsFilePath, htNum, bandSize) match {
+          case Some(similarSha1s: Array[String]) if similarSha1s.nonEmpty =>
+            log.info(s"Similar sha1s: ${similarSha1s.mkString(",")}")
+          case _ => log.info("No similar sha1s")
+        }
+      } else {
+        log.warn("Document frequency or parameters for weighted min hash wasn't provided. Skip similarity query")
+      }
+
       findDuplicateItemForFile(path, conn, keyspace)
     }
   }
 
-  // TODO: should return something later
-  def findSimilarForFile(file: File, bblfshClient: BblfshClient, feClient: FeatureExtractor): Unit = {
-    val uast = extractUAST(file, bblfshClient)
-    if (uast.isDefined) {
-      log.info(s"uast received: ${uast.toString}")
-      val features = extractFeatures(feClient, uast.get)
-      log.info(s"features: ${features.toString}")
-      // TODO: calculate minhash, find similar
+  def findSimilarForFile(
+                          file: File,
+                          conn: Session,
+                          bblfshClient: BblfshClient,
+                          feClient: FeatureExtractor,
+                          docFreqFile: String,
+                          paramsFile: String,
+                          htnum: Int,
+                          bandSize: Int): Option[Array[String]] = {
+
+    val features = extractUAST(file, bblfshClient).map { uast =>
+      log.debug(s"uast received: ${uast.toString}")
+
+      val result = extractFeatures(feClient, uast)
+      log.debug(s"features: ${result.toString}")
+
+      result
+    }
+
+    features match {
+      case Some(featuresList) if featuresList.isEmpty => {
+        log.warn("file doesn't contain features")
+        None
+      }
+      case Some(featuresList) => {
+        val wmh = hashFile(featuresList, new File(docFreqFile), new File(paramsFile))
+
+        // split hash to bands
+        // a little bit verbose because java doesn't have uint32 type
+        // in apollo it's one-liner:
+        // https://github.com/src-d/apollo/blob/57e52394783d73e38cf1f862afc0166724991fd5/apollo/query.py#L35
+        val bands = (0 until htnum).map { i =>
+          val from = i * bandSize
+          val to = (i + 1) * bandSize
+          val band = (from until to).foldLeft(Array.empty[Byte]) { (arr, j) =>
+            arr ++ MathUtil.toUInt32ByteArray(wmh(j)(0)) ++ MathUtil.toUInt32ByteArray(wmh(j)(1))
+          }
+          band
+        }
+
+        log.info("Looking for similar items")
+        val similar = bands.zipWithIndex.foldLeft(Set.empty[String]) { case (similar, (band, i)) =>
+          val table = "hashtables"
+          val cql = s"SELECT sha1 FROM $keyspace.$table WHERE hashtable=$i AND value=0x${MathUtil.bytes2hex(band)}"
+          log.debug(cql)
+
+          val sha1s = conn.execute(new SimpleStatement(cql))
+            .asScala
+            .map(row => row.getString("sha1"))
+
+          similar ++ sha1s
+        }
+        log.info(s"Fetched ${similar.size} items")
+
+        Some(similar.toArray)
+      }
+      case _ => None
     }
   }
 
   def extractUAST(file: File, client: BblfshClient): Option[Node] = {
     val byteArray = Files.readAllBytes(file.toPath)
 
-    val resp = client.parse(file.getName, new String(byteArray))
-    if (resp.errors.nonEmpty) {
-      val errors = resp.errors.mkString(",")
-      log.error(s"bblfsh errors: ${errors}")
-    }
+    try {
+      val resp = client.parse(file.getName, new String(byteArray))
+      if (resp.errors.nonEmpty) {
+        val errors = resp.errors.mkString(",")
+        log.error(s"bblfsh errors: ${errors}")
+      }
 
-    resp.uast
+      resp.uast
+    } catch {
+      case e: Exception => {
+        log.error(s"bblfsh error: ${e.toString}")
+        None
+      }
+    }
   }
 
   def extractFeatures(client: FeatureExtractor, uast: Node): Iterable[Feature] = {
@@ -122,13 +194,90 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val graphletRequest = GraphletRequest(uast=Some(uast), docfreqThreshold=5)
     client.identifiers(idRequest)
 
-    val features = for {
-      idResponse <- client.identifiers(idRequest)
-      litResponse <- client.literals(litRequest)
-      graphletResponse <- client.graphlet(graphletRequest)
-    } yield idResponse.features ++ litResponse.features ++ graphletResponse.features
+    try {
+      val features = for {
+        idResponse <- client.identifiers(idRequest)
+        litResponse <- client.literals(litRequest)
+        graphletResponse <- client.graphlet(graphletRequest)
+      } yield idResponse.features ++ litResponse.features ++ graphletResponse.features
 
-    Await.result(features, Duration(30, SECONDS))
+      Await.result(features, Duration(30, SECONDS))
+    } catch {
+      case e: Exception => {
+        log.error(s"feature extractor error: ${e.toString}")
+        Iterable[Feature]()
+      }
+    }
+  }
+
+  def parseDocFreq(file: File): (Int, Map[String, Double], List[String]) = {
+    val docFreqByteArray = Files.readAllBytes(file.toPath)
+    val docFreqJson = JSON.parseFull(new String(docFreqByteArray))
+
+    docFreqJson match {
+      case Some(m: Map[_, _]) => {
+        val docFreqMap = m.asInstanceOf[Map[String, Any]]
+        val docs = docFreqMap.get("docs") match {
+          case Some(v) => v.asInstanceOf[Double].toInt
+          case None => throw new Exception("can not parse docs in docFreq")
+        }
+        val df = docFreqMap.get("df") match {
+          case Some(v) => v.asInstanceOf[Map[String, Double]]
+          case None => throw new Exception("can not parse df in docFreq")
+        }
+        val tokens = docFreqMap.get("tokens") match {
+          case Some(v) => v.asInstanceOf[List[String]]
+          case None => throw new Exception("can not parse tokens in docFreq")
+        }
+
+        (docs, df, tokens)
+      }
+      case Some(_) => throw new Exception("incorrect json")
+      case None => throw new Exception("can't parse json")
+    }
+  }
+
+  def parseParams(file: File): Map[String, List[List[Double]]] = {
+    val paramsByteArray = Files.readAllBytes(file.toPath)
+    val paramsJson = JSON.parseFull(new String(paramsByteArray))
+    paramsJson match {
+      case Some(m: Map[_, _]) => m.asInstanceOf[Map[String, List[List[Double]]]]
+      case Some(_) => throw new Exception("incorrect json")
+      case None => throw new Exception("can't parse json")
+    }
+  }
+
+  def hashFile(features: Iterable[Feature], docFreq: File, paramsFile: File): Array[Array[Long]] = {
+    val (docs, df, tokens) = parseDocFreq(docFreq)
+
+    val bag = mutable.ArrayBuffer.fill(tokens.size)(0.toDouble)
+    features.foreach { feature =>
+      val idx = tokens.indexOf(feature.name)
+      log.debug(s"name: ${feature.name}, weight: ${feature.weight}")
+      idx match {
+        case idx if idx >= 0 => {
+          val tf = feature.weight.toDouble
+
+          bag(idx) = MathUtil.logTFlogIDF(tf, df(feature.name), docs)
+        }
+        case _ =>
+      }
+    }
+
+    log.info(s"Bag size: ${bag.size}")
+    log.info("Hashing")
+    log.debug(s"Bag: ${bag.mkString(",")}")
+
+    // TODO don't use params file when we implement our own hash
+    val params = parseParams(paramsFile)
+    val wmh = new WeightedMinHash(
+      bag.size,
+      params("rs").length,
+      params("rs") map (_.toArray) toArray,
+      params("ln_cs") map (_.toArray) toArray,
+      params("betas") map (_.toArray) toArray)
+
+    wmh.hash(bag.toArray)
   }
 
   /**
