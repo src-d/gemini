@@ -29,6 +29,11 @@ class FeatureExtractorStub(object):
         request_serializer=service__pb2.Uast2seqRequest.SerializeToString,
         response_deserializer=service__pb2.FeaturesReply.FromString,
         )
+    self.Graphlet = channel.unary_unary(
+        '/tech.sourced.featurext.generated.FeatureExtractor/Graphlet',
+        request_serializer=service__pb2.GraphletRequest.SerializeToString,
+        response_deserializer=service__pb2.FeaturesReply.FromString,
+        )
 
 
 class FeatureExtractorServicer(object):
@@ -56,6 +61,13 @@ class FeatureExtractorServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def Graphlet(self, request, context):
+    """Extract graphlet weighted set
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_FeatureExtractorServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -72,6 +84,11 @@ def add_FeatureExtractorServicer_to_server(servicer, server):
       'Uast2seq': grpc.unary_unary_rpc_method_handler(
           servicer.Uast2seq,
           request_deserializer=service__pb2.Uast2seqRequest.FromString,
+          response_serializer=service__pb2.FeaturesReply.SerializeToString,
+      ),
+      'Graphlet': grpc.unary_unary_rpc_method_handler(
+          servicer.Graphlet,
+          request_deserializer=service__pb2.GraphletRequest.FromString,
           response_serializer=service__pb2.FeaturesReply.SerializeToString,
       ),
   }

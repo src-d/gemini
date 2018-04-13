@@ -13,6 +13,8 @@ service FeatureExtractor {
   rpc Literals (LiteralsRequest) returns (FeaturesReply) {}
   // Extract uast2seq weighted set
   rpc Uast2seq (Uast2seqRequest) returns (FeaturesReply) {}
+  // Extract graphlet weighted set
+  rpc Graphlet (GraphletRequest) returns (FeaturesReply) {}
 }
 
 // The identifiers request message containing extractor configuration and uast.
@@ -32,6 +34,13 @@ message LiteralsRequest {
 
 // The uast2seq request message containing extractor configuration and uast.
 message Uast2seqRequest {
+  gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
+  int32 docfreqThreshold = 2;
+  int32 weight = 3;
+}
+
+// The graphlet request message containing extractor configuration and uast.
+message GraphletRequest {
   gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
   int32 docfreqThreshold = 2;
   int32 weight = 3;

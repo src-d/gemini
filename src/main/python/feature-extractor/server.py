@@ -9,7 +9,7 @@ import os
 import time
 
 import grpc
-from sourced.ml.extractors import IdentifiersBagExtractor, LiteralsBagExtractor, UastSeqBagExtractor
+from sourced.ml.extractors import IdentifiersBagExtractor, LiteralsBagExtractor, UastSeqBagExtractor, GraphletBagExtractor
 
 import pb.service_pb2 as service_pb2
 import pb.service_pb2_grpc as service_pb2_grpc
@@ -43,6 +43,15 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
         """Extract uast2seq weighted set"""
 
         extractor = UastSeqBagExtractor(
+            docfreq_threshold=request.docfreqThreshold,
+            weight=request.weight or 1)
+
+        return self._create_response(extractor.extract(request.uast))
+
+    def Graphlet(self, request, context):
+        """Extract graphlet weighted set"""
+
+        extractor = GraphletBagExtractor(
             docfreq_threshold=request.docfreqThreshold,
             weight=request.weight or 1)
 

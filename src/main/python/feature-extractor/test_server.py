@@ -60,6 +60,15 @@ class TestServer(unittest.TestCase):
                          's.alias>NoopLine>PreviousNoops>Import>Str')
         self.assertEqual(response.features[0].weight, 1)
 
+    def test_Graphlet(self):
+        response = self.stub.Graphlet(
+            service_pb2.GraphletRequest(docfreqThreshold=5, uast=self.uast))
+
+        self.assertEqual(len(response.features), 106)
+        self.assertEqual(response.features[1].name,
+                         'g.Module_If_Compare_If.body')
+        self.assertEqual(response.features[0].weight, 1)
+
     def test_with_weight(self):
         response = self.stub.Identifiers(
             service_pb2.IdentifiersRequest(
@@ -75,6 +84,12 @@ class TestServer(unittest.TestCase):
 
         response = self.stub.Uast2seq(
             service_pb2.Uast2seqRequest(
+                docfreqThreshold=5, uast=self.uast, weight=2))
+
+        self.assertEqual(response.features[0].weight, 2)
+
+        response = self.stub.Graphlet(
+            service_pb2.GraphletRequest(
                 docfreqThreshold=5, uast=self.uast, weight=2))
 
         self.assertEqual(response.features[0].weight, 2)
