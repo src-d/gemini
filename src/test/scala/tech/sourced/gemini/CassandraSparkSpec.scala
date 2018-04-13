@@ -295,6 +295,10 @@ class CassandraSparkSpec extends FlatSpec
       override def uast2Seq(request: Uast2seqRequest): Future[FeaturesReply] = {
         Future.successful(FeaturesReply())
       }
+
+      override def graphlet(request: GraphletRequest): Future[FeaturesReply] = {
+        Future.successful(FeaturesReply())
+      }
     }
 
     new FEServerMock
