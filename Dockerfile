@@ -9,10 +9,11 @@ ENV DUMP_INIT_DEB_NAME=dumb-init_${DUMP_INIT_VERSION}_amd64.deb
 ENV SPARK_DIR /opt/${SPARK_NAME}
 ENV SPARK_HOME /usr/local/spark
 
+
 RUN mkdir -p /usr/share/man/man1 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    openjdk-8-jre-headless  ca-certificates-java curl && \
+    openjdk-8-jre-headless openjdk-8-jdk ca-certificates-java curl && \
     rm -rf /var/lib/apt/* && \
     curl http://d3kbcqa49mib13.cloudfront.net/${SPARK_NAME}.tgz | \
     tar xzf - -C /opt && \
