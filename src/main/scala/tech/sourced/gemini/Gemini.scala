@@ -89,25 +89,36 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
             docFreqPath: String = "",
             paramsFilePath: String = "", // TODO remove when we implement hash
             htNum: Int = 0,
-            bandSize: Int = 0): Iterable[RepoFile] = {
+            bandSize: Int = 0): (Iterable[RepoFile], Iterable[RepoFile]) = {
     val path = new File(inPath)
     if (path.isDirectory) {
-      findDuplicateProjects(path, conn, keyspace)
       //TODO: implement based on Apollo
-      //findSimilarProjects(path)
+      (findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {
+      val duplicates = findDuplicateItemForFile(path, conn, keyspace)
+      var similarShas = Array[String]()
+
       if (docFreqPath != "" && paramsFilePath != "") {
-        // TODO implement correct CLI output
-        findSimilarForFile(path, conn, bblfshClient, feClient, docFreqPath, paramsFilePath, htNum, bandSize) match {
-          case Some(similarSha1s: Array[String]) if similarSha1s.nonEmpty =>
-            log.info(s"Similar sha1s: ${similarSha1s.mkString(",")}")
-          case _ => log.info("No similar sha1s")
-        }
+        similarShas =
+          findSimilarForFile(path, conn, bblfshClient, feClient, docFreqPath, paramsFilePath, htNum, bandSize)
+          .getOrElse(Array[String]())
       } else {
         log.warn("Document frequency or parameters for weighted min hash wasn't provided. Skip similarity query")
       }
 
-      findDuplicateItemForFile(path, conn, keyspace)
+      // value for sha1 in hashtables is path@sha1, but we need only sha1
+      similarShas = similarShas.map(_.split("@")(1))
+      // remove duplicates from similar
+      if (similarShas.isEmpty) {
+        log.info("No similar sha1s")
+      } else {
+        val duplicatedShas = duplicates.map(_.sha).toArray
+        similarShas = similarShas.filterNot(sha => duplicatedShas.contains(sha))
+      }
+
+      val similar = similarShas.flatMap(sha1 => findDuplicateItemForBlobHash(sha1, conn, keyspace))
+
+      (duplicates, similar)
     }
   }
 
@@ -395,7 +406,7 @@ object Gemini {
   val defaultCassandraPort: Int = 9042
   val defaultSchemaFile: String = "src/main/resources/schema.cql"
   val defautKeyspace: String = "hashes"
-  val defaultTable: String = "blob_hash_files"
+  val defaultTable: String = "meta"
   val defaultBblfshHost: String = "127.0.0.1"
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"
@@ -463,6 +474,10 @@ object Gemini {
   def findDuplicateProjects(in: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
     //TODO(bzz): project is duplicate if it has all it's files in some other projects
     throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
+  }
+
+  def findSimilarProjects(in: File): Iterable[RepoFile] = {
+    throw new UnsupportedOperationException("Finding similar repositories is no implemented yet.")
   }
 
   def findDuplicateItemForFile(file: File, conn: Session, keyspace: String): Iterable[RepoFile] = {

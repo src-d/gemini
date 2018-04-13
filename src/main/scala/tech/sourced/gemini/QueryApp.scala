@@ -90,7 +90,7 @@ object QueryApp extends App {
       val bblfshClient = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
       val channel = ManagedChannelBuilder.forAddress(config.feHost, config.fePort).usePlaintext(true).build()
       val feClient = FeatureExtractorGrpc.stub(channel)
-      val similar =
+      val (duplicates, similar) =
         gemini.query(
           file,
           cassandra,
@@ -105,11 +105,16 @@ object QueryApp extends App {
       cassandra.close()
       cluster.close()
 
-      if (similar.isEmpty) {
+      if (duplicates.isEmpty) {
         println(s"No duplicates of $file found.")
-        System.exit(1)
       } else {
-        println(s"Duplicates of $file:\n\t" + (similar mkString "\n\t"))
+        println(s"Duplicates of $file:\n\t" + (duplicates mkString "\n\t"))
+      }
+
+      if (similar.isEmpty) {
+        println(s"No similar files of $file found.")
+      } else {
+        println(s"Similar files of $file:\n\t" + (similar mkString "\n\t"))
       }
 
     case None =>

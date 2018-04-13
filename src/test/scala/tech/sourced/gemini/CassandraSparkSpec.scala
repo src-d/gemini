@@ -130,13 +130,13 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, UNIQUES)
 
     println("Query")
-    val sha1 = gemini.query("src/test/resources/LICENSE", session, bblfshClient, feClient)
+    val (duplicates, _) = gemini.query("src/test/resources/LICENSE", session, bblfshClient, feClient)
     println("Done")
 
-    sha1 should not be empty
-    sha1.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
-    sha1.head.repo should be("null/Users/alex/src-d/gemini")
-    sha1.head.commit should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
+    duplicates should not be empty
+    duplicates.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
+    duplicates.head.repo should be("null/Users/alex/src-d/gemini")
+    duplicates.head.commit should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
   }
 
   "Query for duplicates in single repository" should "return 2 files" in {
@@ -172,15 +172,15 @@ class CassandraSparkSpec extends FlatSpec
       .start()
 
     val gemini = Gemini(sparkSession, logger, SIMILARITIES)
-
-    val file = new File("src/test/resources/models.py")
     val channel = ManagedChannelBuilder.forAddress("localhost", server.getPort).usePlaintext(true).build()
     val bblfshStub = BblfshClient("localhost", server.getPort)
     val feStub = FeatureExtractorGrpc.stub(channel)
 
-    val similar =
+    // full duplicate
+    val dupFile = new File("src/test/resources/models.py")
+    var similar =
       gemini.findSimilarForFile(
-        file,
+        dupFile,
         session,
         bblfshStub,
         feStub,
@@ -191,7 +191,26 @@ class CassandraSparkSpec extends FlatSpec
 
     similar shouldBe defined
 
-    val similarV = similar.get
+    var similarV = similar.get
+    similarV.size shouldEqual 1
+    similarV(0) shouldEqual "27d04fa39c89110c32bc8728a02ce910cdac7b5f"
+
+    // modified file
+    val similarFile = new File("src/test/resources/models.py")
+    similar =
+      gemini.findSimilarForFile(
+        similarFile,
+        session,
+        bblfshStub,
+        feStub,
+        "src/test/resources/docfreq.json",
+        "src/test/resources/params.json",
+        9,
+        13)
+
+    similar shouldBe defined
+
+    similarV = similar.get
     similarV.size shouldEqual 1
     similarV(0) shouldEqual "27d04fa39c89110c32bc8728a02ce910cdac7b5f"
 
