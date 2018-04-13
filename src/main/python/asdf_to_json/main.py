@@ -66,18 +66,8 @@ models = {
     }
 }
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("asdf", help="path to .asdf file")
-    parser.add_argument(
-        "-m",
-        "--model",
-        required=True,
-        help="src-d.ml model",
-        choices=["docfreq", "params"])
 
-    args = parser.parse_args()
-
+def main(args):
     dirname = os.path.dirname(args.asdf)
     filename = os.path.basename(args.asdf)
     name = os.path.splitext(filename)[0]
@@ -89,3 +79,17 @@ if __name__ == '__main__':
 
     with open(json_path, 'w') as outfile:
         json.dump(j, outfile)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("asdf", help="path to .asdf file")
+    parser.add_argument(
+        "-m",
+        "--model",
+        required=True,
+        help="src-d.ml model",
+        choices=["docfreq", "params"])
+
+    args = parser.parse_args()
+    main(args)
