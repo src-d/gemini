@@ -22,6 +22,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.io.Source
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
 import scala.util.parsing.json._
 
 class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
@@ -128,44 +130,54 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       result
     }
 
-    features match {
-      case Some(featuresList) if featuresList.isEmpty => {
-        log.warn("file doesn't contain features")
-        None
-      }
-      case Some(featuresList) => {
-        val wmh = hashFile(featuresList, new File(docFreqFile), new File(paramsFile))
+    features.map { featuresList =>
+      findSimilarFiles(featuresList, conn, docFreqFile, paramsFile, htnum, bandSize)
+    }
+  }
 
-        // split hash to bands
-        // a little bit verbose because java doesn't have uint32 type
-        // in apollo it's one-liner:
-        // https://github.com/src-d/apollo/blob/57e52394783d73e38cf1f862afc0166724991fd5/apollo/query.py#L35
-        val bands = (0 until htnum).map { i =>
-          val from = i * bandSize
-          val to = (i + 1) * bandSize
-          val band = (from until to).foldLeft(Array.empty[Byte]) { (arr, j) =>
-            arr ++ MathUtil.toUInt32ByteArray(wmh(j)(0)) ++ MathUtil.toUInt32ByteArray(wmh(j)(1))
-          }
-          band
+  private def findSimilarFiles(
+                                featuresList: Iterable[Feature],
+                                conn: Session,
+                                docFreqFile: String,
+                                paramsFile: String,
+                                htnum: Int,
+                                bandSize: Int
+                              ): Array[String] = {
+
+    if (featuresList.isEmpty) {
+      log.warn("file doesn't contain features")
+      Array[String]()
+    } else {
+      val wmh = hashFile(featuresList, new File(docFreqFile), new File(paramsFile))
+
+      // split hash to bands
+      // a little bit verbose because java doesn't have uint32 type
+      // in apollo it's one-liner:
+      // https://github.com/src-d/apollo/blob/57e52394783d73e38cf1f862afc0166724991fd5/apollo/query.py#L35
+      val bands = (0 until htnum).map { i =>
+        val from = i * bandSize
+        val to = (i + 1) * bandSize
+        val band = (from until to).foldLeft(Array.empty[Byte]) { (arr, j) =>
+          arr ++ MathUtil.toUInt32ByteArray(wmh(j)(0)) ++ MathUtil.toUInt32ByteArray(wmh(j)(1))
         }
-
-        log.info("Looking for similar items")
-        val similar = bands.zipWithIndex.foldLeft(Set.empty[String]) { case (similar, (band, i)) =>
-          val table = "hashtables"
-          val cql = s"SELECT sha1 FROM $keyspace.$table WHERE hashtable=$i AND value=0x${MathUtil.bytes2hex(band)}"
-          log.debug(cql)
-
-          val sha1s = conn.execute(new SimpleStatement(cql))
-            .asScala
-            .map(row => row.getString("sha1"))
-
-          similar ++ sha1s
-        }
-        log.info(s"Fetched ${similar.size} items")
-
-        Some(similar.toArray)
+        band
       }
-      case _ => None
+
+      log.info("Looking for similar items")
+      val similar = bands.zipWithIndex.foldLeft(Set.empty[String]) { case (similar, (band, i)) =>
+        val table = "hashtables"
+        val cql = s"SELECT sha1 FROM $keyspace.$table WHERE hashtable=$i AND value=0x${MathUtil.bytes2hex(band)}"
+        log.debug(cql)
+
+        val sha1s = conn.execute(new SimpleStatement(cql))
+          .asScala
+          .map(row => row.getString("sha1"))
+
+        similar ++ sha1s
+      }
+      log.info(s"Fetched ${similar.size} items")
+
+      similar.toArray
     }
   }
 
@@ -181,7 +193,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
       resp.uast
     } catch {
-      case e: Exception => {
+      case NonFatal(e) => {
         log.error(s"bblfsh error: ${e.toString}")
         None
       }
@@ -203,48 +215,46 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
       Await.result(features, Duration(30, SECONDS))
     } catch {
-      case e: Exception => {
+      case NonFatal(e) => {
         log.error(s"feature extractor error: ${e.toString}")
         Iterable[Feature]()
       }
     }
   }
 
-  def parseDocFreq(file: File): (Int, Map[String, Double], List[String]) = {
-    val docFreqByteArray = Files.readAllBytes(file.toPath)
-    val docFreqJson = JSON.parseFull(new String(docFreqByteArray))
-
-    docFreqJson match {
-      case Some(m: Map[_, _]) => {
-        val docFreqMap = m.asInstanceOf[Map[String, Any]]
-        val docs = docFreqMap.get("docs") match {
-          case Some(v) => v.asInstanceOf[Double].toInt
-          case None => throw new Exception("can not parse docs in docFreq")
-        }
-        val df = docFreqMap.get("df") match {
-          case Some(v) => v.asInstanceOf[Map[String, Double]]
-          case None => throw new Exception("can not parse df in docFreq")
-        }
-        val tokens = docFreqMap.get("tokens") match {
-          case Some(v) => v.asInstanceOf[List[String]]
-          case None => throw new Exception("can not parse tokens in docFreq")
-        }
-
-        (docs, df, tokens)
-      }
+  def mustParseJSON[T: ClassTag](input: String): T = {
+    JSON.parseFull(input) match {
+      case Some(res: T) => res
       case Some(_) => throw new Exception("incorrect json")
       case None => throw new Exception("can't parse json")
     }
   }
 
+  def parseDocFreq(file: File): (Int, Map[String, Double], List[String]) = {
+    val docFreqByteArray = Files.readAllBytes(file.toPath)
+    val docFreqMap = mustParseJSON[Map[_, _]](new String(docFreqByteArray))
+      .asInstanceOf[Map[String, Any]]
+
+    val docs = docFreqMap.get("docs") match {
+      case Some(v) => v.asInstanceOf[Double].toInt
+      case None => throw new Exception("can not parse docs in docFreq")
+    }
+    val df = docFreqMap.get("df") match {
+      case Some(v) => v.asInstanceOf[Map[String, Double]]
+      case None => throw new Exception("can not parse df in docFreq")
+    }
+    val tokens = docFreqMap.get("tokens") match {
+      case Some(v) => v.asInstanceOf[List[String]]
+      case None => throw new Exception("can not parse tokens in docFreq")
+    }
+
+    (docs, df, tokens)
+  }
+
   def parseParams(file: File): Map[String, List[List[Double]]] = {
     val paramsByteArray = Files.readAllBytes(file.toPath)
-    val paramsJson = JSON.parseFull(new String(paramsByteArray))
-    paramsJson match {
-      case Some(m: Map[_, _]) => m.asInstanceOf[Map[String, List[List[Double]]]]
-      case Some(_) => throw new Exception("incorrect json")
-      case None => throw new Exception("can't parse json")
-    }
+    mustParseJSON[Map[_, _]](new String(paramsByteArray))
+      .asInstanceOf[Map[String, List[List[Double]]]]
   }
 
   def hashFile(features: Iterable[Feature], docFreq: File, paramsFile: File): Array[Array[Long]] = {
