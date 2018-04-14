@@ -117,6 +117,18 @@ To generate protobuf messages fixtures you may use [bblfsh-sdk-tools](https://gi
 bblfsh-sdk-tools fixtures -p .proto -l <LANG> <path-to-source-code-file>
 ```
 
+This project uses [scalafmt](http://scalameta.org/scalafmt) formatting. You can configure IntelliJ IDEA to use the same formatting configuration. To do so, follow the [scalafmt instructions](http://scalameta.org/scalafmt/#IntelliJ).
+
+To check if the code follows the project style, use the linters
+```
+make lint-scala
+```
+
+To fix formatting issues, use the formatters
+```
+make format-scala
+```
+
 ## License
 
 Copyright (C) 2017 source{d}.
