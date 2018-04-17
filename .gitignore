@@ -10,9 +10,13 @@ metastore_db/
 scylla
 derby.log
 .pytest_cache/
+__pycache__
 
 /Makefile.main
 /.ci
 
 scalapbc-0.7.1
 scalapbc-0.7.1.zip
+
+docfreq.json
+params.json
