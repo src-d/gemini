@@ -112,7 +112,7 @@ object QueryApp extends App {
       }
 
       if (similar.isEmpty) {
-        println(s"No similar files of $file found.")
+        println(s"No similar files for $file found.")
       } else {
         println(s"Similar files of $file:\n\t" + (similar mkString "\n\t"))
       }

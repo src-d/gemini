@@ -194,7 +194,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
   def extractUAST(file: File, client: BblfshClient): Option[Node] = {
     val byteArray = Files.readAllBytes(file.toPath)
-
+    log.info(s"Extracting UAST")
     try {
       val resp = client.parse(file.getName, new String(byteArray))
       if (resp.errors.nonEmpty) {
@@ -242,6 +242,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 
   def parseDocFreq(file: File): (Int, Map[String, Double], List[String]) = {
+    log.info("Reading docFreq")
     val docFreqByteArray = Files.readAllBytes(file.toPath)
     val docFreqMap = mustParseJSON[Map[_, _]](new String(docFreqByteArray))
       .asInstanceOf[Map[String, Any]]
@@ -263,6 +264,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 
   def parseParams(file: File): Map[String, List[List[Double]]] = {
+    log.info("Reading params")
     val paramsByteArray = Files.readAllBytes(file.toPath)
     mustParseJSON[Map[_, _]](new String(paramsByteArray))
       .asInstanceOf[Map[String, List[List[Double]]]]
@@ -286,7 +288,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     }
 
     log.info(s"Bag size: ${bag.size}")
-    log.info("Hashing")
+    log.info("Started hashing file")
     log.debug(s"Bag: ${bag.mkString(",")}")
 
     // TODO don't use params file when we implement our own hash
@@ -298,7 +300,9 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       params("ln_cs") map (_.toArray) toArray,
       params("betas") map (_.toArray) toArray)
 
-    wmh.hash(bag.toArray)
+    val hash = wmh.hash(bag.toArray)
+    log.info("Finished hashing file")
+    hash
   }
 
   /**
