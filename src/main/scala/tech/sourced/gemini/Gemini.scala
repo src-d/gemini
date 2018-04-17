@@ -296,9 +296,9 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val wmh = new WeightedMinHash(
       bag.size,
       params("rs").length,
-      params("rs") map (_.toArray) toArray,
-      params("ln_cs") map (_.toArray) toArray,
-      params("betas") map (_.toArray) toArray)
+      params("rs").map(_.toArray).toArray,
+      params("ln_cs").map(_.toArray).toArray,
+      params("betas").map(_.toArray).toArray)
 
     val hash = wmh.hash(bag.toArray)
     log.info("Finished hashing file")
