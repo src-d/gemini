@@ -61,6 +61,7 @@ parallelExecution in Test := false
 fork in Test := true //Forking is required for the Embedded Cassandra
 logBuffered in Test := false
 
+showSuccess := false
 sonatypeProfileName := "tech.sourced"
 
 // pom settings for sonatype

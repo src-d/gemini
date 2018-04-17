@@ -17,5 +17,7 @@ if [[ ! -f "${jar}" ]]; then
     fi
 fi
 
-exec ./sbt "run-main ${app_class} $*"
+
+#exec java -cp "${jar}" "${app_class}" $@
+exec ./sbt --warn "run-main ${app_class} $*"
 

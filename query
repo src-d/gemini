@@ -19,5 +19,5 @@ fi
 
 
 #exec java -cp "${jar}" "${app_class}" $@
-exec ./sbt "run-main tech.sourced.gemini.QueryApp $*"
+exec ./sbt --warn "run-main tech.sourced.gemini.QueryApp $*"
 
