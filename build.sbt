@@ -103,14 +103,5 @@ publishTo := {
   }
 }
 
-scalastyleSources in Compile := {
-  // all .scala files in "src/main/scala"
-  val scalaSourceFiles = ((scalaSource in Compile).value ** "*.scala").get
-  val fSep = java.io.File.separator
-  val dirsNameToExclude = List(
-    "com" + fSep + "google",
-    "tech" + fSep + "sourced" + fSep + "featurext" + fSep + "generated",
-    "gopkg" + fSep + "in"
-  )
-  scalaSourceFiles.filterNot(f => dirsNameToExclude.exists(dir => f.getAbsolutePath.contains(dir)))
-}
+// Show diffs for sbt scalafmt::test
+scalafmtShowDiff in (ThisBuild, scalafmt) := true

@@ -117,6 +117,13 @@ To generate protobuf messages fixtures you may use [bblfsh-sdk-tools](https://gi
 bblfsh-sdk-tools fixtures -p .proto -l <LANG> <path-to-source-code-file>
 ```
 
+This project uses [scalafmt](http://scalameta.org/scalafmt) formatting.
+
+To check if the code follows the project style, use the linters
+```
+make lint-scala
+```
+
 ## License
 
 Copyright (C) 2017 source{d}.

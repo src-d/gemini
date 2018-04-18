@@ -27,3 +27,8 @@ format-python:
 
 lint-python:
 	$(YAPF_CMD) --diff
+
+lint-scala:
+	$(SBT) scalafmt::test
+	$(SBT) test:scalafmt::test
+	$(SBT) sbt:scalafmt::test
