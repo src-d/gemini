@@ -79,7 +79,7 @@ def detect_communities(cc,
         algorithm_params: Parameters for the algorithm (**kwargs, JSON format).
     
     Returns:
-        A JSON with data, indptr
+        A list of communities. Each community is a list of element-ids
     """
 
     if edges != "linear" and edges != "quadratic":
@@ -166,17 +166,7 @@ def detect_communities(cc,
               numpy.median([len(c) for c in communities]))
     log.debug("Max community size: %d", max(map(len, communities)))
 
-    # Replaces CommunitiesModel().construct(communities, ccsmodel.id_to_element).save(output)
-    size = sum(map(len, communities))
-    data = numpy.zeros(size, dtype=numpy.uint32)
-    indptr = numpy.zeros(len(communities) + 1, dtype=numpy.int64)
-    pos = 0
-    for i, community in enumerate(communities):
-        data[pos:pos + len(community)] = community
-        pos += len(community)
-        indptr[i + 1] = pos
-
-    return {"data": data, "indptr": indptr}
+    return communities
 
 
 class CommunityDetector:

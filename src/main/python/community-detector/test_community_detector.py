@@ -25,7 +25,17 @@ class TestCommunityDetector(unittest.TestCase):
             cc = input_npz['id_to_cc']
 
         # Call community_detector
-        result = detect_communities(cc.tolist(), buckets)
+        communities = detect_communities(cc.tolist(), buckets)
+
+        # Replaces CommunitiesModel().construct(communities, ccsmodel.id_to_element).save(output)
+        size = sum(map(len, communities))
+        data = numpy.zeros(size, dtype=numpy.uint32)
+        indptr = numpy.zeros(len(communities) + 1, dtype=numpy.int64)
+        pos = 0
+        for i, community in enumerate(communities):
+            data[pos:pos + len(community)] = community
+            pos += len(community)
+            indptr[i + 1] = pos
 
         # Read npz output
         with numpy.load("%s/fixtures/output.npz" % (dirname)) as output:
@@ -33,8 +43,8 @@ class TestCommunityDetector(unittest.TestCase):
             fixture_indptr = output['indptr']
 
         # Assert equality
-        assert_array_equal(result['data'], fixture_data)
-        assert_array_equal(result['indptr'], fixture_indptr)
+        assert_array_equal(data, fixture_data)
+        assert_array_equal(indptr, fixture_indptr)
 
 
 if __name__ == '__main__':
