@@ -1,9 +1,9 @@
 # Gemini [![Build Status](https://travis-ci.org/src-d/gemini.svg?branch=master)](https://travis-ci.org/src-d/gemini) [![codecov](https://codecov.io/gh/src-d/gemini/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/gemini)
 > Find similar code in Git repositories
 
-Gemini is a tool for searching for duplicate 'items' in the many source code repositories.
+Gemini is a tool for searching for similar 'items' in source code repositories.
 Supported granularity level or items are:
- - repositories (WIP)
+ - repositories (TBD)
  - files
  - functions (TBD)
 
@@ -56,6 +56,12 @@ To pre-process number of repositories for a quick finding of the duplicates run
 ```
 
 Input format of the repositories is the same as in [src-d/Engine](https://github.com/src-d/engine).
+
+**Disclamer**: Hashing for indentifing similar items is WIP and at it's current state,
+to be able to get similarity results, you need to run `apollo hash --keyspace gemini` from [Apollo](https://github.com/src-d/apollo/) first.
+
+Similarity results is an active WIP and hasing similar files in Gemini will be added next few releases.
+
 
 
 ### Query
