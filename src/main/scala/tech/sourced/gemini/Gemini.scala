@@ -417,6 +417,8 @@ object Gemini {
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"
   val defaultFePort: Int = 9001
+  val defaultDocFreqFile: String = "docfreq.json"
+  val defaultParamsFile: String = "params.json"
 
   //TODO(bzz): switch to `tables("meta")`
   val meta = Meta("sha1", "repo", "commit", "path")
