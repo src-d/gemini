@@ -48,9 +48,9 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
     *
     * it allows to operate with simple list of ints later instead of big ByteBuffers
     *
-    * @return
+    * @return Buckets, Element-to-ID
     */
-  def makeBuckets(): List[List[Int]] = {
+  def makeBuckets(): (List[List[Int]], Map[String, Int]) = {
     val (buckets, elementIds) = getHashtables()
       .foldLeft(List[List[Int]](), mutable.Map[String, Int]()) { (result, hashtable) =>
 
@@ -84,7 +84,7 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
     log.info(s"Number of buckets: ${buckets.size}")
     log.info(s"Number of elements: ${elementIds.size}")
 
-    buckets
+    (buckets, elementIds.toMap)
   }
 
   /**

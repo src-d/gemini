@@ -1,13 +1,18 @@
 package tech.sourced.gemini
 
 import java.io.File
+import java.util
 
-import org.apache.hadoop.fs.Path
 import com.datastax.driver.core.Cluster
 import org.apache.avro.SchemaBuilder
-import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
+import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
 import org.apache.hadoop.conf.Configuration
-import org.apache.parquet.avro.AvroParquetWriter
+import org.apache.hadoop.fs.Path
+import org.apache.parquet.avro.{AvroParquetReader, AvroParquetWriter}
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.sys.process._
 
 case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
                            port: Int = Gemini.defaultCassandraPort,
@@ -69,13 +74,31 @@ object ReportApp extends App {
         case `groupByMode` => ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
       }
 
-      val (connectedComponents, elsToBuckets) = gemini.findConnectedComponents(cassandra)
+      val (connectedComponents, elsToBuckets, elementIds) = gemini.findConnectedComponents(cassandra)
       saveConnectedComponents(connectedComponents, elsToBuckets, config.ccDirPath)
 
-      cassandra.close()
-      cluster.close()
+      val pythonCmd = s"python3 src/main/python/community-detector/report.py ${config.ccDirPath}"
+      val rc = pythonCmd.!
 
-      print(report)
+      if (rc == 0) {
+        val communities = readCommunities(config.ccDirPath)
+
+        val reportCommunities = gemini.reportCommunities(cassandra, communities, elementIds)
+
+        cassandra.close()
+        cluster.close()
+
+        print(report)
+        println()
+        printCommunities(reportCommunities)
+      } else {
+        log.error(s"Failed to execute '${pythonCmd}'")
+
+        cassandra.close()
+        cluster.close()
+
+        System.exit(2)
+      }
     case None =>
       System.exit(2)
   }
@@ -89,6 +112,18 @@ object ReportApp extends App {
           val count = item.size
           println(s"$count duplicates:\n\t" + (item mkString "\n\t") + "\n")
         }
+    }
+  }
+
+  def printCommunities(report: Iterable[Iterable[RepoFile]]): Unit = {
+    report match {
+      case e if e.isEmpty => println(s"No similar files found.")
+      case _ => {
+        report.foreach { community =>
+          val count = community.size
+          println(s"$count similar files:\n\t${community.mkString("\n\t")}\n")
+        }
+      }
     }
   }
 
@@ -166,4 +201,32 @@ object ReportApp extends App {
     writerBuckets.close()
   }
 
+  def readCommunities(dirPath: String): List[(Int, List[Int])] = {
+    val parquetFilePath = new Path(s"$dirPath/communities.parquet")
+    val reader = AvroParquetReader.builder[GenericRecord](parquetFilePath).build()
+
+    var result = mutable.Map[Int, List[Int]]()
+
+    var nextRecord: GenericRecord = null
+
+    while ( {
+      nextRecord = reader.read
+      nextRecord
+    } != null) {
+      val communityId = nextRecord.get("community_id").asInstanceOf[Long].toInt
+
+      val elementIds = nextRecord
+        .get("element_ids")
+        .asInstanceOf[util.ArrayList[GenericData.Record]]
+        .asScala
+        .toList
+        .map(_.get("item").asInstanceOf[Long].toInt)
+
+      result += (communityId -> elementIds)
+    }
+
+    reader.close()
+
+    result.toList.sortBy { case (communityId, _) => communityId }
+  }
 }

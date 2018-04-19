@@ -339,20 +339,28 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       }
   }
 
+  def reportCommunities(conn: Session,
+                        communities: List[(Int, List[Int])],
+                        elementIds: Map[String, Int]): Iterable[Iterable[RepoFile]] = {
+    getCommunities(conn, keyspace, communities, elementIds)
+  }
+
   /**
     * Return connected components from DB hashtables
     *
     * @param conn Database connections
-    * @return Tuple with:
-    *         - Map of connected components groupId to list of elements
+    * @return - Map of connected components groupId to list of elements
     *         - Map of element ids to list of bucket indices
+    *         - Map of element to ID
     */
-  def findConnectedComponents(conn: Session): (Map[Int, Set[Int]], Map[Int, List[Int]]) = {
+  def findConnectedComponents(conn: Session): (Map[Int, Set[Int]], Map[Int, List[Int]], Map[String, Int]) = {
     val cc = new DBConnectedComponents(log, conn, "hashtables", keyspace)
-    val buckets = cc.makeBuckets()
+    val (buckets, elementIds) = cc.makeBuckets()
     val elsToBuckets = cc.elementsToBuckets(buckets)
 
-    (cc.findInBuckets(buckets, elsToBuckets), elsToBuckets)
+    val result = cc.findInBuckets(buckets, elsToBuckets)
+
+    (result, elsToBuckets, elementIds)
   }
 
   def applySchema(session: Session): Unit = {
@@ -493,6 +501,37 @@ object Gemini {
     conn.execute(query).asScala.map { row =>
       RepoFile(row.getString(meta.repo), row.getString(meta.commit), row.getString(meta.path), row.getString(meta.sha))
     }
+  }
+
+  def getCommunities(conn: Session,
+                     keyspace: String,
+                     communities: List[(Int, List[Int])],
+                     elementIds: Map[String, Int]): Iterable[Iterable[RepoFile]] = {
+
+    val idToSha1 = for ((elem, id) <- elementIds) yield (id, elem.split("@")(1))
+
+    // Transform communities of element IDs to communities of sha1s
+    // Equivalent to apollo graph.py BatchedCommunityResolver._gen_hashes
+    // https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L295
+    val communitiesSha1 = communities.map {
+      case (communityId, community) => community.collect {
+        case id if (idToSha1.contains(id)) => idToSha1(id)
+      }
+    }.filter(_.size > 1)
+
+
+    communitiesSha1.map(sha1s => {
+      val elems = sha1s.map(st => s"'$st'").mkString(",")
+      val query = s"select sha1, repo, commit, path from $keyspace.$defaultTable where sha1 in ($elems)"
+
+      conn
+        .execute(new SimpleStatement(query))
+        .asScala
+        .map { row =>
+          RepoFile(row.getString(meta.repo), row.getString(meta.commit),
+            row.getString(meta.path), row.getString(meta.sha))
+        }
+    })
   }
 }
 
