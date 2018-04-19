@@ -343,14 +343,16 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * Return connected components from DB hashtables
     *
     * @param conn Database connections
-    * @return
+    * @return Tuple with:
+    *         - Map of connected components groupId to list of elements
+    *         - Map of element ids to list of bucket indices
     */
-  def findConnectedComponents(conn: Session): Map[Int, Set[Int]] = {
+  def findConnectedComponents(conn: Session): (Map[Int, Set[Int]], Map[Int, List[Int]]) = {
     val cc = new DBConnectedComponents(log, conn, "hashtables", keyspace)
     val buckets = cc.makeBuckets()
     val elsToBuckets = cc.elementsToBuckets(buckets)
 
-    cc.findInBuckets(buckets, elsToBuckets)
+    (cc.findInBuckets(buckets, elsToBuckets), elsToBuckets)
   }
 
   def applySchema(session: Session): Unit = {

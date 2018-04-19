@@ -13,7 +13,7 @@ case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
                            port: Int = Gemini.defaultCassandraPort,
                            keyspace: String = Gemini.defautKeyspace,
                            mode: String = ReportApp.defaultMode,
-                           ccFilePath: String = "cc.parquet",
+                           ccDirPath: String = ".",
                            verbose: Boolean = false)
 
 object ReportApp extends App {
@@ -36,8 +36,8 @@ object ReportApp extends App {
       .action((x, c) => c.copy(keyspace = x))
       .text("keyspace is Cassandra keyspace")
     opt[String]('o', "cc-output")
-      .action((x, c) => c.copy(ccFilePath = x))
-      .text("path to output parquet file with connected components")
+      .action((x, c) => c.copy(ccDirPath = x))
+      .text("directory path to output parquet files with connected components")
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
@@ -69,8 +69,8 @@ object ReportApp extends App {
         case `groupByMode` => ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
       }
 
-      val connectedComponents = gemini.findConnectedComponents(cassandra)
-      saveConnectedComponents(connectedComponents, config.ccFilePath)
+      val (connectedComponents, elsToBuckets) = gemini.findConnectedComponents(cassandra)
+      saveConnectedComponents(connectedComponents, elsToBuckets, config.ccDirPath)
 
       cassandra.close()
       cluster.close()
@@ -106,36 +106,64 @@ object ReportApp extends App {
 
   case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)
 
-  def saveConnectedComponents(cc: Map[Int, Set[Int]], outputPath: String): Unit = {
+  def saveConnectedComponents(ccs: Map[Int, Set[Int]], elsToBuckets: Map[Int, List[Int]], outputPath: String): Unit = {
     val schema = SchemaBuilder
-      .record("cc")
+      .record("ccs")
       .fields()
-      .name("elements").`type`().array().items().intType().noDefault()
+      .name("cc").`type`().intType().noDefault()
+      .name("element_ids").`type`().array().items().intType().noDefault()
       .endRecord()
 
     // delete old file if exists
-    val parquetFile = new File(outputPath)
+    val parquetFile = new File(s"$outputPath/cc.parquet")
     parquetFile.delete()
 
     // make it compatible with python
     val parquetConf = new Configuration()
     parquetConf.setBoolean("parquet.avro.write-old-list-structure", false)
 
-    val parquetFilePath = new Path(outputPath)
+    val parquetFilePath = new Path(s"$outputPath/cc.parquet")
     val writer = AvroParquetWriter.builder[GenericRecord](parquetFilePath)
       .withSchema(schema)
       .withConf(parquetConf)
       .build()
 
-    cc.foreach { case (_, elements) =>
+    ccs.foreach { case (cc, ids) =>
       val record = new GenericRecordBuilder(schema)
-        .set("elements", elements.toArray)
+        .set("cc", cc)
+        .set("element_ids", ids.toArray)
         .build()
 
       writer.write(record)
     }
 
     writer.close()
+
+    val schemaBuckets = SchemaBuilder
+      .record("id_to_buckets")
+      .fields()
+      .name("buckets").`type`().array().items().intType().noDefault()
+      .endRecord()
+
+    // delete old file if exists
+    val parquetFileButckets = new File(s"$outputPath/buckets.parquet")
+    parquetFileButckets.delete()
+
+    val parquetBucketsFilePath = new Path(s"$outputPath/buckets.parquet")
+    val writerBuckets = AvroParquetWriter.builder[GenericRecord](parquetBucketsFilePath)
+      .withSchema(schemaBuckets)
+      .withConf(parquetConf)
+      .build()
+
+    elsToBuckets.foreach { case(_, bucket) =>
+      val record = new GenericRecordBuilder(schemaBuckets)
+        .set("buckets", bucket.toArray)
+        .build()
+
+      writerBuckets.write(record)
+    }
+
+    writerBuckets.close()
   }
 
 }
