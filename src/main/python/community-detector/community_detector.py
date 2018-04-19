@@ -20,6 +20,9 @@ def build_matrix(id_to_buckets):
         A scipy.sparse.csr_matrix with the same contents
     """
 
+    if len(id_to_buckets) == 0:
+        return csr_matrix((0, 0), dtype=numpy.uint8)
+
     data = numpy.ones(sum(map(len, id_to_buckets)), dtype=numpy.uint8)
     indices = numpy.zeros(len(data), dtype=numpy.uint32)
     indptr = numpy.zeros(len(id_to_buckets) + 1, dtype=numpy.uint32)
@@ -159,12 +162,13 @@ def detect_communities(cc,
 
     communities.extend(chain.from_iterable((detector(g) for g in graphs)))
 
-    log.debug("Overall communities: %d", len(communities))
-    log.debug("Average community size: %.1f",
-              numpy.mean([len(c) for c in communities]))
-    log.debug("Median community size: %.1f",
-              numpy.median([len(c) for c in communities]))
-    log.debug("Max community size: %d", max(map(len, communities)))
+    if len(communities) > 0:
+        log.debug("Overall communities: %d", len(communities))
+        log.debug("Average community size: %.1f",
+                  numpy.mean([len(c) for c in communities]))
+        log.debug("Median community size: %.1f",
+                  numpy.median([len(c) for c in communities]))
+        log.debug("Max community size: %d", max(map(len, communities)))
 
     return communities
 
