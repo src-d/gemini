@@ -513,11 +513,13 @@ object Gemini {
     // Transform communities of element IDs to communities of sha1s
     // Equivalent to apollo graph.py BatchedCommunityResolver._gen_hashes
     // https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L295
-    val communitiesSha1 = communities.map {
-      case (communityId, community) => community.collect {
-        case id if (idToSha1.contains(id)) => idToSha1(id)
+    val communitiesSha1 = communities
+      .map { case (_, community) =>
+        community
+          .filter(idToSha1.contains)
+          .map(idToSha1)
       }
-    }.filter(_.size > 1)
+      .filter(_.size > 1)
 
 
     communitiesSha1.map(sha1s => {

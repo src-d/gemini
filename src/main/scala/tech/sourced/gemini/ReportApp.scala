@@ -116,13 +116,12 @@ object ReportApp extends App {
   }
 
   def printCommunities(report: Iterable[Iterable[RepoFile]]): Unit = {
-    report match {
-      case e if e.isEmpty => println(s"No similar files found.")
-      case _ => {
-        report.foreach { community =>
-          val count = community.size
-          println(s"$count similar files:\n\t${community.mkString("\n\t")}\n")
-        }
+    if (report.isEmpty){
+      println(s"No similar files found.")
+    } else {
+      report.foreach { community =>
+        val count = community.size
+        println(s"$count similar files:\n\t${community.mkString("\n\t")}\n")
       }
     }
   }
@@ -205,28 +204,21 @@ object ReportApp extends App {
     val parquetFilePath = new Path(s"$dirPath/communities.parquet")
     val reader = AvroParquetReader.builder[GenericRecord](parquetFilePath).build()
 
-    var result = mutable.Map[Int, List[Int]]()
+    Iterator
+      .continually(reader.read)
+      .takeWhile(_ != null)
+      .map(record => {
+        val communityId = record.get("community_id").asInstanceOf[Long].toInt
 
-    var nextRecord: GenericRecord = null
+        val elementIds = record
+          .get("element_ids")
+          .asInstanceOf[util.ArrayList[GenericData.Record]]
+          .asScala
+          .toList
+          .map(_.get("item").asInstanceOf[Long].toInt)
 
-    while ( {
-      nextRecord = reader.read
-      nextRecord
-    } != null) {
-      val communityId = nextRecord.get("community_id").asInstanceOf[Long].toInt
-
-      val elementIds = nextRecord
-        .get("element_ids")
-        .asInstanceOf[util.ArrayList[GenericData.Record]]
-        .asScala
-        .toList
-        .map(_.get("item").asInstanceOf[Long].toInt)
-
-      result += (communityId -> elementIds)
-    }
-
-    reader.close()
-
-    result.toList.sortBy { case (communityId, _) => communityId }
+        (communityId, elementIds)
+      })
+      .toList
   }
 }
