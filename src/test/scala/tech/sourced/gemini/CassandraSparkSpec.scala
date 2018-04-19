@@ -143,7 +143,7 @@ class CassandraSparkSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, DUPLICATES)
 
     // 2 file in 9279be3cf07fb3cca4fc964b27acea57e0af461b.siva
-    val sha1 = Gemini.findDuplicateItemForBlobHash("c4e5bcc8001f80acc238877174130845c5c39aa3", session, DUPLICATES)
+    val sha1 = Gemini.findDuplicatesOfBlobHash("c4e5bcc8001f80acc238877174130845c5c39aa3", session, DUPLICATES)
 
     sha1 should not be empty
     sha1.size shouldEqual 2
@@ -189,12 +189,9 @@ class CassandraSparkSpec extends FlatSpec
         9,
         13)
 
-    similar shouldBe defined
-
-    val similarV = similar.get
-    similarV.size shouldEqual 2
-    similarV(0) shouldEqual "9f653118e787febce824759bb5c4ef17fe4da7b0"
-    similarV(1) shouldEqual "e32d54ae4b969ac13f737efaf1c11ccfc52bbe5b"
+    similar.size shouldEqual 2
+    similar(0) shouldEqual "9f653118e787febce824759bb5c4ef17fe4da7b0"
+    similar(1) shouldEqual "e32d54ae4b969ac13f737efaf1c11ccfc52bbe5b"
 
     server.shutdown()
   }

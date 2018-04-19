@@ -87,37 +87,23 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
             bblfshClient: BblfshClient,
             feClient: FeatureExtractor,
             docFreqPath: String = "",
-            paramsFilePath: String = "", // TODO remove when we implement hash
+            paramsPath: String = "", // TODO remove when we implement hash
             htNum: Int = 0,
             bandSize: Int = 0): (Iterable[RepoFile], Iterable[RepoFile]) = {
     val path = new File(inPath)
     if (path.isDirectory) {
-      //TODO: implement based on Apollo
       (findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {
-      val duplicates = findDuplicateItemForFile(path, conn, keyspace)
-      var similarShas = Array[String]()
+      val duplicates = findDuplicatesOfFile(path, conn, keyspace)
+      val duplicatedShas = duplicates.map(_.sha).toSeq
 
-      if (docFreqPath != "" && paramsFilePath != "") {
-        similarShas =
-          findSimilarForFile(path, conn, bblfshClient, feClient, docFreqPath, paramsFilePath, htNum, bandSize)
-          .getOrElse(Array[String]())
-      } else {
-        log.warn("Document frequency or parameters for weighted min hash wasn't provided. Skip similarity query")
-      }
+      val similarShas = findSimilarForFile(path, conn, bblfshClient, feClient, docFreqPath, paramsPath, htNum, bandSize)
+        .filterNot(sha => duplicatedShas.contains(sha))
+        .map(_.split("@")(1)) // value for sha1 in Apollo hashtables is 'path@sha1', but we need only hashes
 
-      // value for sha1 in hashtables is path@sha1, but we need only sha1
-      similarShas = similarShas.map(_.split("@")(1))
-      // remove duplicates from similar
-      if (similarShas.isEmpty) {
-        log.info("No similar sha1s")
-      } else {
-        val duplicatedShas = duplicates.map(_.sha).toArray
-        similarShas = similarShas.filterNot(sha => duplicatedShas.contains(sha))
-      }
+      log.info(s"${similarShas.length} SHA1's found to be similar")
 
-      val similar = similarShas.flatMap(sha1 => findDuplicateItemForBlobHash(sha1, conn, keyspace))
-
+      val similar = similarShas.flatMap(sha1 => findDuplicatesOfBlobHash(sha1, conn, keyspace))
       (duplicates, similar)
     }
   }
@@ -127,39 +113,39 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
                           conn: Session,
                           bblfshClient: BblfshClient,
                           feClient: FeatureExtractor,
-                          docFreqFile: String,
-                          paramsFile: String,
+                          docFreqPath: String,
+                          paramsPath: String,
                           htnum: Int,
-                          bandSize: Int): Option[Array[String]] = {
-
-    val features = extractUAST(file, bblfshClient).map { uast =>
-      log.debug(s"uast received: ${uast.toString}")
-
-      val result = extractFeatures(feClient, uast)
-      log.debug(s"features: ${result.toString}")
-
-      result
-    }
-
-    features.map { featuresList =>
-      findSimilarFiles(featuresList, conn, docFreqFile, paramsFile, htnum, bandSize)
+                          bandSize: Int): Seq[String] = {
+    val docFreqFile = new File(docFreqPath)
+    val paramsFile = new File(paramsPath)
+    if (!docFreqFile.exists() || !paramsFile.exists()) {
+      log.warn("Document frequency or parameters for weighted min hash wasn't provided. Skip similarity query")
+      Seq()
+    } else {
+      extractUAST(file, bblfshClient) match {
+        case Some(node) =>
+          val featuresList = extractFeatures(feClient, node)
+          findSimilarFiles(featuresList, conn, docFreqFile, paramsFile, htnum, bandSize)
+        case _ => Seq()
+      }
     }
   }
 
   private def findSimilarFiles(
                                 featuresList: Iterable[Feature],
                                 conn: Session,
-                                docFreqFile: String,
-                                paramsFile: String,
+                                docFreqFile: File,
+                                paramsFile: File,
                                 htnum: Int,
                                 bandSize: Int
-                              ): Array[String] = {
+                              ): Seq[String] = {
 
     if (featuresList.isEmpty) {
       log.warn("file doesn't contain features")
-      Array[String]()
+      Seq()
     } else {
-      val wmh = hashFile(featuresList, new File(docFreqFile), new File(paramsFile))
+      val wmh = hashFile(featuresList, docFreqFile, paramsFile)
 
       // split hash to bands
       // a little bit verbose because java doesn't have uint32 type
@@ -188,7 +174,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       }
       log.info(s"Fetched ${similar.size} items")
 
-      similar.toArray
+      similar.toSeq
     }
   }
 
@@ -212,12 +198,13 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 
   def extractFeatures(client: FeatureExtractor, uast: Node): Iterable[Feature] = {
-    val idRequest = IdentifiersRequest(uast=Some(uast), docfreqThreshold=5)
-    val litRequest = LiteralsRequest(uast=Some(uast), docfreqThreshold=5)
-    val graphletRequest = GraphletRequest(uast=Some(uast), docfreqThreshold=5)
-    client.identifiers(idRequest)
+    log.debug(s"uast received: ${uast.toString}")
 
-    try {
+    val idRequest = IdentifiersRequest().withUast(uast).withDocfreqThreshold(5)
+    val litRequest = LiteralsRequest().withUast(uast).withDocfreqThreshold(5)
+    val graphletRequest = GraphletRequest().withUast(uast).withDocfreqThreshold(5)
+
+    val result = try {
       val features = for {
         idResponse <- client.identifiers(idRequest)
         litResponse <- client.literals(litRequest)
@@ -228,9 +215,11 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     } catch {
       case NonFatal(e) => {
         log.error(s"feature extractor error: ${e.toString}")
-        Iterable[Feature]()
+        Iterable()
       }
     }
+    log.debug(s"features: ${result.toString}")
+    result
   }
 
   def mustParseJSON[T: ClassTag](input: String): T = {
@@ -339,7 +328,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def reportCassandraGroupBy(conn: Session): Iterable[Iterable[RepoFile]] = {
     reportCassandraCondensed(conn)
       .map { item =>
-        findDuplicateItemForBlobHash(item.sha, conn, keyspace)
+        findDuplicatesOfBlobHash(item.sha, conn, keyspace)
       }
   }
 
@@ -470,7 +459,7 @@ object Gemini {
       .execute(new SimpleStatement(distinctBlobHash))
       .asScala
       .flatMap { r =>
-        val dupes = findDuplicateItemForBlobHash(r.getString(hash), conn, keyspace)
+        val dupes = findDuplicatesOfBlobHash(r.getString(hash), conn, keyspace)
         if (dupes.size > 1) {
           List(dupes)
         } else {
@@ -488,11 +477,11 @@ object Gemini {
     throw new UnsupportedOperationException("Finding similar repositories is no implemented yet.")
   }
 
-  def findDuplicateItemForFile(file: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
-    findDuplicateItemForBlobHash(computeSha1(file), conn, keyspace)
+  def findDuplicatesOfFile(file: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
+    findDuplicatesOfBlobHash(computeSha1(file), conn, keyspace)
   }
 
-  def findDuplicateItemForBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
+  def findDuplicatesOfBlobHash(sha: String, conn: Session, keyspace: String): Iterable[RepoFile] = {
     val query = QueryBuilder.select().all().from(keyspace, defaultTable)
       .where(QueryBuilder.eq(meta.sha, sha))
 
