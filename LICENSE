@@ -680,4 +680,7 @@ BSD-style licenses
 The following components are provided under a BSD-style license. See project link for details.
 
 (BSD 3 Clause) protocol buffers (https://github.com/google/protobuf)
+  src/main/proto/google/protobuf/descriptor.proto
+
 (BSD 2 Clause) gogoprotobuf (https://github.com/gogo/protobuf)
+  src/main/proto/github.com/gogo/protobuf/gogoproto/gogo.proto

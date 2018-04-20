@@ -16,4 +16,5 @@ cp project/build.properties gemini-$VERSION/project/
 cp project/Dependencies.scala gemini-$VERSION/project/
 cp project/plugins.sbt gemini-$VERSION/project/
 cp -r src/main/resources/* gemini-$VERSION/src/main/resources/
+cp LICENCE gemini-$VERSION/
 tar -cvzf gemini_$VERSION.tar.gz gemini-$VERSION/
