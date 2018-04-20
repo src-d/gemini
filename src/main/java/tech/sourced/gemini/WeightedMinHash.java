@@ -4,6 +4,8 @@ import org.apache.commons.math3.distribution.GammaDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.lang.Math.floor;
 import static java.lang.Math.log;
@@ -14,6 +16,8 @@ import static java.lang.Math.log;
  * https://github.com/src-d/go-license-detector/blob/master/licensedb/internal/wmh/wmh.go
  */
 public class WeightedMinHash {
+    private static final Logger log = LoggerFactory.getLogger(WeightedMinHash.class);
+
     protected int dim;
     protected int sampleSize;
 
@@ -95,6 +99,7 @@ public class WeightedMinHash {
         if (values.length != dim) {
             throw new IllegalArgumentException("input dimension mismatch, expected " + dim);
         }
+        log.info("Hashing");
 
         // hashvalues = np.zeros((self.sample_size, 2), dtype=np.int)
         long[][] hashvalues = new long[sampleSize][2];

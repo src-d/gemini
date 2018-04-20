@@ -13,10 +13,10 @@ case class QueryAppConfig(file: String = "",
                           bblfshPort: Int = Gemini.defaultBblfshPort,
                           feHost: String = Gemini.defaultFeHost,
                           fePort: Int = Gemini.defaultFePort,
-                          docFreqFile: String = "",
+                          docFreqFile: String = Gemini.defaultDocFreqFile,
                           // paramsFile, hashtablesNum and bandSize are needed only as long as we use apollo hash
                           // should be removed after we implement hash on our side
-                          paramsFile: String = "",
+                          paramsFile: String = Gemini.defaultParamsFile,
                           hashtablesNum: Int = 0,
                           bandSize: Int = 0,
                           verbose: Boolean = false)
@@ -76,7 +76,7 @@ object QueryApp extends App {
       val log = Logger("gemini", config.verbose)
 
       val file = config.file
-      println(s"Query duplicate files to: $file")
+      println(s"Query duplicate files of: $file")
 
       //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
       val cluster = Cluster.builder()
@@ -112,7 +112,7 @@ object QueryApp extends App {
       }
 
       if (similar.isEmpty) {
-        println(s"No similar files of $file found.")
+        println(s"No similar files for $file found.")
       } else {
         println(s"Similar files of $file:\n\t" + (similar mkString "\n\t"))
       }
