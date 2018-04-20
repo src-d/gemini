@@ -1,13 +1,18 @@
 package tech.sourced.gemini
 
 import java.io.File
+import java.util
 
-import org.apache.hadoop.fs.Path
-import com.datastax.driver.core.Cluster
+import com.datastax.driver.core.{Cluster, Session}
 import org.apache.avro.SchemaBuilder
-import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
+import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
 import org.apache.hadoop.conf.Configuration
-import org.apache.parquet.avro.AvroParquetWriter
+import org.apache.hadoop.fs.Path
+import org.apache.parquet.avro.{AvroParquetReader, AvroParquetWriter}
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.sys.process._
 
 case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
                            port: Int = Gemini.defaultCassandraPort,
@@ -62,22 +67,39 @@ object ReportApp extends App {
       val gemini = Gemini(null, log, config.keyspace)
       gemini.applySchema(cassandra)
 
-
-      val report = config.mode match {
+      val duplicateReport = config.mode match {
         case `defaultMode` => ReportExpandedGroup(gemini.report(cassandra))
         case `condensedMode` => ReportGrouped(gemini.reportCassandraCondensed(cassandra))
         case `groupByMode` => ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
       }
+      val similarityReport = makeDuplicateReport(gemini, cassandra, config)
 
-      val (connectedComponents, elsToBuckets) = gemini.findConnectedComponents(cassandra)
-      saveConnectedComponents(connectedComponents, elsToBuckets, config.ccDirPath)
+      print(duplicateReport)
+      printCommunities(similarityReport)
 
       cassandra.close()
       cluster.close()
 
-      print(report)
     case None =>
       System.exit(2)
+  }
+
+  def makeDuplicateReport(gemini: Gemini, cassandra: Session, config: ReportAppConfig): Iterable[Iterable[RepoFile]] = {
+    val log = Logger("gemini", config.verbose)
+
+    val (connectedComponents, elsToBuckets, elementIds) = gemini.findConnectedComponents(cassandra)
+    saveConnectedComponents(connectedComponents, elsToBuckets, config.ccDirPath)
+
+    val pythonCmd = s"python3 src/main/python/community-detector/report.py ${config.ccDirPath}"
+    val rc = pythonCmd.!
+
+    if (rc == 0) {
+      val communities = readCommunities(config.ccDirPath)
+      gemini.reportCommunities(cassandra, communities, elementIds)
+    } else {
+      log.error(s"Failed to execute '${pythonCmd}'")
+      Iterable[Iterable[RepoFile]]()
+    }
   }
 
   def print(report: Report): Unit = {
@@ -89,6 +111,17 @@ object ReportApp extends App {
           val count = item.size
           println(s"$count duplicates:\n\t" + (item mkString "\n\t") + "\n")
         }
+    }
+  }
+
+  def printCommunities(report: Iterable[Iterable[RepoFile]]): Unit = {
+    if (report.isEmpty){
+      println(s"No similar files found.")
+    } else {
+      report.foreach { community =>
+        val count = community.size
+        println(s"$count similar files:\n\t${community.mkString("\n\t")}\n")
+      }
     }
   }
 
@@ -166,4 +199,25 @@ object ReportApp extends App {
     writerBuckets.close()
   }
 
+  def readCommunities(dirPath: String): List[(Int, List[Int])] = {
+    val parquetFilePath = new Path(s"$dirPath/communities.parquet")
+    val reader = AvroParquetReader.builder[GenericRecord](parquetFilePath).build()
+
+    Iterator
+      .continually(reader.read)
+      .takeWhile(_ != null)
+      .map { record =>
+        val communityId = record.get("community_id").asInstanceOf[Long].toInt
+
+        val elementIds = record
+          .get("element_ids")
+          .asInstanceOf[util.ArrayList[GenericData.Record]]
+          .asScala
+          .toList
+          .map(_.get("item").asInstanceOf[Long].toInt)
+
+        (communityId, elementIds)
+      }
+      .toList
+  }
 }

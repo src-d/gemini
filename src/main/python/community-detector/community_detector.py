@@ -20,6 +20,9 @@ def build_matrix(id_to_buckets):
         A scipy.sparse.csr_matrix with the same contents
     """
 
+    if len(id_to_buckets) == 0:
+        return csr_matrix((0, 0), dtype=numpy.uint8)
+
     data = numpy.ones(sum(map(len, id_to_buckets)), dtype=numpy.uint8)
     indices = numpy.zeros(len(data), dtype=numpy.uint32)
     indptr = numpy.zeros(len(id_to_buckets) + 1, dtype=numpy.uint32)
@@ -79,7 +82,7 @@ def detect_communities(cc,
         algorithm_params: Parameters for the algorithm (**kwargs, JSON format).
     
     Returns:
-        A JSON with data, indptr
+        A list of communities. Each community is a list of element-ids
     """
 
     if edges != "linear" and edges != "quadratic":
@@ -159,24 +162,15 @@ def detect_communities(cc,
 
     communities.extend(chain.from_iterable((detector(g) for g in graphs)))
 
-    log.debug("Overall communities: %d", len(communities))
-    log.debug("Average community size: %.1f",
-              numpy.mean([len(c) for c in communities]))
-    log.debug("Median community size: %.1f",
-              numpy.median([len(c) for c in communities]))
-    log.debug("Max community size: %d", max(map(len, communities)))
+    if len(communities) > 0:
+        log.debug("Overall communities: %d", len(communities))
+        log.debug("Average community size: %.1f",
+                  numpy.mean([len(c) for c in communities]))
+        log.debug("Median community size: %.1f",
+                  numpy.median([len(c) for c in communities]))
+        log.debug("Max community size: %d", max(map(len, communities)))
 
-    # Replaces CommunitiesModel().construct(communities, ccsmodel.id_to_element).save(output)
-    size = sum(map(len, communities))
-    data = numpy.zeros(size, dtype=numpy.uint32)
-    indptr = numpy.zeros(len(communities) + 1, dtype=numpy.int64)
-    pos = 0
-    for i, community in enumerate(communities):
-        data[pos:pos + len(community)] = community
-        pos += len(community)
-        indptr[i + 1] = pos
-
-    return {"data": data, "indptr": indptr}
+    return communities
 
 
 class CommunityDetector:

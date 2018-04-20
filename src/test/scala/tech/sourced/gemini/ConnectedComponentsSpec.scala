@@ -33,7 +33,7 @@ class ConnectedComponentsSpec extends FlatSpec
     val cc = new TestConnectedComponents(logger)
 
     "makeBuckets" should "correctly create buckets" in {
-      cc.makeBuckets() shouldEqual List[List[Int]](
+      cc.makeBuckets()._1 shouldEqual List[List[Int]](
         List(0, 1),
         List(2),
         List(3, 4),
@@ -47,7 +47,7 @@ class ConnectedComponentsSpec extends FlatSpec
     }
 
     "elementsToBuckets" should "create correct map" in {
-      val buckets = cc.makeBuckets()
+      val (buckets, _) = cc.makeBuckets()
       cc.elementsToBuckets(buckets) shouldEqual Map[Int, List[Int]](
         0 -> List(0, 3, 6),
         1 -> List(0),
@@ -64,7 +64,7 @@ class ConnectedComponentsSpec extends FlatSpec
     }
 
   "findInBuckets" should "return connected components" in {
-    val buckets = cc.makeBuckets()
+    val (buckets, _) = cc.makeBuckets()
     val elementToBuckets = cc.elementsToBuckets(buckets)
     cc.findInBuckets(buckets, elementToBuckets) shouldEqual Map[Int, Set[Int]](
       0 -> Set(3, 10, 7, 4),

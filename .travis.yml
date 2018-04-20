@@ -21,6 +21,8 @@ matrix:
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
+    before_install:
+      - ./scripts/install_python.sh
     install:
       - make build
     script:
@@ -55,6 +57,8 @@ matrix:
     env:
       - INTEGRATION_TESTS=true
       - MASTER=spark://127.0.0.1:7077
+    before_install:
+      - ./scripts/install_python.sh
     install:
       - make build
       - 
@@ -107,10 +111,7 @@ matrix:
   - scala: 2.11.2
     env: PYTHON_LIB_TESTS=true
     before_install:
-      - sudo apt-get -qq update
-      - sudo apt-get -y install python3-pip
-      - sudo pip3 install --upgrade pip setuptools wheel
-      - pip3 install --user --only-binary=numpy,scipy -r src/main/python/community-detector/requirements.txt pytest
+      - ./scripts/install_python.sh
     script:
       - pytest -v src/main/python/community-detector
 
