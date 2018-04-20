@@ -3,7 +3,7 @@ package tech.sourced.gemini
 import java.io.File
 import java.util
 
-import com.datastax.driver.core.Cluster
+import com.datastax.driver.core.{Cluster, Session}
 import org.apache.avro.SchemaBuilder
 import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
 import org.apache.hadoop.conf.Configuration
@@ -67,40 +67,39 @@ object ReportApp extends App {
       val gemini = Gemini(null, log, config.keyspace)
       gemini.applySchema(cassandra)
 
-
-      val report = config.mode match {
+      val duplicateReport = config.mode match {
         case `defaultMode` => ReportExpandedGroup(gemini.report(cassandra))
         case `condensedMode` => ReportGrouped(gemini.reportCassandraCondensed(cassandra))
         case `groupByMode` => ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
       }
+      val similarityReport = makeDuplicateReport(gemini, cassandra, config)
 
-      val (connectedComponents, elsToBuckets, elementIds) = gemini.findConnectedComponents(cassandra)
-      saveConnectedComponents(connectedComponents, elsToBuckets, config.ccDirPath)
+      print(duplicateReport)
+      printCommunities(similarityReport)
 
-      val pythonCmd = s"python3 src/main/python/community-detector/report.py ${config.ccDirPath}"
-      val rc = pythonCmd.!
+      cassandra.close()
+      cluster.close()
 
-      if (rc == 0) {
-        val communities = readCommunities(config.ccDirPath)
-
-        val reportCommunities = gemini.reportCommunities(cassandra, communities, elementIds)
-
-        cassandra.close()
-        cluster.close()
-
-        print(report)
-        println()
-        printCommunities(reportCommunities)
-      } else {
-        log.error(s"Failed to execute '${pythonCmd}'")
-
-        cassandra.close()
-        cluster.close()
-
-        System.exit(2)
-      }
     case None =>
       System.exit(2)
+  }
+
+  def makeDuplicateReport(gemini: Gemini, cassandra: Session, config: ReportAppConfig): Iterable[Iterable[RepoFile]] = {
+    val log = Logger("gemini", config.verbose)
+
+    val (connectedComponents, elsToBuckets, elementIds) = gemini.findConnectedComponents(cassandra)
+    saveConnectedComponents(connectedComponents, elsToBuckets, config.ccDirPath)
+
+    val pythonCmd = s"python3 src/main/python/community-detector/report.py ${config.ccDirPath}"
+    val rc = pythonCmd.!
+
+    if (rc == 0) {
+      val communities = readCommunities(config.ccDirPath)
+      gemini.reportCommunities(cassandra, communities, elementIds)
+    } else {
+      log.error(s"Failed to execute '${pythonCmd}'")
+      Iterable[Iterable[RepoFile]]()
+    }
   }
 
   def print(report: Report): Unit = {
@@ -207,7 +206,7 @@ object ReportApp extends App {
     Iterator
       .continually(reader.read)
       .takeWhile(_ != null)
-      .map(record => {
+      .map { record =>
         val communityId = record.get("community_id").asInstanceOf[Long].toInt
 
         val elementIds = record
@@ -218,7 +217,7 @@ object ReportApp extends App {
           .map(_.get("item").asInstanceOf[Long].toInt)
 
         (communityId, elementIds)
-      })
+      }
       .toList
   }
 }

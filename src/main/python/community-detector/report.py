@@ -35,11 +35,10 @@ def main(dirpath):
     id_to_cc = community_detector.build_id_to_cc(connected_components, n_ids)
 
     # The result is a list of communities. Each community is a list of element-ids
-    communities = community_detector.detect_communities(
-        id_to_cc, buckets_matrix)
-    com_ids = list(range(len(communities)))
+    coms = community_detector.detect_communities(id_to_cc, buckets_matrix)
+    com_ids = list(range(len(coms)))
 
-    data = [pa.array(com_ids), pa.array(communities)]
+    data = [pa.array(com_ids), pa.array(coms)]
     batch = pa.RecordBatch.from_arrays(data, ['community_id', 'element_ids'])
 
     table = pa.Table.from_batches([batch])
