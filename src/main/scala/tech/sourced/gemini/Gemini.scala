@@ -161,16 +161,16 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       }
 
       log.info("Looking for similar items")
-      val similar = bands.zipWithIndex.foldLeft(Set.empty[String]) { case (similar, (band, i)) =>
+      val similar = bands.zipWithIndex.foldLeft(Set[String]()) { case (sim, (band, i)) =>
         val table = "hashtables"
         val cql = s"SELECT sha1 FROM $keyspace.$table WHERE hashtable=$i AND value=0x${MathUtil.bytes2hex(band)}"
         log.debug(cql)
 
         val sha1s = conn.execute(new SimpleStatement(cql))
           .asScala
-          .map(row => row.getString("sha1"))
+          .map(_.getString("sha1"))
 
-        similar ++ sha1s
+        sim ++ sha1s
       }
       log.info(s"Fetched ${similar.size} items")
 
@@ -264,12 +264,11 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
     val bag = mutable.ArrayBuffer.fill(tokens.size)(0.toDouble)
     features.foreach { feature =>
-      val idx = tokens.indexOf(feature.name)
+      val index = tokens.indexOf(feature.name)
       log.debug(s"name: ${feature.name}, weight: ${feature.weight}")
-      idx match {
+      index match {
         case idx if idx >= 0 => {
           val tf = feature.weight.toDouble
-
           bag(idx) = MathUtil.logTFlogIDF(tf, df(feature.name), docs)
         }
         case _ =>
