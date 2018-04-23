@@ -2,6 +2,8 @@
 PROJECT = gemini
 SBT = ./sbt
 
+DOCKERFILES = Dockerfile:$(PROJECT) FE.Dockerfile:feature-extractor
+
 # Including ci Makefile
 MAKEFILE = Makefile.main
 CI_REPOSITORY = https://github.com/src-d/ci.git
