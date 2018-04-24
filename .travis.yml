@@ -19,7 +19,7 @@ matrix:
     - ./scripts/start_docker_db.sh
     script:
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
-      - ./sbt "test-only * -- -l tags.FEIntegration"
+      - ./sbt "test-only * -- -l tags.FEIntegration -l Integration"
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
@@ -74,6 +74,8 @@ matrix:
       # start dependencies
       - ./scripts/start_apache_spark_cluster.sh "127.0.0.1" "7077" || travis_terminate 1
       - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
+      # integration tests
+      - ./sbt "test-only * -- -n Integration"
       # hashing test repositories
       - ./hash src/test/resources/siva || travis_terminate 1
       # query without similarity

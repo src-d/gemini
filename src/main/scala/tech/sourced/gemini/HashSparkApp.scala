@@ -76,8 +76,15 @@ object HashSparkApp extends App with Logging {
       CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
         gemini.applySchema(cassandra)
       }
-      val filesToWrite = gemini.hash(reposPath, config.limit, config.format)
-      gemini.save(filesToWrite)
+
+      val files = gemini.hash(reposPath, config.limit, config.format).cache()
+      val uasts = gemini.sparkExtractUast(files).cache()
+      val features = gemini.sparkFeatures(uasts)
+      val docFreq = gemini.makeDocFreq(uasts, features)
+
+      gemini.save(files)
+      gemini.saveDocFreq(docFreq)
+
       println("Done")
 
     case None =>

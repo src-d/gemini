@@ -6,8 +6,10 @@ import java.nio.file.Files
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.{Session, SimpleStatement}
 import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
 import org.bblfsh.client.BblfshClient
 import org.eclipse.jgit.lib.Constants.OBJ_BLOB
 import org.eclipse.jgit.lib.ObjectInserter
@@ -18,13 +20,11 @@ import tech.sourced.featurext.generated.service._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, SECONDS}
 import scala.io.Source
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-import scala.util.parsing.json._
+import tech.sourced.featurext.{FEClient, SparkFEClient}
+
+case class SparkFeature(key: Array[String], weight: Long)
 
 class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
 
@@ -55,16 +55,67 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       .getCommits
       .getTreeEntries
       .getBlobs
+      .filter('is_binary === false)
+
+  def sparkExtractUast(files: DataFrame): DataFrame = {
+    // TODO(max): get languages from bblfsh directly as soon as
+    // https://github.com/bblfsh/client-scala/issues/68 resolved
+    val langs = Array("Java", "Python", "Go", "JavaScript", "TypeScript", "Ruby", "Bash", "Php")
+
+    files
+      .dropDuplicates("blob_id")
+      .classifyLanguages
+      .filter('lang.isin(langs: _*))
+      .extractUASTs
+      .select("repository_id", "path", "blob_id", "uast")
+      .filter(_.getAs[Seq[Array[Byte]]]("uast").nonEmpty)
+      .withColumn("document", expr("CONCAT(repository_id, '//', path, '@', blob_id)"))
+      .select("document", "uast")
+  }
+
+  def sparkFeatures(uasts: DataFrame): RDD[SparkFeature] = {
+    var feConfig = SparkFEClient.getConfig(session)
+    val rows = uasts.flatMap { row =>
+      val uastArr = row.getSeq[Array[Byte]](1)
+      val features = uastArr.flatMap { byteArr =>
+        val uast = Node.parseFrom(byteArr)
+        SparkFEClient.extract(uast, feConfig)
+      }
+      features.map(f => SparkFeature(Array[String](f.name, row(0).asInstanceOf[String]), f.weight.toLong))
+    }
+
+    rows.rdd
+  }
+
+  def makeDocFreq(uasts: DataFrame, features: RDD[SparkFeature]): OrderedDocFreq = {
+    val docs = uasts.select("document").distinct().count()
+
+    val df = features
+      .map(row => (row.key(0), row.key(1)))
+      .distinct()
+      .map(row => (row._1, 1))
+      .reduceByKey((a, b) => a + b)
+      .collectAsMap()
+
+    new OrderedDocFreq(docs.toInt, df.keys.toArray, df.toMap)
+  }
+
+  def saveDocFreq(docFreq: OrderedDocFreq): Unit = {
+    // TODO replace with DB later
+    docFreq.saveToJson()
+  }
+
+  def save(files: DataFrame): Unit = {
+    val renamedFiles = files
       .select("blob_id", "repository_id", "commit_hash", "path")
       .withColumnRenamed("blob_id", meta.sha)
       .withColumnRenamed("repository_id", meta.repo)
       .withColumnRenamed("commit_hash", meta.commit)
       .withColumnRenamed("path", meta.path)
 
-  def save(files: DataFrame): Unit = {
-    val approxFileCount = files.rdd.countApprox(10000L)
+    val approxFileCount = renamedFiles.rdd.countApprox(10000L)
     log.info(s"Writing $approxFileCount files to DB")
-    files.write
+    renamedFiles.write
       .mode("append")
       .cassandraFormat(defaultTable, keyspace)
       .save()
@@ -199,68 +250,21 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
   def extractFeatures(client: FeatureExtractor, uast: Node): Iterable[Feature] = {
     log.debug(s"uast received: ${uast.toString}")
-
-    val idRequest = IdentifiersRequest().withUast(uast).withDocfreqThreshold(5)
-    val litRequest = LiteralsRequest().withUast(uast).withDocfreqThreshold(5)
-    val graphletRequest = GraphletRequest().withUast(uast).withDocfreqThreshold(5)
-
-    val result = try {
-      val features = for {
-        idResponse <- client.identifiers(idRequest)
-        litResponse <- client.literals(litRequest)
-        graphletResponse <- client.graphlet(graphletRequest)
-      } yield idResponse.features ++ litResponse.features ++ graphletResponse.features
-
-      Await.result(features, Duration(30, SECONDS))
-    } catch {
-      case NonFatal(e) => {
-        log.error(s"feature extractor error: ${e.toString}")
-        Iterable()
-      }
-    }
+    val result = FEClient.extract(uast, client, log)
     log.debug(s"features: ${result.toString}")
     result
   }
 
-  def mustParseJSON[T: ClassTag](input: String): T = {
-    JSON.parseFull(input) match {
-      case Some(res: T) => res
-      case Some(_) => throw new Exception("incorrect json")
-      case None => throw new Exception("can't parse json")
-    }
-  }
-
-  def parseDocFreq(file: File): (Int, Map[String, Double], List[String]) = {
-    log.info("Reading docFreq")
-    val docFreqByteArray = Files.readAllBytes(file.toPath)
-    val docFreqMap = mustParseJSON[Map[_, _]](new String(docFreqByteArray))
-      .asInstanceOf[Map[String, Any]]
-
-    val docs = docFreqMap.get("docs") match {
-      case Some(v) => v.asInstanceOf[Double].toInt
-      case None => throw new Exception("can not parse docs in docFreq")
-    }
-    val df = docFreqMap.get("df") match {
-      case Some(v) => v.asInstanceOf[Map[String, Double]]
-      case None => throw new Exception("can not parse df in docFreq")
-    }
-    val tokens = docFreqMap.get("tokens") match {
-      case Some(v) => v.asInstanceOf[List[String]]
-      case None => throw new Exception("can not parse tokens in docFreq")
-    }
-
-    (docs, df, tokens)
-  }
-
   def parseParams(file: File): Map[String, List[List[Double]]] = {
     log.info("Reading params")
-    val paramsByteArray = Files.readAllBytes(file.toPath)
-    mustParseJSON[Map[_, _]](new String(paramsByteArray))
+    JSONUtils.parseFile[Map[_, _]](file)
       .asInstanceOf[Map[String, List[List[Double]]]]
   }
 
+
   def hashFile(features: Iterable[Feature], docFreq: File, paramsFile: File): Array[Array[Long]] = {
-    val (docs, df, tokens) = parseDocFreq(docFreq)
+    log.info("Reading docFreq")
+    val OrderedDocFreq(docs, tokens, df) = OrderedDocFreq.fromJson(docFreq)
 
     val bag = mutable.ArrayBuffer.fill(tokens.size)(0.toDouble)
     features.foreach { feature =>
@@ -413,7 +417,6 @@ object Gemini {
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"
   val defaultFePort: Int = 9001
-  val defaultDocFreqFile: String = "docfreq.json"
   val defaultParamsFile: String = "params.json"
 
   //TODO(bzz): switch to `tables("meta")`
