@@ -1,3 +1,4 @@
+dist: trusty
 language: scala
 scala:
    - 2.11.2
@@ -14,20 +15,25 @@ matrix:
   fast_finish: true
   include:
   - scala: 2.11.2
+    before_install:
+    - ./scripts/start_docker_db.sh
     script:
-      - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
       - ./sbt "test-only * -- -l tags.FEIntegration"
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
     before_install:
+      - ./scripts/start_docker_db.sh
+      - ./scripts/start_docker_bblfsh.sh
       - ./scripts/install_python.sh
+      - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
     install:
       - make build
     script:
-      - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
-      - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
+      # start dependencies
+      - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
+      # just check that commands don't fail
       - ./hash src/test/resources/siva || travis_terminate 1
       - ./query ./src/test/resources/LICENSE
       - ./report
@@ -59,18 +65,16 @@ matrix:
       - MASTER=spark://127.0.0.1:7077
     before_install:
       - ./scripts/install_python.sh
+      - ./scripts/start_docker_db.sh
+      - ./scripts/start_docker_bblfsh.sh
+      - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
     install:
       - make build
-      - 
     script:
       # start dependencies
-      - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
       - ./scripts/start_apache_spark_cluster.sh "127.0.0.1" "7077" || travis_terminate 1
-      # python will be installed after https://github.com/src-d/gemini/issues/60
-      # and after merge https://github.com/src-d/gemini/pull/98 we can use local fe runner
-      - docker build -t srcd/gemini-fe -f FE.Dockerfile .
-      - ./scripts/start_docker_fe.sh
-      - sleep 10 # wait for it doesn't work, port is avalable but scyllaDB is still down
+      - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
+      # hashing test repositories
       - ./hash src/test/resources/siva || travis_terminate 1
       # query without similarity
       - ./query ./src/test/resources/LICENSE
@@ -120,16 +124,21 @@ matrix:
     script:
       - pytest -v src/main/python/community-detector
 
-before_script:
- - ./scripts/start_docker_db.sh
- - ./scripts/start_docker_bblfsh.sh
-
 after_failure:
  - docker logs db
+
+before_cache:
+  # Cleanup the cached directories to avoid unnecessary cache updates
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
+  # make bblfsh images readable
+  - sudo chmod -R 777 $HOME/bblfsh-drivers/images
 
 cache:
   directories:
     - .spark-dist
-    - /home/travis/.sbt
-    - /home/travis/.ivy2
-    - /home/travis/bblfsh-drivers
+    - $HOME/.sbt
+    - $HOME/.ivy2/cache
+    - $HOME/.coursier
+    - $HOME/bblfsh-drivers/images
+    - $HOME/.cache/pip/wheels
