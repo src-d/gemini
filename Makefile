@@ -21,6 +21,7 @@ $(MAKEFILE):
 -include $(MAKEFILE)
 
 build:
+	$(SBT) assemblyPackageDependency
 	$(SBT) assembly
 	$(SBT) package
 

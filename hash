@@ -4,19 +4,26 @@
 E_NO_SPARK=2
 E_BUILD_FAILED=1
 
+version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
 jar="target/gemini-uber.jar"
 build_command="./sbt assembly"
+deps_jar="target/gemini-assembly-${version}-deps.jar"
+build_deps_command="./sbt assemblyPackageDependency"
 
 app_class="tech.sourced.gemini.HashSparkApp"
 app_name="Gemini - hashing"
 
 hash java >/dev/null 2>&1 || { echo "Please install Java" >&2; exit 1; }
 
-if [[ ! -f "${jar}" ]]; then
-    echo "${jar} not found. Running build '${build_command}'"
-    if ! $build_command ; then
+if [[ ! -f "${deps_jar}" ]]; then
+    echo "${deps_jar} not found. Running build '${build_deps_command}'"
+    if ! $build_deps_command ; then
         exit "${E_BUILD_FAILED}"
     fi
+fi
+
+if ! $build_command ; then
+    exit "${E_BUILD_FAILED}"
 fi
 
 sparkSubmit() {
@@ -39,6 +46,7 @@ sparkSubmit() {
 # spark.executor.extraJavaOptions=-Dlog4j.configuration=log4j-spark.properties
 
 sparkSubmit \
+  --jars "${deps_jar}" \
   --class "${app_class}" \
   --master "${MASTER:=local[*]}" \
   --name "${app_name}" \

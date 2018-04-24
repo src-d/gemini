@@ -32,7 +32,7 @@ RUN ln -s $SPARK_DIR $SPARK_HOME
 
 COPY . /gemini
 
-RUN ./sbt assembly && ./sbt package
+RUN ./sbt assemblyPackageDependency && ./sbt assembly && ./sbt package
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["bash", "-c", "sleep infinity & wait"]
