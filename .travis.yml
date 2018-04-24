@@ -74,6 +74,8 @@ matrix:
       - ./hash src/test/resources/siva || travis_terminate 1
       # query without similarity
       - ./query ./src/test/resources/LICENSE
+      # report without similarity
+      - ./report
       # query with similarity
       - docker cp ./src/test/resources/hashtables_dump.cql db:/hashtables_dump.cql
       - docker exec -it db cqlsh -e "SOURCE '/hashtables_dump.cql'"
@@ -81,8 +83,11 @@ matrix:
       # check both identical & similar files appeared in output
       - grep "Duplicates of ./src/test/resources/consumer.go" query_result.txt > /dev/null
       - grep "Similar files of ./src/test/resources/consumer.go" query_result.txt > /dev/null
-      # report
-      - ./report
+      # report with similarity
+      - ./report | tee report_result.txt
+      # check both identical & similar files appeared in output
+      - grep "2 duplicates" report_result.txt > /dev/null
+      - grep "2 similar files" report_result.txt > /dev/null
       # go query
       - go get ./src/main/go/... || true
       - go run ./src/main/go/query.go ./src/test/resources/LICENSE
