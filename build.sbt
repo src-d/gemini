@@ -3,7 +3,7 @@ import sbt.Keys.libraryDependencies
 
 organization := "tech.sourced"
 scalaVersion := "2.11.11"
-version := "0.0.1-SNAPSHOT"
+version := "0.0.2-SNAPSHOT"
 
 name := "gemini"
 // we need it to be able to run gemini from only jar files without src
