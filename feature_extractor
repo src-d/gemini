@@ -1,0 +1,16 @@
+#!/bin/bash
+# Convenience script to run features extraction service locally
+
+service_dir="src/main/python/feature-extractor"
+
+hash python3 >/dev/null 2>&1 || { echo "Please install python3" >&2; exit 1; }
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    echo "Looks like you don't use virtual environment for python"
+    echo "Please activate it or create a new one"
+    echo "More information is here: https://virtualenv.pypa.io/en/stable/"
+    exit 1
+fi
+
+pip install --no-cache-dir -r "${service_dir}/requirements.txt"
+(cd "${service_dir}"; PYTHONHASHSEED=0 python3 server.py "$@")
