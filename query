@@ -3,7 +3,8 @@
 
 E_BUILD_FAILED=142
 
-jar="target/gemini-0.0.1-SNAPSHOT.jar"
+version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
+jar="target/gemini-${version}.jar"
 build_command="./sbt package"
 
 app_class="tech.sourced.gemini.QueryApp"
