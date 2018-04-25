@@ -12,5 +12,12 @@ if [ -z "$VIRTUAL_ENV" ]; then
     exit 1
 fi
 
-pip install --no-cache-dir -r "${service_dir}/requirements.txt"
-(cd "${service_dir}"; PYTHONHASHSEED=0 python3 server.py "$@")
+pip3 install -I --user -r "${service_dir}/requirements.txt"
+(
+    cd "${service_dir}"
+    if [ -z "$IN_BACKGROUND" ]; then
+        PYTHONHASHSEED=0 python3 server.py "$@"
+    else
+        PYTHONHASHSEED=0 python3 server.py "$@" &
+    fi
+)

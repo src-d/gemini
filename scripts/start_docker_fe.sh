@@ -8,16 +8,12 @@ image="srcd/gemini-fe"
 
 set -ev
 
-if [[ -z "${STYLE_CHECK}" ]]; then
-  echo "Starting Docker image ${image}"
-  docker run --name fe -e PYTHONHASHSEED=0 -p 9001:9001 -d "${image}"
+echo "Starting Docker image ${image}"
+docker run --name fe -e PYTHONHASHSEED=0 -p 9001:9001 -d "${image}"
 
-  if [[ "$?" -ne 0 ]]; then
-    echo "Unable to start Docker ${file_list}" >&2
-    exit "${E_BAD_DOCKER}"
-  fi
-else
-  echo "Skip starting Docker image ${image}"
+if [[ "$?" -ne 0 ]]; then
+  echo "Unable to start Docker ${file_list}" >&2
+  exit "${E_BAD_DOCKER}"
 fi
 
 docker ps
