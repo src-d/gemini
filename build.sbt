@@ -6,8 +6,7 @@ scalaVersion := "2.11.11"
 version := "0.0.2-SNAPSHOT"
 
 name := "gemini"
-// we need it to be able to run gemini from only jar files without src
-unmanagedBase := baseDirectory.value / "target"
+
 libraryDependencies ++= Seq(
   scalaTest % Test,
   scoverage % Test,
@@ -35,22 +34,23 @@ libraryDependencies ++= Seq(
   parquetAvro % Compile,
   hadoopCommon % Compile
 )
-assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
+assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, includeDependency = false)
 assemblyJarName in assembly := s"${name.value}-uber.jar"
 
 assemblyMergeStrategy in assembly := {
   case "META-INF/io.netty.versions.properties" => MergeStrategy.last
-  // engine uses bblfsh client scala, which also uses scalapb but different version
-  case PathList("scalapb", xs @ _*) => MergeStrategy.first
-  case PathList("com", "trueaccord", "lenses", xs @ _*) => MergeStrategy.first
-  case PathList("com", "google", "protobuf", xs @ _*) => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
 }
 
 assemblyShadeRules in assembly := Seq(
-  ShadeRule.rename("io.netty.**" -> "io.shadednetty.@1").inAll
+  ShadeRule.rename("io.netty.**" -> "io.shadednetty.@1").inAll,
+  // bblfsh/scalapb use newer versions than spark
+  ShadeRule.rename("com.google.common.**" -> "shaded.com.google.common.@1").inAll,
+  ShadeRule.rename("com.google.protobuf.**" -> "shaded.com.google.protobuf.@1").inAll,
+  // bblfsh in engine is old
+  ShadeRule.rename("com.trueaccord.scalapb.**" -> "scalapb.@1").inAll
 )
 
 test in assembly := {}

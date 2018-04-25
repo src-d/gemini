@@ -33,5 +33,10 @@ cp feature_extractor gemini-$VERSION/
 # copy documentation
 cp LICENCE gemini-$VERSION/
 
+cat <<EOT >> gemini-$VERSION/build.sbt
+// we need it to be able to run gemini from only jar files without src
+unmanagedBase := baseDirectory.value / "target"
+EOT
+
 # create archive
 tar -cvzf gemini_$VERSION.tar.gz gemini-$VERSION/
