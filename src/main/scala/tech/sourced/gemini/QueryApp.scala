@@ -14,11 +14,6 @@ case class QueryAppConfig(file: String = "",
                           feHost: String = Gemini.defaultFeHost,
                           fePort: Int = Gemini.defaultFePort,
                           docFreqFile: String = Gemini.defaultDocFreqFile,
-                          // paramsFile, hashtablesNum and bandSize are needed only as long as we use apollo hash
-                          // should be removed after we implement hash on our side
-                          paramsFile: String = Gemini.defaultParamsFile,
-                          hashtablesNum: Int = 0,
-                          bandSize: Int = 0,
                           verbose: Boolean = false)
 
 /**
@@ -56,15 +51,6 @@ object QueryApp extends App {
     opt[String]("doc-freq-file")
       .action((x, c) => c.copy(docFreqFile = x))
       .text("path to file with feature frequencies")
-    opt[String]("params-file")
-      .action((x, c) => c.copy(paramsFile = x))
-      .text("path to file with feature frequencies")
-    opt[Int]("hashtables-num")
-      .action((x, c) => c.copy(hashtablesNum = x))
-      .text("number of hashtables should match docFreq file")
-    opt[Int]("band-size")
-      .action((x, c) => c.copy(bandSize = x))
-      .text("size of a band should match docFreq file")
     arg[String]("<path-to-file>")
       .required()
       .action((x, c) => c.copy(file = x))
@@ -90,16 +76,13 @@ object QueryApp extends App {
       val bblfshClient = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
       val channel = ManagedChannelBuilder.forAddress(config.feHost, config.fePort).usePlaintext(true).build()
       val feClient = FeatureExtractorGrpc.stub(channel)
-      val (duplicates, similar) =
+      val QueryResult(duplicates, similar) =
         gemini.query(
           file,
           cassandra,
           bblfshClient,
           feClient,
-          config.docFreqFile,
-          config.paramsFile,
-          config.hashtablesNum,
-          config.bandSize
+          config.docFreqFile
         )
 
       cassandra.close()

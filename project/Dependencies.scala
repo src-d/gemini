@@ -8,7 +8,7 @@ object Dependencies {
   lazy val spark = "org.apache.spark" %% "spark-core" % "2.2.0"
   lazy val fixNetty = "io.netty" % "netty-all" % "4.1.17.Final"
   lazy val fixNewerHadoopClient = "org.apache.hadoop" % "hadoop-client" % "2.7.2"
-  lazy val engine = "tech.sourced" % "engine" % "0.6.0" classifier "slim"
+  lazy val engine = "tech.sourced" % "engine" % "0.6.1" classifier "slim"
   lazy val jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "4.9.0.201710071750-r"
   lazy val cassandraSparkConnector = "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.6"
   lazy val cassandraDriverMetrics = "com.codahale.metrics" % "metrics-core" % "3.0.2"

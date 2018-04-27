@@ -17,9 +17,10 @@ matrix:
   - scala: 2.11.2
     before_install:
     - ./scripts/start_docker_db.sh
+    - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
-      - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
-      - ./sbt "test-only * -- -l tags.FEIntegration -l Integration"
+      # run only tests without external deps (beside DB)
+      - ./sbt "test-only * -- -l tags.FEIntegration -l tags.Bblfsh -l tags.FeatureExtractor"
 
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
@@ -28,17 +29,14 @@ matrix:
       - ./scripts/start_docker_bblfsh.sh
       - ./scripts/install_python.sh
       - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
+      - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     install:
       - make build
     script:
       # start dependencies
       - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
-      # just check that commands don't fail
-      - ./hash src/test/resources/siva || travis_terminate 1
-      - ./query ./src/test/resources/LICENSE
-      - ./report
-      - go get ./src/main/go/... || true
-      - go run ./src/main/go/query.go ./src/test/resources/LICENSE
+      # run all test suite
+      - ./sbt test
     before_deploy:
       - VERSION=$TRAVIS_TAG ./scripts/release.sh
     deploy:
@@ -74,8 +72,6 @@ matrix:
       # start dependencies
       - ./scripts/start_apache_spark_cluster.sh "127.0.0.1" "7077" || travis_terminate 1
       - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
-      # integration tests
-      - ./sbt "test-only * -- -n Integration"
       # hashing test repositories
       - ./hash src/test/resources/siva || travis_terminate 1
       # query without similarity
@@ -83,9 +79,7 @@ matrix:
       # report without similarity
       - ./report
       # query with similarity
-      - docker cp ./src/test/resources/hashtables_dump.cql db:/hashtables_dump.cql
-      - docker exec -it db cqlsh -e "SOURCE '/hashtables_dump.cql'"
-      - ./query --doc-freq-file=src/test/resources/docfreq.json --params-file=src/test/resources/params.json --hashtables-num=9 --band-size=13 ./src/test/resources/consumer.go | tee query_result.txt
+      - ./query ./src/test/resources/consumer.go | tee query_result.txt
       # check both identical & similar files appeared in output
       - grep "Duplicates of ./src/test/resources/consumer.go" query_result.txt > /dev/null
       - grep "Similar files of ./src/test/resources/consumer.go" query_result.txt > /dev/null

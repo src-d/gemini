@@ -77,14 +77,7 @@ object HashSparkApp extends App with Logging {
         gemini.applySchema(cassandra)
       }
 
-      val files = gemini.hash(reposPath, config.limit, config.format).cache()
-      val uasts = gemini.sparkExtractUast(files).cache()
-      val features = gemini.sparkFeatures(uasts)
-      val docFreq = gemini.makeDocFreq(uasts, features)
-
-      gemini.save(files)
-      gemini.saveDocFreq(docFreq)
-
+      gemini.hash(reposPath, config.limit, config.format)
       println("Done")
 
     case None =>

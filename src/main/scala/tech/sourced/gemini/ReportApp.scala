@@ -72,7 +72,7 @@ object ReportApp extends App {
         case `condensedMode` => ReportGrouped(gemini.reportCassandraCondensed(cassandra))
         case `groupByMode` => ReportExpandedGroup(gemini.reportCassandraGroupBy(cassandra))
       }
-      val similarityReport = makeDuplicateReport(gemini, cassandra, config)
+      val similarityReport = makeSimilarityReport(gemini, cassandra, config)
 
       print(duplicateReport)
       printCommunities(similarityReport)
@@ -84,7 +84,11 @@ object ReportApp extends App {
       System.exit(2)
   }
 
-  def makeDuplicateReport(gemini: Gemini, cassandra: Session, config: ReportAppConfig): Iterable[Iterable[RepoFile]] = {
+  def makeSimilarityReport(
+                            gemini: Gemini,
+                            cassandra: Session,
+                            config: ReportAppConfig): Iterable[Iterable[RepoFile]] = {
+
     val log = Logger("gemini", config.verbose)
 
     val (connectedComponents, elsToBuckets, elementIds) = gemini.findConnectedComponents(cassandra)
