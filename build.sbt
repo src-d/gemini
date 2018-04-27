@@ -45,12 +45,10 @@ assemblyMergeStrategy in assembly := {
 }
 
 assemblyShadeRules in assembly := Seq(
-  ShadeRule.rename("io.netty.**" -> "io.shadednetty.@1").inAll,
+  ShadeRule.rename("io.netty.**" -> "tech.sourced.gemini.shaded.io.netty.@1").inAll,
   // bblfsh/scalapb use newer versions than spark
-  ShadeRule.rename("com.google.common.**" -> "shaded.com.google.common.@1").inAll,
-  ShadeRule.rename("com.google.protobuf.**" -> "shaded.com.google.protobuf.@1").inAll,
-  // bblfsh in engine is old
-  ShadeRule.rename("com.trueaccord.scalapb.**" -> "scalapb.@1").inAll
+  ShadeRule.rename("com.google.common.**" -> "tech.sourced.gemini.shaded.com.google.common.@1").inAll,
+  ShadeRule.rename("com.google.protobuf.**" -> "tech.sourced.gemini.shaded.com.google.protobuf.@1").inAll
 )
 
 test in assembly := {}
