@@ -13,7 +13,7 @@ case class QueryAppConfig(file: String = "",
                           bblfshPort: Int = Gemini.defaultBblfshPort,
                           feHost: String = Gemini.defaultFeHost,
                           fePort: Int = Gemini.defaultFePort,
-                          docFreqFile: String = OrderedDocFreq.defaultFile,
+                          docFreqFile: String = Gemini.defaultDocFreqFile,
                           // paramsFile, hashtablesNum and bandSize are needed only as long as we use apollo hash
                           // should be removed after we implement hash on our side
                           paramsFile: String = Gemini.defaultParamsFile,

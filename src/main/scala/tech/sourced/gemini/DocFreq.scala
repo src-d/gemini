@@ -12,7 +12,7 @@ import scala.util.parsing.json.{JSONArray, JSONObject}
   * @param df
   */
 case class OrderedDocFreq(docs: Int, tokens: Array[String], df: Map[String, Int]) {
-  def saveToJson(filename: String = OrderedDocFreq.defaultFile): Unit = {
+  def saveToJson(filename: String): Unit = {
     val jsonObj = JSONObject(Map[String, Any](
       "docs" -> docs,
       "tokens" -> JSONArray(tokens.toList),
@@ -25,8 +25,6 @@ case class OrderedDocFreq(docs: Int, tokens: Array[String], df: Map[String, Int]
 }
 
 object OrderedDocFreq {
-  val defaultFile: String = "docfreq.json"
-
   def fromJson(file: File): OrderedDocFreq = {
     val docFreqMap = JSONUtils.parseFile[Map[_, _]](file)
       .asInstanceOf[Map[String, Any]]

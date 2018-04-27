@@ -73,9 +73,10 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
       .select("document", "uast")
   }
 
-  def sparkFeatures(uasts: DataFrame): RDD[SparkFeature] = {
+  // Try to use DF here instead
+  def sparkFeatures(uastsDf: DataFrame): RDD[SparkFeature] = {
     var feConfig = SparkFEClient.getConfig(session)
-    val rows = uasts.flatMap { row =>
+    val rows = uastsDf.flatMap { row =>
       val uastArr = row.getSeq[Array[Byte]](1)
       val features = uastArr.flatMap { byteArr =>
         val uast = Node.parseFrom(byteArr)
@@ -102,7 +103,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
 
   def saveDocFreq(docFreq: OrderedDocFreq): Unit = {
     // TODO replace with DB later
-    docFreq.saveToJson()
+    docFreq.saveToJson(Gemini.defaultDocFreqFile)
   }
 
   def save(files: DataFrame): Unit = {
@@ -417,6 +418,7 @@ object Gemini {
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"
   val defaultFePort: Int = 9001
+  val defaultDocFreqFile: String = "docfreq.json"
   val defaultParamsFile: String = "params.json"
 
   //TODO(bzz): switch to `tables("meta")`
