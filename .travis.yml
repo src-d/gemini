@@ -30,8 +30,6 @@ matrix:
       - ./scripts/install_python.sh
       - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
-    install:
-      - make build
     script:
       # start dependencies
       - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
