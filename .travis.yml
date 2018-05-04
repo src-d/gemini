@@ -28,7 +28,6 @@ matrix:
       - ./scripts/start_docker_db.sh
       - ./scripts/start_docker_bblfsh.sh
       - ./scripts/install_python.sh
-      - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
       # start dependencies
