@@ -51,43 +51,38 @@ class FileQuery(conn: Session,
     val duplicates = findDuplicatesOfFile(file)
     val duplicatedShas = duplicates.map(_.sha).toSeq
 
-    val similarShas = findSimilarForFile(file, conn, bblfshClient, feClient, docFreqPath)
+    val similarShas = findSimilarForFile(file)
       .map(_.split("@")(1)) // value for sha1 in Apollo hashtables is 'path@sha1', but we need only hashes
       .filterNot(sha => duplicatedShas.contains(sha))
 
     log.info(s"${similarShas.length} SHA1's found to be similar")
 
-    val similar = similarShas.flatMap(sha1 => Database.repoFilesByHash(sha1, conn, keyspace, tables))
+    val similar = similarShas.flatMap(sha1 => Database.findFilesByHash(sha1, conn, keyspace, tables))
     QueryResult(duplicates, similar)
   }
 
   protected def findDuplicatesOfFile(file: File): Iterable[RepoFile] = {
-    Database.repoFilesByHash(Gemini.computeSha1(file), conn, keyspace, tables)
+    Database.findFilesByHash(Gemini.computeSha1(file), conn, keyspace, tables)
   }
 
-  protected def findSimilarForFile(
-                          file: File,
-                          conn: Session,
-                          bblfshClient: BblfshClient,
-                          feClient: FeatureExtractor,
-                          docFreqPath: String): Seq[String] = {
+  protected def findSimilarForFile(file: File): Seq[String] = {
     val docFreqFile = new File(docFreqPath)
     if (!docFreqFile.exists()) {
       log.warn("Document frequency for weighted min hash wasn't provided. Skip similarity query")
       Seq()
     } else {
-      extractUAST(file, bblfshClient) match {
+      extractUAST(file) match {
         case Some(node) =>
-          val featuresList = extractFeatures(feClient, node)
-          findSimilarFiles(featuresList, conn, docFreqFile)
+          val featuresList = extractFeatures(node)
+          findSimilarFiles(featuresList, docFreqFile)
         case _ => Seq()
       }
     }
   }
 
-  private def findSimilarFiles(featuresList: Iterable[Feature], conn: Session, docFreqFile: File): Seq[String] = {
+  private def findSimilarFiles(featuresList: Iterable[Feature], docFreqFile: File): Seq[String] = {
     if (featuresList.isEmpty) {
-      log.warn("file doesn't contain features")
+      log.warn(s"file: '${docFreqFile.getPath}' doesn't contain features")
       Seq()
     } else {
       val cols = tables.hashtablesCols
@@ -97,8 +92,7 @@ class FileQuery(conn: Session,
 
       log.info("Looking for similar items")
       val similar = bands.zipWithIndex.foldLeft(Set[String]()) { case (sim, (band, i)) =>
-        val table = "hashtables"
-        val cql = s"""SELECT ${cols.sha} FROM $keyspace.$table
+        val cql = s"""SELECT ${cols.sha} FROM $keyspace.${tables.hashtables}
           WHERE ${cols.hashtable}=$i AND ${cols.value}=0x${MathUtil.bytes2hex(band)}"""
         log.debug(cql)
 
@@ -114,11 +108,11 @@ class FileQuery(conn: Session,
     }
   }
 
-  protected def extractUAST(file: File, client: BblfshClient): Option[Node] = {
+  protected def extractUAST(file: File): Option[Node] = {
     val byteArray = Files.readAllBytes(file.toPath)
     log.info(s"Extracting UAST")
     try {
-      val resp = client.parse(file.getName, new String(byteArray))
+      val resp = bblfshClient.parse(file.getName, new String(byteArray))
       if (resp.errors.nonEmpty) {
         val errors = resp.errors.mkString(",")
         log.error(s"bblfsh errors: ${errors}")
@@ -133,9 +127,9 @@ class FileQuery(conn: Session,
     }
   }
 
-  protected def extractFeatures(client: FeatureExtractor, uast: Node): Iterable[Feature] = {
+  protected def extractFeatures(uast: Node): Iterable[Feature] = {
     log.debug(s"uast received: ${uast.toString}")
-    val result = FEClient.extract(uast, client, log)
+    val result = FEClient.extract(uast, feClient, log)
     log.debug(s"features: ${result.toString}")
     result
   }

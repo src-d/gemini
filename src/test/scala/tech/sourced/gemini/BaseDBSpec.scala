@@ -3,7 +3,7 @@ package tech.sourced.gemini
 import com.datastax.driver.core.{Cluster, Session}
 import org.scalatest.{BeforeAndAfterAll, Suite, Tag}
 
-case class hashtableItem(hashtable: Int, v: String, sha1: String)
+case class HashtableItem(hashtable: Int, v: String, sha1: String)
 
 trait BaseDBSpec extends BeforeAndAfterAll {
   this: Suite =>
@@ -37,9 +37,9 @@ trait BaseDBSpec extends BeforeAndAfterAll {
     }
   }
 
-  def insertHashtables(items: Iterable[hashtableItem]): Unit = {
+  def insertHashtables(items: Iterable[HashtableItem]): Unit = {
     val cols = Gemini.tables.hashtablesCols
-    items.foreach { case hashtableItem(ht, v, sha1) =>
+    items.foreach { case HashtableItem(ht, v, sha1) =>
       val cql = s"""INSERT INTO $keyspace.${Gemini.tables.hashtables}
         (${cols.hashtable}, ${cols.value}, ${cols.sha})
         VALUES ($ht, $v, '$sha1')"""

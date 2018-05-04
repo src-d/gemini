@@ -188,7 +188,7 @@ class FileQuerySpec extends FlatSpec
     new FEServerMock
   }
 
-  def readHashItemsFromFile(path: String): Iterable[hashtableItem] = {
+  def readHashItemsFromFile(path: String): Iterable[HashtableItem] = {
     val file = new File(path)
     val byteArray = Files.readAllBytes(file.toPath)
     val jsonData = JSON.parseFull(new String(byteArray))
@@ -197,7 +197,7 @@ class FileQuerySpec extends FlatSpec
       case Some(m: List[_]) => {
         m.map { l =>
           val r = l.asInstanceOf[List[String]]
-          hashtableItem(hashtable=r(0).toInt, v=r(1), sha1=r(2))
+          HashtableItem(hashtable=r(0).toInt, v=r(1), sha1=r(2))
         }
       }
       case _ => throw new Exception("incorrect json")

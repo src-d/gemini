@@ -1,6 +1,6 @@
 package tech.sourced.gemini
 
-import com.datastax.driver.core.Session
+import com.datastax.driver.core.{Row, Session}
 import com.datastax.driver.core.querybuilder.QueryBuilder
 
 import scala.collection.JavaConverters._
@@ -34,13 +34,15 @@ object Database {
     * @param tables
     * @return
     */
-  def repoFilesByHash(sha: String, conn: Session, keyspace: String, tables: Tables): Iterable[RepoFile] = {
-    val cols = tables.metaCols
+  def findFilesByHash(sha: String, conn: Session, keyspace: String, tables: Tables): Iterable[RepoFile] = {
     val query = QueryBuilder.select().all().from(keyspace, tables.meta)
-      .where(QueryBuilder.eq(cols.sha, sha))
+      .where(QueryBuilder.eq(tables.metaCols.sha, sha))
 
-    conn.execute(query).asScala.map { row =>
-      RepoFile(row.getString(cols.repo), row.getString(cols.commit), row.getString(cols.path), row.getString(cols.sha))
-    }
+    conn.execute(query).asScala.map(rowToRepoFile(tables))
+  }
+
+  private def rowToRepoFile(tables: Tables)(row: Row): RepoFile = {
+    val cols = tables.metaCols
+    RepoFile(row.getString(cols.repo), row.getString(cols.commit), row.getString(cols.path), row.getString(cols.sha))
   }
 }

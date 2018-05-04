@@ -63,7 +63,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   protected def extractUast(files: DataFrame): DataFrame = {
     // TODO(max): get languages from bblfsh directly as soon as
     // https://github.com/bblfsh/client-scala/issues/68 resolved
-    val langs = Array("Java", "Python", "Go", "JavaScript", "TypeScript", "Ruby", "Bash", "Php")
+    val langs = Seq("Java", "Python", "Go", "JavaScript", "TypeScript", "Ruby", "Bash", "Php")
 
     files
       .dropDuplicates("blob_id")
@@ -103,8 +103,9 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
       .map(row => (row._1, 1))
       .reduceByKey((a, b) => a + b)
       .collectAsMap()
+    val tokens = df.keys.toArray[String].sorted
 
-    new OrderedDocFreq(docs.toInt, df.keys.toArray[String], df.toMap[String, Int])
+    new OrderedDocFreq(docs.toInt, tokens, df.toMap[String, Int])
   }
 
   // TODO(max): Try to use DF here instead

@@ -69,7 +69,7 @@ class SparkHashSpec extends FlatSpec
     // num of processed files * 2 repo
     docFreq.docs shouldEqual 4
     docFreq.tokens.size shouldEqual 867
-    docFreq.df(docFreq.tokens(0)) shouldEqual 1
+    docFreq.df(docFreq.tokens(0)) shouldEqual 3
   }
 
   "Hash with limit" should "collect files only from limit repos" in {

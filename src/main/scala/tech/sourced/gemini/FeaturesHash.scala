@@ -3,6 +3,7 @@ package tech.sourced.gemini
 import tech.sourced.featurext.generated.service.Feature
 
 import scala.collection.mutable
+import scala.collection.Searching._
 
 object FeaturesHash {
   // All params below must be the same for hash & query
@@ -20,18 +21,18 @@ object FeaturesHash {
                     docFreq: OrderedDocFreq,
                     features: Iterable[Feature],
                     sampleSize: Int = defaultSampleSize,
-                    seed: Int = defaultSeed): Array[Array[Long]] = {
+                    seed: Int = defaultSeed): Array[Array[Long]] = synchronized {
     val OrderedDocFreq(docs, tokens, df) = docFreq
 
     if (wmh == null || tokensSize != tokens.size) {
       wmh = new WeightedMinHash(tokens.size, sampleSize, seed)
+      tokensSize = tokens.size
     }
 
     val bag = mutable.ArrayBuffer.fill(tokens.size)(0.toDouble)
     features.foreach { feature =>
-      val idx = tokens.indexOf(feature.name)
-      idx match {
-        case idx if idx >= 0 => {
+      tokens.search(feature.name) match {
+        case Found(idx) => {
           val tf = feature.weight.toDouble
 
           bag(idx) = MathUtil.logTFlogIDF(tf, df(feature.name), docs)
@@ -42,21 +43,33 @@ object FeaturesHash {
     wmh.hash(bag.toArray)
   }
 
-  // split hash to bands
-  // a little bit verbose because java doesn't have uint32 type
-  // in apollo it's one-liner:
-  // https://github.com/src-d/apollo/blob/57e52394783d73e38cf1f862afc0166724991fd5/apollo/query.py#L35
+  /**
+    * split hash to bands
+    *
+    * @param wmh
+    * @param htnum
+    * @param bandSize
+    * @return
+    */
   def wmhToBands(
                   wmh: Array[Array[Long]],
                   htnum: Int = defaultHashtablesNum,
                   bandSize: Int = defaultBandSize): Iterable[Array[Byte]] = {
-    (0 until htnum).map { i =>
+
+    // a little bit verbose because java doesn't have uint32 type
+    // in apollo it's one-liner:
+    // https://github.com/src-d/apollo/blob/57e52394783d73e38cf1f862afc0166724991fd5/apollo/query.py#L35
+    val bands = new Array[Array[Byte]](htnum)
+    (0 until htnum).foreach { i =>
       val from = i * bandSize
-      val to = (i + 1) * bandSize
-      val band = (from until to).foldLeft(Array.empty[Byte]) { (arr, j) =>
-        arr ++ MathUtil.toUInt32ByteArray(wmh(j)(0)) ++ MathUtil.toUInt32ByteArray(wmh(j)(1))
+      val band = new Array[Byte](bandSize*8)
+      (0 until bandSize).foreach { j =>
+        val z = from + j
+        MathUtil.toUInt32ByteArray(wmh(z)(0)).copyToArray(band, j*8)
+        MathUtil.toUInt32ByteArray(wmh(z)(1)).copyToArray(band, j*8 + 4)
       }
-      band
+      bands(i) = band
     }
+    bands
   }
 }

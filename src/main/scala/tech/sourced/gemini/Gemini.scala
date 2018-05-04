@@ -120,7 +120,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def reportCassandraGroupBy(conn: Session): Iterable[Iterable[RepoFile]] = {
     reportCassandraCondensed(conn)
       .map { item =>
-        Database.repoFilesByHash(item.sha, conn, keyspace, tables)
+        Database.findFilesByHash(item.sha, conn, keyspace, tables)
       }
   }
 
@@ -260,7 +260,7 @@ object Gemini {
       .execute(new SimpleStatement(distinctBlobHash))
       .asScala
       .flatMap { r =>
-        val dupes = Database.repoFilesByHash(r.getString(hash), conn, keyspace, tables)
+        val dupes = Database.findFilesByHash(r.getString(hash), conn, keyspace, tables)
         if (dupes.size > 1) {
           List(dupes)
         } else {

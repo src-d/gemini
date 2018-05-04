@@ -24,7 +24,7 @@ class DatabaseSpec extends FlatSpec
   }
 
   "Query for duplicates" should "return 2 files" in {
-    val sha1 = Database.repoFilesByHash("c4e5bcc8001f80acc238877174130845c5c39aa3", cassandra, keyspace, Gemini.tables)
+    val sha1 = Database.findFilesByHash("c4e5bcc8001f80acc238877174130845c5c39aa3", cassandra, keyspace, Gemini.tables)
 
     sha1 should not be empty
     sha1.size shouldEqual 2
