@@ -1,0 +1,46 @@
+version: "3"
+services:
+  gemini:
+    build: .
+    volumes:
+      - ./repositories:/repositories
+    network_mode: "host"
+
+  scylla:
+    image: scylladb/scylla:2.0.0
+    ports:
+      - "9042:9042"
+    volumes:
+      - db-data:/var/lib/scylla
+    command:
+      - "--broadcast-address"
+      - "127.0.0.1"
+      - "--listen-address"
+      - "0.0.0.0"
+      - "--broadcast-rpc-address"
+      - "127.0.0.1"
+      - "--memory"
+      - "2G"
+
+  feature_extractor:
+    ports:
+      - "9001:9001"
+    build:
+      context: .
+      dockerfile: FE.Dockerfile
+    environment:
+      PYTHONHASHSEED: "0"
+
+  bblfshd:
+    image: bblfsh/bblfshd:v2.4.2
+    privileged: true
+    ports:
+      - "9432:9432"
+    volumes:
+      - bblfsh-storage:/var/lib/bblfshd
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "bblfshd & wait 5 && bblfshctl driver install --recommended && tail -f /dev/null"]
+
+volumes:
+  db-data:
+  bblfsh-storage:
