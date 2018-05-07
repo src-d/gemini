@@ -68,7 +68,7 @@ class SparkHashSpec extends FlatSpec
     val docFreq = hashResult.docFreq
     // num of processed files * 2 repo
     docFreq.docs shouldEqual 4
-    docFreq.tokens.size shouldEqual 867
+    docFreq.tokens.size shouldEqual 738
     docFreq.df(docFreq.tokens(0)) shouldEqual 3
   }
 
