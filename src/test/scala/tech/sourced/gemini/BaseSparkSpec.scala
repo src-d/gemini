@@ -7,7 +7,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite, Tag}
 trait BaseSparkSpec extends BeforeAndAfterAll {
   this: Suite =>
 
-  var sparkSession: SparkSession = _
+  @transient var sparkSession: SparkSession = _
   private var _conf: SparkConf = _
 
   def useSparkConf(conf: SparkConf): SparkConf = {
