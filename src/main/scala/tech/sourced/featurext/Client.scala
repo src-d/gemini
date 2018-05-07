@@ -14,11 +14,14 @@ import scala.concurrent.duration.{Duration, SECONDS}
 import scala.util.control.NonFatal
 
 object FEClient {
+  val idWeight = 194
+  val literalsWeight = 264
+  val graphletWeight = 548
 
   def extract(uast: Node, client: FeatureExtractor, log: Slf4jLogger): Iterable[Feature] = {
-    val idRequest = IdentifiersRequest(uast=Some(uast), docfreqThreshold=5)
-    val litRequest = LiteralsRequest(uast=Some(uast), docfreqThreshold=5)
-    val graphletRequest = GraphletRequest(uast=Some(uast), docfreqThreshold=5)
+    val idRequest = IdentifiersRequest(uast=Some(uast), docfreqThreshold=5, weight = idWeight, splitStem = true)
+    val litRequest = LiteralsRequest(uast=Some(uast), docfreqThreshold=5, weight = literalsWeight)
+    val graphletRequest = GraphletRequest(uast=Some(uast), docfreqThreshold=5, weight = graphletWeight)
     client.identifiers(idRequest)
 
     try {
