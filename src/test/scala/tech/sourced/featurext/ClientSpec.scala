@@ -36,7 +36,7 @@ class ClientSpec extends FlatSpec
   "identifiers call" should "return correct response" in {
     val request = IdentifiersRequest(docfreqThreshold=5, uast=Some(uast))
     val reply = blockingStub.identifiers(request)
-    var features = reply.features.sortBy(f => f.name)
+    var features = reply.features.sortBy(_.name)
 
     // check correct shape of response
     features.size should be(49)
@@ -47,7 +47,7 @@ class ClientSpec extends FlatSpec
   "literals call" should "return correct response" in {
     val request = LiteralsRequest(docfreqThreshold=5, uast=Some(uast))
     val reply = blockingStub.literals(request)
-    var features = reply.features.sortBy(f => f.name)
+    var features = reply.features.sortBy(_.name)
 
     // check correct shape of response
     features.size should be(16)
@@ -58,7 +58,7 @@ class ClientSpec extends FlatSpec
   "uast2seq call" should "return correct response" in {
     val request = Uast2seqRequest(docfreqThreshold=5, uast=Some(uast))
     val reply = blockingStub.uast2Seq(request)
-    var features = reply.features.sortBy(f => f.name)
+    var features = reply.features.sortBy(_.name)
 
     // check correct shape of response
     features.size should be(207)
@@ -69,7 +69,7 @@ class ClientSpec extends FlatSpec
   "graphlet call" should "return correct response" in {
     val request = GraphletRequest(docfreqThreshold=5, uast=Some(uast))
     val reply = blockingStub.graphlet(request)
-    var features = reply.features.sortBy(f => f.name)
+    var features = reply.features.sortBy(_.name)
 
     // check correct shape of response
     features.size should be(106)

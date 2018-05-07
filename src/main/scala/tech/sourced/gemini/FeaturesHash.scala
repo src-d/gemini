@@ -22,14 +22,32 @@ object FeaturesHash {
                     features: Iterable[Feature],
                     sampleSize: Int = defaultSampleSize,
                     seed: Int = defaultSeed): Array[Array[Long]] = synchronized {
-    val OrderedDocFreq(docs, tokens, df) = docFreq
-
-    if (wmh == null || tokensSize != tokens.size) {
-      wmh = new WeightedMinHash(tokens.size, sampleSize, seed)
-      tokensSize = tokens.size
+    // keep created WeightedMinHash instance cause the calculation of parameters is expensive for large dimension
+    if (wmh == null || tokensSize != docFreq.tokens.size) {
+      wmh = new WeightedMinHash(docFreq.tokens.size, sampleSize, seed)
+      tokensSize = docFreq.tokens.size
     }
 
-    val bag = mutable.ArrayBuffer.fill(tokens.size)(0.toDouble)
+    val bag = toBagOfFeatures(features, docFreq)
+    wmh.hash(bag)
+  }
+
+  /**
+    * Creates bag of features
+    * It's array with a size of vocabulary
+    * each element represents a feature weight as log-tf-log-idf
+    *
+    * similar code in apollo:
+    * https://github.com/src-d/apollo/blob/bbb9f83fffc93e791fa59f064efadefa270f400a/apollo/hasher.py#L212
+    *
+    * @param features
+    * @param docFreq
+    * @return
+    */
+  private def toBagOfFeatures(features: Iterable[Feature], docFreq: OrderedDocFreq): Array[Double] = {
+    val OrderedDocFreq(docs, tokens, df) = docFreq
+
+    val bag = new Array[Double](tokens.size)//mutable.ArrayBuffer.fill(tokens.size)(0.toDouble)
     features.foreach { feature =>
       tokens.search(feature.name) match {
         case Found(idx) => {
@@ -40,7 +58,7 @@ object FeaturesHash {
         case _ =>
       }
     }
-    wmh.hash(bag.toArray)
+    bag
   }
 
   /**

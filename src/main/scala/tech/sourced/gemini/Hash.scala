@@ -131,7 +131,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   }
 
   protected def saveDocFreq(docFreq: OrderedDocFreq): Unit = {
-    log.info("save document frequencies")
+    log.info(s"save document frequencies to ${Gemini.defaultDocFreqFile}")
     // TODO(max) replace with DB later
     docFreq.saveToJson(Gemini.defaultDocFreqFile)
   }
@@ -159,10 +159,11 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     log.info("save hashtables")
 
     val cols = tables.hashtablesCols
-    rdd.flatMap(row => {
-      val RDDHash(doc, wmh) = row
-      FeaturesHash.wmhToBands(wmh).zipWithIndex.map{ case(band, i) => (doc, i, band) }
-    })
+    rdd
+      .flatMap(row => {
+        val RDDHash(doc, wmh) = row
+        FeaturesHash.wmhToBands(wmh).zipWithIndex.map{ case(band, i) => (doc, i, band) }
+      })
       .toDF(cols.sha, cols.hashtable, cols.value)
       .write
       .mode("append")
