@@ -15,6 +15,11 @@ case class HashAppConfig(reposPath: String = "",
                          limit: Int = 0,
                          host: String = Gemini.defaultCassandraHost,
                          port: Int = Gemini.defaultCassandraPort,
+                         keyspace: String = Gemini.defautKeyspace,
+                         bblfshHost: String = Gemini.defaultBblfshHost,
+                         bblfshPort: Int = Gemini.defaultBblfshPort,
+                         feHost: String = Gemini.defaultFeHost,
+                         fePort: Int = Gemini.defaultFePort,
                          format: String = "siva",
                          verbose: Boolean = false)
 
@@ -35,6 +40,22 @@ object HashSparkApp extends App with Logging {
     opt[Int]('p', "port")
       .action((x, c) => c.copy(port = x))
       .text("port is Cassandra port")
+    opt[String]('k', "keyspace")
+      .action((x, c) => c.copy(keyspace = x))
+      .text("keyspace is Cassandra keyspace")
+    opt[String]("bblfsh-host")
+      .action((x, c) => c.copy(bblfshHost = x))
+      .text("host is babelfish server host")
+    opt[Int]("bblfsh-port")
+      .action((x, c) => c.copy(bblfshPort = x))
+      .text("port is babelfish server port")
+    opt[String]("features-extractor-host")
+      .action((x, c) => c.copy(feHost = x))
+      .text("host is features-extractor server host")
+    opt[Int]("features-extractor-port")
+      .action((x, c) => c.copy(fePort = x))
+      .text("port is features-extractor server port")
+    opt[Unit]('v', "verbose")
     opt[Int]('l', "limit")
       .action((x, c) => c.copy(limit = x))
       .text("limit on the number of processed repositories")
@@ -63,6 +84,10 @@ object HashSparkApp extends App with Logging {
         .master(Properties.envOrElse("MASTER", "local[*]"))
         .config("spark.cassandra.connection.host", config.host)
         .config("spark.cassandra.connection.port", config.port)
+        .config("spark.tech.sourced.bblfsh.grpc.host", config.bblfshHost)
+        .config("spark.tech.sourced.bblfsh.grpc.port", config.bblfshPort)
+        .config("spark.tech.sourced.featurext.grpc.host", config.feHost)
+        .config("spark.tech.sourced.featurext.grpc.port", config.fePort)
         .getOrCreate()
 
       if (config.verbose) {
@@ -72,7 +97,7 @@ object HashSparkApp extends App with Logging {
       val repos = listRepositories(reposPath, config.format, spark.sparkContext.hadoopConfiguration, config.limit)
       printRepositories(reposPath, repos)
 
-      val gemini = Gemini(spark, log, "hashes")
+      val gemini = Gemini(spark, log, config.keyspace)
       CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
         gemini.applySchema(cassandra)
       }
