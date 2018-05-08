@@ -684,3 +684,12 @@ The following components are provided under a BSD-style license. See project lin
 
 (BSD 2 Clause) gogoprotobuf (https://github.com/gogo/protobuf)
   src/main/proto/github.com/gogo/protobuf/gogoproto/gogo.proto
+
+========================================================================
+MIT licenses
+========================================================================
+
+The following components are provided under the MIT License. See project link for details.
+
+(MIT License) datasketch (https://github.com/ekzhu/datasketch)
+  src/main/python/calculate-hashtables/main.py
