@@ -4,6 +4,7 @@ services:
     build: .
     volumes:
       - ./repositories:/repositories
+      - ./query:/query
     environment:
       DB_HOST: scylla
       BBLFSH_HOST: bblfshd

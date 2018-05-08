@@ -7,12 +7,96 @@ Supported granularity level or items are:
  - files
  - functions (TBD)
 
+## Run
+
+```
+./hash   <path-to-repos-or-siva-files>
+./query  <path-to-file>
+./report
+```
+
+You would need to prefix commands with `docker-compose exec gemini` if you run it in docker. Read below how to start gemini in docker or standalone mode.
+
+### Hash
+To pre-process number of repositories for a quick finding of the duplicates run
+
+```
+./hash ./src/test/resources/siva
+```
+
+Input format of the repositories is the same as in [src-d/Engine](https://github.com/src-d/engine).
+
+### Query
+To find all duplicate of the single file run
+
+```
+./query <path-to-single-file>
+```
+
+There is an example of a client in a Golang under [src/main/go](src/main/go)
+
+### Report
+To find all duplicate files in all repositories run
+
+```
+./report
+```
+
+All repositories must be [hashed](#hash) before.
+
 ## Requirements
+
+### Docker
+
+Start containers:
+
+```bash
+docker-compose up -d
+```
+
+Local directories `repositories` and `query` are available as `/repositories` and `/query` inside the container.
+
+Examples:
+
+```bash
+$ docker-compose exec gemini ./hash /repositories
+Hashing 2 repositories in: /repositories
+	file:/repositories/f281ab6f2e0e38dcc3af05360667d8f530c00103.siva
+	file:/repositories/9279be3cf07fb3cca4fc964b27acea57e0af461b.siva
+Done
+
+$ docker-compose exec gemini ./query /query/consumer.go
+Query duplicate files of: /query/consumer.go
+Duplicates of /query/consumer.go:
+	https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/consumer.go
+Similar files of /query/consumer.go:
+	https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/consumer.go
+
+$ docker-compose exec gemini ./report
+2 duplicates:
+	https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/model_test.go
+	https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/model_test.go
+...
+2 similar files:
+	https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/consumer_test.go
+	https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/consumer_test.go
+...
+```
+
+
+### Standalone
+
+You would need:
+
  - JVM 1.8
  - Apache Cassandra or ScyllaDB
  - Apache Spark
+ - Python 3
  - Go (optional)
 
+By default, all commands are going to use
+ - **Apache Cassandra or ScyllaDB** instance available at `localhost:9042`
+ - **Apache Spark**, available though `$SPARK_HOME`
 
 ```bash
 # save some repos in .siva files using Borges
@@ -34,54 +118,6 @@ docker run -p 9042:9042 --volume $(pwd)/scylla:/var/lib/scylla \
 # to get access to DB for development
 docker exec -it some-scylla cqlsh
 ```
-
-
-## Run
-```
-./hash   <path-to-repos-or-siva-files>
-./query  <path-to-file>
-./report
-```
-
-By default, all commands are going to use
- - **Apache Cassandra or ScyllaDB** instance available at `localhost:9042`
- - **Apache Spark**, available though `$SPARK_HOME`
-
-
-### Hash
-To pre-process number of repositories for a quick finding of the duplicates run
-
-```
-./hash $(pwd)/src/test/resources/siva
-```
-
-Input format of the repositories is the same as in [src-d/Engine](https://github.com/src-d/engine).
-
-**Disclamer**: Hashing for indentifing similar items is WIP and at it's current state,
-to be able to get similarity results, you need to run `apollo hash --keyspace gemini` from [Apollo](https://github.com/src-d/apollo/) first.
-
-Similarity results is an active WIP and hasing similar files in Gemini will be added next few releases.
-
-
-
-### Query
-To find all duplicate of the single file run
-
-```
-./query <path-to-single-file>
-```
-
-There is an example of a client in a Golang under [src/main/go](src/main/go)
-
-### Report
-To find all duplicate files in all repositories run
-
-```
-./report
-```
-
-All repositories must be [hashed](#hash) before.
-
 
 
 ### External Apache Spark cluster
