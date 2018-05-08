@@ -8,11 +8,11 @@ import scala.collection.Searching._
 object FeaturesHash {
   // All params below must be the same for hash & query
   val defaultSeed = 0
-  val defaultSampleSize = 128
+  val defaultSampleSize = 160
   // Depend on threshold and sample_size
   // this values calculated for threshold=0.8 and sample_size=128
-  val defaultHashtablesNum = 9
-  val defaultBandSize = 13
+  val defaultHashtablesNum = 20
+  val defaultBandSize = 8
 
   private var tokensSize: Int = _
   private var wmh: WeightedMinHash = _
