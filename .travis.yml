@@ -16,7 +16,7 @@ matrix:
   include:
   - scala: 2.11.2
     before_install:
-    - ./scripts/start_docker_db.sh
+    - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla
     - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
       # run only tests without external deps (beside DB)
@@ -25,8 +25,7 @@ matrix:
   - scala: 2.11.2
     env: INTEGRATION_TESTS=true
     before_install:
-      - ./scripts/start_docker_db.sh
-      - ./scripts/start_docker_bblfsh.sh
+      - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
       - ./scripts/install_python.sh
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
@@ -60,8 +59,7 @@ matrix:
       - MASTER=spark://127.0.0.1:7077
     before_install:
       - ./scripts/install_python.sh
-      - ./scripts/start_docker_db.sh
-      - ./scripts/start_docker_bblfsh.sh
+      - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
       - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
     install:
       - make build
@@ -96,9 +94,8 @@ matrix:
   - scala: 2.11.2
     env: FE_PYTHON_TEST=true
     script:
-      - docker build -t srcd/gemini-fe -f FE.Dockerfile .
-      - docker run --rm -e PYTHONHASHSEED=0 srcd/gemini-fe pytest -v
-      - docker run -p 9001:9001 -e PYTHONHASHSEED=0 -d srcd/gemini-fe
+      - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d featurext
+      - docker-compose exec featurext pytest -v
       - ./sbt "test-only * -- -n tags.FEIntegration"
 
   - scala: 2.11.2
