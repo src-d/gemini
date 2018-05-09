@@ -108,8 +108,8 @@ For `query` and `hash` commands parameters for bblfsh/features extractor  config
 
 Hash command specific arguments:
 
- * `-l/--limit` - limit on the number of processed repositories, no default
- * `-f/--format [siva | bare | standard]` - format of the stored repositories, default `siva`
+ * `-l/--limit` - limit the number of repositories to be processed. All repositories will be processed by default
+ * `-f/--format` - format of the stored repositories. Supported input data formats that repositories could be stored in are `siva`, `bare` or `standard`, default `siva`
 
 # Dev
 
