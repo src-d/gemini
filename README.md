@@ -59,28 +59,9 @@ Local directories `repositories` and `query` are available as `/repositories` an
 Examples:
 
 ```bash
-$ docker-compose exec gemini ./hash /repositories
-Hashing 2 repositories in: /repositories
-	file:/repositories/f281ab6f2e0e38dcc3af05360667d8f530c00103.siva
-	file:/repositories/9279be3cf07fb3cca4fc964b27acea57e0af461b.siva
-Done
-
-$ docker-compose exec gemini ./query /query/consumer.go
-Query duplicate files of: /query/consumer.go
-Duplicates of /query/consumer.go:
-	https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/consumer.go
-Similar files of /query/consumer.go:
-	https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/consumer.go
-
-$ docker-compose exec gemini ./report
-2 duplicates:
-	https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/model_test.go
-	https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/model_test.go
-...
-2 similar files:
-	https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/consumer_test.go
-	https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/consumer_test.go
-...
+docker-compose exec gemini ./hash /repositories
+docker-compose exec gemini ./query /query/consumer.go
+docker-compose exec gemini ./report
 ```
 
 
