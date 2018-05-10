@@ -109,9 +109,24 @@ MASTER="spark://<spark-master-url>" ./hash <path>
 
 ### CLI arguments
 
-```
- --db <url to Cassandra>, default localhost:9042
-```
+All three commands accept parameters for database connection and logging:
+
+ * `-h/--host` - cassandra/scylla db hostname, default `127.0.0.1`
+ * `-p/--port` - cassandra/scylla db port, default `9042`
+ * `-k/--keyspace` - cassandra/scylla db keyspace, default `hashes`
+ * `-v/--verbose` - producing more verbose output, default `false`
+
+For `query` and `hash` commands parameters for bblfsh/features extractor  configuration are available:
+
+ * `--bblfsh-host` - babelfish server host, default `127.0.0.1`
+ * `--bblfsh-port` - babelfish server port, default `9432`
+ * `--features-extractor-host` - features-extractor host, default `127.0.0.1`
+ * `--features-extractor-port` - features-extractor port, default `9001`
+
+Hash command specific arguments:
+
+ * `-l/--limit` - limit the number of repositories to be processed. All repositories will be processed by default
+ * `-f/--format` - format of the stored repositories. Supported input data formats that repositories could be stored in are `siva`, `bare` or `standard`, default `siva`
 
 # Dev
 
