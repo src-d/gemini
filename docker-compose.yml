@@ -4,12 +4,14 @@ services:
     build: .
     volumes:
       - ./repositories:/repositories
-    network_mode: "host"
+      - ./query:/query
+    environment:
+      DB_HOST: scylla
+      BBLFSH_HOST: bblfshd
+      FE_HOST: featurext
 
   scylla:
     image: scylladb/scylla:2.0.0
-    ports:
-      - "9042:9042"
     volumes:
       - db-data:/var/lib/scylla
     command:
@@ -22,9 +24,7 @@ services:
       - "--memory"
       - "2G"
 
-  feature_extractor:
-    ports:
-      - "9001:9001"
+  featurext:
     build:
       context: .
       dockerfile: FE.Dockerfile
@@ -34,8 +34,6 @@ services:
   bblfshd:
     image: bblfsh/bblfshd:v2.4.2
     privileged: true
-    ports:
-      - "9432:9432"
     volumes:
       - bblfsh-storage:/var/lib/bblfshd
     entrypoint: ["/bin/sh"]

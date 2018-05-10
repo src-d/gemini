@@ -6,6 +6,7 @@ E_BUILD_FAILED=142
 version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
 jar="target/gemini-${version}.jar"
 build_command="./sbt package"
+current_dir="$(dirname "$0")"
 
 app_class="tech.sourced.gemini.QueryApp"
 
@@ -18,7 +19,7 @@ if [[ ! -f "${jar}" ]]; then
     fi
 fi
 
+source "$current_dir/scripts/common_params.sh"
 
 #exec java -cp "${jar}" "${app_class}" $@
-exec ./sbt --warn "run-main tech.sourced.gemini.QueryApp $*"
-
+exec ./sbt --warn "run-main ${app_class} ${COMMAND_PARAMS[*]}"

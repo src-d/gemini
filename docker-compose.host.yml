@@ -1,0 +1,16 @@
+version: "3"
+services:
+  gemini:
+    network_mode: "host"
+
+  scylla:
+    ports:
+      - "9042:9042"
+
+  feature_extractor:
+    ports:
+      - "9001:9001"
+
+  bblfshd:
+    ports:
+      - "9432:9432"

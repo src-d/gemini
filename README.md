@@ -7,12 +7,77 @@ Supported granularity level or items are:
  - files
  - functions (TBD)
 
+## Run
+
+```
+./hash   <path-to-repos-or-siva-files>
+./query  <path-to-file>
+./report
+```
+
+You would need to prefix commands with `docker-compose exec gemini` if you run it in docker. Read below how to start gemini in docker or standalone mode.
+
+### Hash
+To pre-process number of repositories for a quick finding of the duplicates run
+
+```
+./hash ./src/test/resources/siva
+```
+
+Input format of the repositories is the same as in [src-d/Engine](https://github.com/src-d/engine).
+
+### Query
+To find all duplicate of the single file run
+
+```
+./query <path-to-single-file>
+```
+
+There is an example of a client in a Golang under [src/main/go](src/main/go)
+
+### Report
+To find all duplicate files in all repositories run
+
+```
+./report
+```
+
+All repositories must be [hashed](#hash) before.
+
 ## Requirements
+
+### Docker
+
+Start containers:
+
+```bash
+docker-compose up -d
+```
+
+Local directories `repositories` and `query` are available as `/repositories` and `/query` inside the container.
+
+Examples:
+
+```bash
+docker-compose exec gemini ./hash /repositories
+docker-compose exec gemini ./query /query/consumer.go
+docker-compose exec gemini ./report
+```
+
+
+### Standalone
+
+You would need:
+
  - JVM 1.8
  - Apache Cassandra or ScyllaDB
  - Apache Spark
+ - Python 3
  - Go (optional)
 
+By default, all commands are going to use
+ - **Apache Cassandra or ScyllaDB** instance available at `localhost:9042`
+ - **Apache Spark**, available though `$SPARK_HOME`
 
 ```bash
 # save some repos in .siva files using Borges
@@ -34,54 +99,6 @@ docker run -p 9042:9042 --volume $(pwd)/scylla:/var/lib/scylla \
 # to get access to DB for development
 docker exec -it some-scylla cqlsh
 ```
-
-
-## Run
-```
-./hash   <path-to-repos-or-siva-files>
-./query  <path-to-file>
-./report
-```
-
-By default, all commands are going to use
- - **Apache Cassandra or ScyllaDB** instance available at `localhost:9042`
- - **Apache Spark**, available though `$SPARK_HOME`
-
-
-### Hash
-To pre-process number of repositories for a quick finding of the duplicates run
-
-```
-./hash $(pwd)/src/test/resources/siva
-```
-
-Input format of the repositories is the same as in [src-d/Engine](https://github.com/src-d/engine).
-
-**Disclamer**: Hashing for indentifing similar items is WIP and at it's current state,
-to be able to get similarity results, you need to run `apollo hash --keyspace gemini` from [Apollo](https://github.com/src-d/apollo/) first.
-
-Similarity results is an active WIP and hasing similar files in Gemini will be added next few releases.
-
-
-
-### Query
-To find all duplicate of the single file run
-
-```
-./query <path-to-single-file>
-```
-
-There is an example of a client in a Golang under [src/main/go](src/main/go)
-
-### Report
-To find all duplicate files in all repositories run
-
-```
-./report
-```
-
-All repositories must be [hashed](#hash) before.
-
 
 
 ### External Apache Spark cluster
