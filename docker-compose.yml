@@ -13,7 +13,7 @@ services:
   scylla:
     image: scylladb/scylla:2.0.0
     volumes:
-      - db-data:/var/lib/scylla
+      - /var/lib/scylla
     command:
       - "--broadcast-address"
       - "127.0.0.1"
@@ -35,10 +35,6 @@ services:
     image: bblfsh/bblfshd:v2.4.2
     privileged: true
     volumes:
-      - bblfsh-storage:/var/lib/bblfshd
+      - /var/lib/bblfshd
     entrypoint: ["/bin/sh"]
-    command: ["-c", "bblfshd & wait 5 && bblfshctl driver install --recommended && tail -f /dev/null"]
-
-volumes:
-  db-data:
-  bblfsh-storage:
+    command: ["-c", "bblfshd & sleep 5 && bblfshctl driver install --recommended && tail -f /dev/null"]
