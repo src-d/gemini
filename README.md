@@ -157,5 +157,5 @@ bblfsh-sdk-tools fixtures -p .proto -l <LANG> <path-to-source-code-file>
 
 ## License
 
-Copyright (C) 2017 source{d}.
+Copyright (C) 2018 source{d}.
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
