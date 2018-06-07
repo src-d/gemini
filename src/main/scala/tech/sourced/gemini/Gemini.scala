@@ -30,6 +30,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }
+    log.info(s"Getting repositories at $reposPath in $format format")
 
     // hash might be called more than one time with the same spark session
     // every run should re-process all repos/files
@@ -38,7 +39,10 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val hash = new Hash(session, log)
     val repos = getRepos(reposPath, limit, format)
 
+    log.info("Hashing")
     val result = hash.forRepos(repos)
+
+    log.info("Saving hashes to DB")
     hash.save(result, keyspace, tables)
   }
 
@@ -60,6 +64,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     if (limit <= 0) {
       repos
     } else {
+      log.info(s"Using only $limit repositories")
       val repoIds = repos.limit(limit).select($"id").collect().map(_ (0))
       repos.filter($"id".isin(repoIds: _*))
     }
