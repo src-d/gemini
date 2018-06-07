@@ -1,13 +1,14 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.cmd
 
 import java.net.URI
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.internal.Logging
 import org.apache.log4j.{Level, LogManager}
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
+import tech.sourced.gemini.Gemini
 
 import scala.util.Properties
 

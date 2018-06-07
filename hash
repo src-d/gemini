@@ -11,7 +11,7 @@ deps_jar="target/gemini-assembly-${version}-deps.jar"
 build_deps_command="./sbt assemblyPackageDependency"
 current_dir="$(dirname "$0")"
 
-app_class="tech.sourced.gemini.HashSparkApp"
+app_class="tech.sourced.gemini.cmd.HashSparkApp"
 app_name="Gemini - hashing"
 
 hash java >/dev/null 2>&1 || { echo "Please install Java" >&2; exit 1; }

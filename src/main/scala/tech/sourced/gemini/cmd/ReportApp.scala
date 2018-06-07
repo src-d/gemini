@@ -1,4 +1,4 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.cmd
 
 import java.io.File
 import java.util
@@ -9,9 +9,9 @@ import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.avro.{AvroParquetReader, AvroParquetWriter}
+import tech.sourced.gemini.{DuplicateBlobHash, Gemini, Logger, RepoFile}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.sys.process._
 
 case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,

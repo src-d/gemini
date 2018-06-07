@@ -1,9 +1,10 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.cmd
 
 import com.datastax.driver.core.Cluster
 import io.grpc.ManagedChannelBuilder
 import org.bblfsh.client.BblfshClient
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc
+import tech.sourced.gemini.{Gemini, Logger, QueryResult}
 
 case class QueryAppConfig(file: String = "",
                           host: String = Gemini.defaultCassandraHost,
