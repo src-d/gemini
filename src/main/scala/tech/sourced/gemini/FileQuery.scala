@@ -50,14 +50,15 @@ class FileQuery(conn: Session,
   def find(file: File): QueryResult = {
     val duplicates = findDuplicatesOfFile(file)
     val duplicatedShas = duplicates.map(_.sha).toSeq
+    log.info(s"${duplicatedShas.length} duplicate SHA1s")
 
     val similarShas = findSimilarForFile(file)
       .map(_.split("@")(1)) // value for sha1 in Apollo hashtables is 'path@sha1', but we need only hashes
       .filterNot(sha => duplicatedShas.contains(sha))
-
-    log.info(s"${similarShas.length} SHA1's found to be similar")
+    log.info(s"${similarShas.length} SHA1's found to be similar, after filtering duplicates")
 
     val similar = similarShas.flatMap(sha1 => Database.findFilesByHash(sha1, conn, keyspace, tables))
+    log.info("Looking up similar files metadata from DB")
     QueryResult(duplicates, similar)
   }
 
@@ -102,7 +103,7 @@ class FileQuery(conn: Session,
 
         sim ++ sha1s
       }
-      log.info(s"Fetched ${similar.size} items")
+      log.info(s"Fetched ${similar.size} items from DB")
 
       similar.toSeq
     }

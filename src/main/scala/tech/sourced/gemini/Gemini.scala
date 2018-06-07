@@ -83,6 +83,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
             feClient: FeatureExtractor,
             docFreqPath: String = ""): QueryResult = {
     val path = new File(inPath)
+    log.info(s"Query for items similar to $path")
     if (path.isDirectory) {
       QueryResult(findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {

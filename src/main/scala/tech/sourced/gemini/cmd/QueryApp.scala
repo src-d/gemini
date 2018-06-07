@@ -63,17 +63,20 @@ object QueryApp extends App {
       val log = Logger("gemini", config.verbose)
 
       val file = config.file
-      println(s"Query duplicate files of: $file")
+      println(s"Query all files similar to: $file")
 
       //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
+      log.info("Creating Cassandra connection")
       val cluster = Cluster.builder()
         .addContactPoint(config.host)
         .withPort(config.port)
         .build()
       val cassandra = cluster.connect()
       val gemini = Gemini(null, log, config.keyspace)
+      log.info("Checking schema")
       gemini.applySchema(cassandra)
 
+      log.info("Setting up bblfsh/fe gRCP clients")
       val bblfshClient = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
       val channel = ManagedChannelBuilder.forAddress(config.feHost, config.fePort).usePlaintext(true).build()
       val feClient = FeatureExtractorGrpc.stub(channel)
