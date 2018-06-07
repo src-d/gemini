@@ -9,6 +9,7 @@ import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.avro.{AvroParquetReader, AvroParquetWriter}
+import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.gemini.{DuplicateBlobHash, Gemini, Logger, RepoFile}
 
 import scala.collection.JavaConverters._
@@ -57,7 +58,9 @@ object ReportApp extends App {
   parser.parse(args, ReportAppConfig()) match {
     case Some(config) =>
       val log = Logger("gemini", config.verbose)
+      println(s"Reporting all similar files")
 
+      log.info("Creating Cassandra connection")
       //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
       val cluster = Cluster.builder()
         .addContactPoint(config.host)
@@ -65,6 +68,7 @@ object ReportApp extends App {
         .build()
       val cassandra = cluster.connect()
       val gemini = Gemini(null, log, config.keyspace)
+      log.info("Checking DB schema")
       gemini.applySchema(cassandra)
 
       val duplicateReport = config.mode match {
@@ -77,6 +81,7 @@ object ReportApp extends App {
       print(duplicateReport)
       printCommunities(similarityReport)
 
+      log.info("Closing DB connection")
       cassandra.close()
       cluster.close()
 
@@ -92,16 +97,17 @@ object ReportApp extends App {
     val log = Logger("gemini", config.verbose)
 
     val (connectedComponents, elsToBuckets, elementIds) = gemini.findConnectedComponents(cassandra)
-    saveConnectedComponents(connectedComponents, elsToBuckets, config.ccDirPath)
+    saveConnectedComponents(log, connectedComponents, elsToBuckets, config.ccDirPath)
 
+    log.info("Detecting communities in Python")
     val pythonCmd = s"python3 src/main/python/community-detector/report.py ${config.ccDirPath}"
     val rc = pythonCmd.!
 
     if (rc == 0) {
-      val communities = readCommunities(config.ccDirPath)
+      val communities = readCommunities(log, config.ccDirPath)
       gemini.reportCommunities(cassandra, communities, elementIds)
     } else {
-      log.error(s"Failed to execute '${pythonCmd}'")
+      log.error(s"Failed to execute '${pythonCmd}', skipping similarity report")
       Iterable[Iterable[RepoFile]]()
     }
   }
@@ -119,7 +125,7 @@ object ReportApp extends App {
   }
 
   def printCommunities(report: Iterable[Iterable[RepoFile]]): Unit = {
-    if (report.isEmpty){
+    if (report.isEmpty) {
       println(s"No similar files found.")
     } else {
       report.foreach { community =>
@@ -143,7 +149,11 @@ object ReportApp extends App {
 
   case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends Report(v)
 
-  def saveConnectedComponents(ccs: Map[Int, Set[Int]], elsToBuckets: Map[Int, List[Int]], outputPath: String): Unit = {
+  def saveConnectedComponents(log: Slf4jLogger,
+                              ccs: Map[Int, Set[Int]],
+                              elsToBuckets: Map[Int, List[Int]],
+                              outputPath: String): Unit = {
+    log.info("Saving ConnectedComponents to Parquet")
     val schema = SchemaBuilder
       .record("ccs")
       .fields()
@@ -176,6 +186,7 @@ object ReportApp extends App {
 
     writer.close()
 
+    log.info("Saving auxiliary data structure (id to buckets) to Parquet")
     val schemaBuckets = SchemaBuilder
       .record("id_to_buckets")
       .fields()
@@ -192,7 +203,7 @@ object ReportApp extends App {
       .withConf(parquetConf)
       .build()
 
-    elsToBuckets.foreach { case(_, bucket) =>
+    elsToBuckets.foreach { case (_, bucket) =>
       val record = new GenericRecordBuilder(schemaBuckets)
         .set("buckets", bucket.toArray)
         .build()
@@ -203,8 +214,9 @@ object ReportApp extends App {
     writerBuckets.close()
   }
 
-  def readCommunities(dirPath: String): List[(Int, List[Int])] = {
+  def readCommunities(log: Slf4jLogger, dirPath: String): List[(Int, List[Int])] = {
     val parquetFilePath = new Path(s"$dirPath/communities.parquet")
+    log.info(s"Reading detected communities from $parquetFilePath")
     val reader = AvroParquetReader.builder[GenericRecord](parquetFilePath).build()
 
     Iterator
