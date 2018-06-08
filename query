@@ -31,4 +31,4 @@ fi
 
 source "${current_dir}/scripts/common_params.sh"
 
-exec java -cp "${jar}:${deps_jar}" "${app_class}" $@
+exec java -cp "${jar}:${deps_jar}" "${app_class}" "${COMMAND_PARAMS[@]}"

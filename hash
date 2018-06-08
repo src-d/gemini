@@ -62,5 +62,5 @@ sparkSubmit \
   --conf "spark.default.parallelism=8" \
   --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j.properties" \
   "${jar}" \
-  "$@"
+  "${COMMAND_PARAMS[@]}"
 
