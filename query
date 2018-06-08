@@ -1,11 +1,10 @@
 #!/bin/bash
-# Convenience script to query for a similar files for a single file
+# Convenience script to query for a similar files of a given file
 
 E_BUILD_FAILED=142
 
-version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
-jar="target/gemini-${version}.jar"
-build_command="./sbt package"
+jar="target/gemini-uber.jar"
+build_command="./sbt assembly"
 current_dir="$(dirname "$0")"
 
 app_class="tech.sourced.gemini.cmd.QueryApp"
@@ -19,7 +18,6 @@ if [[ ! -f "${jar}" ]]; then
     fi
 fi
 
-source "$current_dir/scripts/common_params.sh"
+source "${current_dir}/scripts/common_params.sh"
 
-#exec java -cp "${jar}" "${app_class}" $@
-exec ./sbt --warn "run-main ${app_class} ${COMMAND_PARAMS[*]}"
+exec java -cp "${jar}" "${app_class}" $@

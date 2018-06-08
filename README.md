@@ -135,11 +135,6 @@ Build, fatJar for Apache Spark (hash, report)
 ./sbt assembly
 ```
 
-Build, for query
-```
-./sbt package
-```
-
 Tests (with embedded Cassandra)
 ```
 ./sbt test

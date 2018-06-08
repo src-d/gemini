@@ -36,7 +36,7 @@ libraryDependencies ++= Seq(
   scalaJsonParser % Compile //needed for docFreq reading, as scala.util.parsing.json was removed after Scala 2.10
   //TODO(bzz): remove scalaJsonParser at https://github.com/src-d/gemini/issues/112
 )
-assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, includeDependency = false)
+//assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, includeDependency = false)
 assemblyJarName in assembly := s"${name.value}-uber.jar"
 
 assemblyMergeStrategy in assembly := {

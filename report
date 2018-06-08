@@ -1,17 +1,15 @@
 #!/bin/bash
-# Convenience script to find duplicated files among hashed repositories that already exists in certain repository
+# Convenience script to find all similar files among already hashed repositories
 
 E_BUILD_FAILED=142
 
-version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
-jar="target/gemini-${version}.jar"
-build_command="./sbt package"
+jar="target/gemini-uber.jar"
+build_command="./sbt assembly"
 current_dir="$(dirname "$0")"
 
 app_class="tech.sourced.gemini.cmd.ReportApp"
 
 hash java >/dev/null 2>&1 || { echo "Please install Java" >&2; exit 1; }
-
 hash python3 >/dev/null 2>&1 || { echo "Please install python3" >&2; exit 1; }
 
 if [[ ! -f "${jar}" ]]; then
@@ -21,7 +19,6 @@ if [[ ! -f "${jar}" ]]; then
     fi
 fi
 
-source "$current_dir/scripts/common_params.sh"
+source "${current_dir}/scripts/common_params.sh"
 
-#exec java -cp "${jar}" "${app_class}" $@
-exec ./sbt --warn "run-main ${app_class} ${COMMAND_PARAMS[*]}"
+exec java -cp "${jar}" "${app_class}" $@
