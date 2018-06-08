@@ -31,4 +31,9 @@ fi
 
 source "${current_dir}/scripts/common_params.sh"
 
-exec java -cp "${jar}:${deps_jar}" "${app_class}" "${COMMAND_PARAMS[@]}"
+if [[ -n "$DEV" ]]; then
+    echo "Development mode: ON. Using ./sbt to build and run can be slow"
+    exec ./sbt --warn "run-main ${app_class} ${COMMAND_PARAMS[*]}"
+else
+    exec java -cp "${jar}:${deps_jar}" "${app_class}" "${COMMAND_PARAMS[@]}"
+fi

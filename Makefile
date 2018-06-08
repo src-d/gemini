@@ -23,7 +23,6 @@ $(MAKEFILE):
 build:
 	$(SBT) assemblyPackageDependency
 	$(SBT) assembly
-	$(SBT) package
 
 format-python:
 	$(YAPF_CMD) --in-place

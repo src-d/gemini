@@ -128,25 +128,30 @@ Hash command specific arguments:
  * `-l/--limit` - limit the number of repositories to be processed. All repositories will be processed by default
  * `-f/--format` - format of the stored repositories. Supported input data formats that repositories could be stored in are `siva`, `bare` or `standard`, default `siva`
 
-# Dev
+## Development
 
-We use same set of argefacts for both, Apache Spark job (hash) and CLI applications (query, report).
+### Compile & Run
+If env var `DEV` is set, `./sbt` is used to compile and run all non-Spark commands: `./hash` and `./report`.
+This is a convenient for local development, as not requiring a separate "compile" step allows for a dev workflow
+that is similar to experience with interpreted languages.
 
-## Build
+### Build
+To build final .jars for all commands
 ```
 ./sbt assemblyPackageDependency
 ./sbt assembly
 ```
-Instead of 1 fatJar we bulid 2, separating all the dependencies from actuall application code.
+Instead of 1 fatJar we bulid 2, separating all the dependencies from actuall application code to allow for
+lower build times in case simple changes.
 
-## Test
+### Test
 
 To run tests, that rely
 ```
 ./sbt test
 ```
 
-## Re-generate code
+### Re-generate code
 Latest generated code for gRPC is already checked in under `src/main/scala/tech/sourced/featurext`.
 In case you update any of the `src/main/proto/*.proto`, you would need to generate gRPC code for Feature Extractors:
 ```
