@@ -4,24 +4,25 @@
 E_NO_SPARK=2
 E_BUILD_FAILED=1
 
-#version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
+version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
 jar="target/gemini-uber.jar"
-build_command="./sbt assembly"
-#deps_jar="target/gemini-assembly-${version}-deps.jar"
-#build_deps_command="./sbt assemblyPackageDependency"
-current_dir="$(dirname "$0")"
+deps_jar="target/gemini-assembly-${version}-deps.jar"
 
+build_command="./sbt assembly"
+build_deps_command="./sbt assemblyPackageDependency"
+
+current_dir="$(dirname "$0")"
 app_class="tech.sourced.gemini.cmd.HashSparkApp"
 app_name="Gemini - hashing"
 
 hash java >/dev/null 2>&1 || { echo "Please install Java" >&2; exit 1; }
 
-#if [[ ! -f "${deps_jar}" ]]; then
-#    echo "${deps_jar} not found. Running build '${build_deps_command}'"
-#    if ! $build_deps_command ; then
-#        exit "${E_BUILD_FAILED}"
-#    fi
-#fi
+if [[ ! -f "${deps_jar}" ]]; then
+    echo "${deps_jar} not found. Running build '${build_deps_command}'"
+    if ! $build_deps_command ; then
+        exit "${E_BUILD_FAILED}"
+    fi
+fi
 
 if [[ ! -f "${jar}" ]]; then
     echo "${jar} not found. Running build '${build_command}'"
@@ -51,13 +52,12 @@ sparkSubmit() {
 # spark.executor.extraJavaOptions=-Dlog4j.configuration=log4j-spark.properties
 
 source "${current_dir}/scripts/common_params.sh"
-#  --jars "${deps_jar}" \
-#
 
 sparkSubmit \
   --class "${app_class}" \
   --master "${MASTER:=local[*]}" \
   --name "${app_name}" \
+  --jars "${deps_jar}" \
   --conf "spark.executor.memory=4g" \
   --conf "spark.default.parallelism=8" \
   --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j.properties" \

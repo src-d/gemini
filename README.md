@@ -130,22 +130,30 @@ Hash command specific arguments:
 
 # Dev
 
-Build, fatJar for Apache Spark (hash, report)
+We use same set of argefacts for both, Apache Spark job (hash) and CLI applications (query, report).
+
+## Build
 ```
+./sbt assemblyPackageDependency
 ./sbt assembly
 ```
+Instead of 1 fatJar we bulid 2, separating all the dependencies from actuall application code.
 
-Tests (with embedded Cassandra)
+## Test
+
+To run tests, that rely
 ```
 ./sbt test
 ```
 
-To generate gRPC code for Feature Extractors from `src/main/proto/*.proto` files:
+## Re-generate code
+Latest generated code for gRPC is already checked in under `src/main/scala/tech/sourced/featurext`.
+In case you update any of the `src/main/proto/*.proto`, you would need to generate gRPC code for Feature Extractors:
 ```
 ./src/main/resources/generate_from_proto.sh
 ```
 
-To generate protobuf messages fixtures you may use [bblfsh-sdk-tools](https://github.com/bblfsh/sdk):
+To generate new protobuf messages fixtures for tests, you may use [bblfsh-sdk-tools](https://github.com/bblfsh/sdk):
 ```
 bblfsh-sdk-tools fixtures -p .proto -l <LANG> <path-to-source-code-file>
 ```
