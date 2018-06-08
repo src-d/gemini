@@ -29,4 +29,6 @@ object Dependencies {
   lazy val ioGrpc = "io.grpc" % "grpc-netty" % "1.10.0"
   lazy val commonsMath = "org.apache.commons" % "commons-math3" % "3.6.1"
   lazy val bblfshClient = "org.bblfsh" % "bblfsh-client" % "1.8.2"
+  lazy val scalaJsonParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.0"
+
 }
