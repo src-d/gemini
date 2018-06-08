@@ -56,7 +56,6 @@ object HashSparkApp extends App with Logging {
     opt[Int]("features-extractor-port")
       .action((x, c) => c.copy(fePort = x))
       .text("port is features-extractor server port")
-    opt[Unit]('v', "verbose")
     opt[Int]('l', "limit")
       .action((x, c) => c.copy(limit = x))
       .text("limit on the number of processed repositories")
