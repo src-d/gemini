@@ -47,7 +47,8 @@ assemblyMergeStrategy in assembly := {
 }
 
 assemblyShadeRules in assembly := Seq(
-  ShadeRule.rename("io.netty.**" -> "tech.sourced.gemini.shaded.io.netty.@1").inAll,
+  // https://issues.apache.org/jira/browse/FLINK-8295
+  ShadeRule.rename("io.netty.**" -> "com.datastax.shaded.netty.@1").inAll,
   // bblfsh/scalapb use newer versions than spark
   ShadeRule.rename("com.google.common.**" -> "tech.sourced.gemini.shaded.com.google.common.@1").inAll,
   ShadeRule.rename("com.google.protobuf.**" -> "tech.sourced.gemini.shaded.com.google.protobuf.@1").inAll
