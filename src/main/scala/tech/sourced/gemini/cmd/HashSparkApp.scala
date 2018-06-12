@@ -1,13 +1,14 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.cmd
 
 import java.net.URI
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.internal.Logging
 import org.apache.log4j.{Level, LogManager}
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
+import tech.sourced.gemini.Gemini
 
 import scala.util.Properties
 
@@ -55,7 +56,6 @@ object HashSparkApp extends App with Logging {
     opt[Int]("features-extractor-port")
       .action((x, c) => c.copy(fePort = x))
       .text("port is features-extractor server port")
-    opt[Unit]('v', "verbose")
     opt[Int]('l', "limit")
       .action((x, c) => c.copy(limit = x))
       .text("limit on the number of processed repositories")
@@ -78,10 +78,14 @@ object HashSparkApp extends App with Logging {
 
   parser.parse(args, HashAppConfig()) match {
     case Some(config) =>
-      val reposPath = config.reposPath
+      if (config.verbose) {
+        LogManager.getRootLogger.setLevel(Level.INFO)
+      }
+      val sparkMaster = Properties.envOrElse("MASTER", "local[*]")
+      println(s"Running Hashing as Apache Spark job, master: $sparkMaster")
 
       val spark = SparkSession.builder()
-        .master(Properties.envOrElse("MASTER", "local[*]"))
+        .master(sparkMaster)
         .config("spark.cassandra.connection.host", config.host)
         .config("spark.cassandra.connection.port", config.port)
         .config("spark.tech.sourced.bblfsh.grpc.host", config.bblfshHost)
@@ -90,14 +94,12 @@ object HashSparkApp extends App with Logging {
         .config("spark.tech.sourced.featurext.grpc.port", config.fePort)
         .getOrCreate()
 
-      if (config.verbose) {
-        LogManager.getRootLogger.setLevel(Level.INFO)
-      }
-
+      val reposPath = config.reposPath
       val repos = listRepositories(reposPath, config.format, spark.sparkContext.hadoopConfiguration, config.limit)
       printRepositories(reposPath, repos)
 
       val gemini = Gemini(spark, log, config.keyspace)
+      log.info("Checking DB schema")
       CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
         gemini.applySchema(cassandra)
       }
@@ -110,10 +112,12 @@ object HashSparkApp extends App with Logging {
   }
 
   private def printRepositories(reposPath: String, repos: Array[Path]): Unit = {
-    println(s"Hashing ${repos.length} repositories in: $reposPath")
-    if (repos.length < printLimit && repos.length > 0) {
-      println("\t" + (repos mkString "\n\t"))
-    }
+    val numToPrint = Math.min(repos.length, printLimit)
+    println(s"Hashing ${repos.length} repositories in: '$reposPath' " +
+      s"${if (numToPrint < repos.length) s"(only $numToPrint shown)"}")
+    repos
+      .take(numToPrint)
+      .foreach(repo => println(s"\t$repo"))
   }
 
   private def listRepositories(path: String, format: String, conf: Configuration, limit: Int): Array[Path] = {

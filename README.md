@@ -128,34 +128,42 @@ Hash command specific arguments:
  * `-l/--limit` - limit the number of repositories to be processed. All repositories will be processed by default
  * `-f/--format` - format of the stored repositories. Supported input data formats that repositories could be stored in are `siva`, `bare` or `standard`, default `siva`
 
-# Dev
+## Development
 
-Build, fatJar for Apache Spark (hash, report)
+### Compile & Run
+If env var `DEV` is set, `./sbt` is used to compile and run all non-Spark commands: `./hash` and `./report`.
+This is a convenient for local development, as not requiring a separate "compile" step allows for a dev workflow
+that is similar to experience with interpreted languages.
+
+### Build
+To build final .jars for all commands
 ```
+./sbt assemblyPackageDependency
 ./sbt assembly
 ```
+Instead of 1 fatJar we bulid 2, separating all the dependencies from actual application code to allow for
+lower build times in case of simple changes.
 
-Build, for query
-```
-./sbt package
-```
+### Test
 
-Tests (with embedded Cassandra)
+To run tests, that rely
 ```
 ./sbt test
 ```
 
-To generate gRPC code for Feature Extractors from `src/main/proto/*.proto` files:
+### Re-generate code
+Latest generated code for gRPC is already checked in under `src/main/scala/tech/sourced/featurext`.
+In case you update any of the `src/main/proto/*.proto`, you would need to generate gRPC code for Feature Extractors:
 ```
 ./src/main/resources/generate_from_proto.sh
 ```
 
-To generate protobuf messages fixtures you may use [bblfsh-sdk-tools](https://github.com/bblfsh/sdk):
+To generate new protobuf messages fixtures for tests, you may use [bblfsh-sdk-tools](https://github.com/bblfsh/sdk):
 ```
 bblfsh-sdk-tools fixtures -p .proto -l <LANG> <path-to-source-code-file>
 ```
 
 ## License
 
-Copyright (C) 2017 source{d}.
+Copyright (C) 2018 source{d}.
 This project is licensed under the [GNU General Public License v3.0](LICENSE).

@@ -32,7 +32,9 @@ libraryDependencies ++= Seq(
   bblfshClient % Compile,
   avro % Compile,
   parquetAvro % Compile,
-  hadoopCommon % Compile
+  hadoopCommon % Compile,
+  scalaJsonParser % Compile //needed for docFreq reading, as scala.util.parsing.json was removed after Scala 2.10
+  //TODO(bzz): remove scalaJsonParser at https://github.com/src-d/gemini/issues/112
 )
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, includeDependency = false)
 assemblyJarName in assembly := s"${name.value}-uber.jar"
@@ -45,7 +47,8 @@ assemblyMergeStrategy in assembly := {
 }
 
 assemblyShadeRules in assembly := Seq(
-  ShadeRule.rename("io.netty.**" -> "tech.sourced.gemini.shaded.io.netty.@1").inAll,
+  // https://issues.apache.org/jira/browse/FLINK-8295
+  ShadeRule.rename("io.netty.**" -> "com.datastax.shaded.netty.@1").inAll,
   // bblfsh/scalapb use newer versions than spark
   ShadeRule.rename("com.google.common.**" -> "tech.sourced.gemini.shaded.com.google.common.@1").inAll,
   ShadeRule.rename("com.google.protobuf.**" -> "tech.sourced.gemini.shaded.com.google.protobuf.@1").inAll

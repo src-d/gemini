@@ -20,3 +20,5 @@ scalapbc-0.7.1.zip
 
 docfreq.json
 params.json
+
+src/test/resources/weighted-minhash/csv/

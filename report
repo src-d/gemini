@@ -1,18 +1,27 @@
 #!/bin/bash
-# Convenience script to find duplicated files among hashed repositories that already exists in certain repository
+# Convenience script to find all similar files among already hashed repositories
 
 E_BUILD_FAILED=142
 
 version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
-jar="target/gemini-${version}.jar"
-build_command="./sbt package"
-current_dir="$(dirname "$0")"
+jar="target/gemini-uber.jar"
+deps_jar="target/gemini-assembly-${version}-deps.jar"
 
-app_class="tech.sourced.gemini.ReportApp"
+build_command="./sbt assembly"
+build_deps_command="./sbt assemblyPackageDependency"
+
+current_dir="$(dirname "$0")"
+app_class="tech.sourced.gemini.cmd.ReportApp"
 
 hash java >/dev/null 2>&1 || { echo "Please install Java" >&2; exit 1; }
-
 hash python3 >/dev/null 2>&1 || { echo "Please install python3" >&2; exit 1; }
+
+if [[ ! -f "${deps_jar}" ]]; then
+    echo "${deps_jar} not found. Running build '${build_deps_command}'"
+    if ! $build_deps_command ; then
+        exit "${E_BUILD_FAILED}"
+    fi
+fi
 
 if [[ ! -f "${jar}" ]]; then
     echo "${jar} not found. Running build '${build_command}'"
@@ -21,7 +30,11 @@ if [[ ! -f "${jar}" ]]; then
     fi
 fi
 
-source "$current_dir/scripts/common_params.sh"
+source "${current_dir}/scripts/common_params.sh"
 
-#exec java -cp "${jar}" "${app_class}" $@
-exec ./sbt --warn "run-main ${app_class} ${COMMAND_PARAMS[*]}"
+if [[ -n "$DEV" ]]; then
+    echo "Development mode: ON. Using ./sbt to build and run can be slow"
+    exec ./sbt --warn "run-main ${app_class} ${COMMAND_PARAMS[*]}"
+else
+    exec java -cp "${jar}:${deps_jar}" "${app_class}" "${COMMAND_PARAMS[@]}"
+fi

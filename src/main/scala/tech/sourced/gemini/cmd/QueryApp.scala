@@ -1,9 +1,10 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.cmd
 
 import com.datastax.driver.core.Cluster
 import io.grpc.ManagedChannelBuilder
 import org.bblfsh.client.BblfshClient
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc
+import tech.sourced.gemini.{Gemini, Logger, QueryResult}
 
 case class QueryAppConfig(file: String = "",
                           host: String = Gemini.defaultCassandraHost,
@@ -62,17 +63,20 @@ object QueryApp extends App {
       val log = Logger("gemini", config.verbose)
 
       val file = config.file
-      println(s"Query duplicate files of: $file")
+      println(s"Query all files similar to: $file")
 
       //TODO(bzz): wrap to CassandraConnector(config).withSessionDo { session =>
+      log.info("Creating Cassandra connection")
       val cluster = Cluster.builder()
         .addContactPoint(config.host)
         .withPort(config.port)
         .build()
       val cassandra = cluster.connect()
       val gemini = Gemini(null, log, config.keyspace)
+      log.info("Checking schema")
       gemini.applySchema(cassandra)
 
+      log.info("Setting up bblfsh/fe gRPC clients")
       val bblfshClient = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
       val channel = ManagedChannelBuilder.forAddress(config.feHost, config.fePort).usePlaintext(true).build()
       val feClient = FeatureExtractorGrpc.stub(channel)

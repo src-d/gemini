@@ -2,41 +2,36 @@
 
 # Prepares tarball for release
 # the list is quite huge, but we will improve it later
+set -e
+
+dst="gemini-$VERSION"
 
 # prepare directories
-mkdir -p gemini-$VERSION/target
-mkdir -p gemini-$VERSION/project
-mkdir -p gemini-$VERSION/src/main/resources
-mkdir -p gemini-$VERSION/src/main/python
+mkdir -p "${dst}/target"
+mkdir -p "${dst}/scripts"
+mkdir -p "${dst}/src/main/resources"
+mkdir -p "${dst}/src/main/python"
+
+# need this to get version :/
+cp build.sbt "${dst}/"
 
 # copy java build results (jars) and resources
-cp target/*.jar gemini-$VERSION/target/
-cp -r src/main/resources/* gemini-$VERSION/src/main/resources/
-
-# copy sbt
-cp project/build.properties gemini-$VERSION/project/
-cp project/Dependencies.scala gemini-$VERSION/project/
-cp project/plugins.sbt gemini-$VERSION/project/
-cp sbt gemini-$VERSION/
-cp build.sbt gemini-$VERSION/
+cp target/*.jar "${dst}/target/"
+cp -r src/main/resources/* "${dst}/src/main/resources/"
 
 # copy python
-cp -r src/main/python/feature-extractor gemini-$VERSION/src/main/python/
-cp -r src/main/python/community-detector gemini-$VERSION/src/main/python/
+cp -r src/main/python/feature-extractor "${dst}/src/main/python/"
+cp -r src/main/python/community-detector "${dst}/src/main/python/"
 
 # copy scripts
-cp hash gemini-$VERSION/
-cp query gemini-$VERSION/
-cp report gemini-$VERSION/
-cp feature_extractor gemini-$VERSION/
+cp hash "${dst}/"
+cp query "${dst}/"
+cp report "${dst}/"
+cp feature_extractor "${dst}/"
+cp scripts/common_params.sh "${dst}/scripts/"
 
 # copy documentation
-cp LICENCE gemini-$VERSION/
-
-cat <<EOT >> gemini-$VERSION/build.sbt
-// we need it to be able to run gemini from only jar files without src
-unmanagedBase := baseDirectory.value / "target"
-EOT
+cp LICENSE "${dst}/"
 
 # create archive
-tar -cvzf gemini_$VERSION.tar.gz gemini-$VERSION/
+tar -cvzf gemini_$VERSION.tar.gz "${dst}/"

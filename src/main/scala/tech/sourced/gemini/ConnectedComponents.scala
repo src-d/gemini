@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 
 import com.datastax.driver.core.{Session, SimpleStatement}
 import org.slf4j.{Logger => Slf4jLogger}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -76,7 +77,7 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
         }
 
         val bucketsSize = buckets.size - prevBucketsSize
-        log.info(s"Fetched $hashtable, $bucketsSize buckets")
+        log.debug(s"Fetched $hashtable, $bucketsSize buckets")
 
         (buckets, elementIds)
       }

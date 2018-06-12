@@ -99,7 +99,7 @@ public class WeightedMinHash {
         if (values.length != dim) {
             throw new IllegalArgumentException("input dimension mismatch, expected " + dim);
         }
-        log.info("Hashing");
+        log.debug("Hashing");
 
         // hashvalues = np.zeros((self.sample_size, 2), dtype=np.int)
         long[][] hashvalues = new long[sampleSize][2];

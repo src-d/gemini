@@ -30,6 +30,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }
+    log.info(s"Getting repositories at $reposPath in $format format")
 
     // hash might be called more than one time with the same spark session
     // every run should re-process all repos/files
@@ -38,7 +39,10 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val hash = new Hash(session, log)
     val repos = getRepos(reposPath, limit, format)
 
+    log.info("Hashing")
     val result = hash.forRepos(repos)
+
+    log.info("Saving hashes to DB")
     hash.save(result, keyspace, tables)
   }
 
@@ -60,6 +64,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     if (limit <= 0) {
       repos
     } else {
+      log.info(s"Using only $limit repositories")
       val repoIds = repos.limit(limit).select($"id").collect().map(_ (0))
       repos.filter($"id".isin(repoIds: _*))
     }
@@ -78,6 +83,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
             feClient: FeatureExtractor,
             docFreqPath: String = ""): QueryResult = {
     val path = new File(inPath)
+    log.info(s"Query for items similar to $path")
     if (path.isDirectory) {
       QueryResult(findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {
@@ -94,7 +100,10 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @return
     */
   def report(conn: Session): Iterable[Iterable[RepoFile]] = {
-    findAllDuplicateItems(conn, keyspace)
+    log.info(s"Report duplicate items from DB $keyspace")
+    val dups = findAllDuplicateItems(conn, keyspace).toSeq
+    log.info(s"${dups.length} duplicate SHA1s")
+    dups
   }
 
   /**
@@ -127,7 +136,10 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def reportCommunities(conn: Session,
                         communities: List[(Int, List[Int])],
                         elementIds: Map[String, Int]): Iterable[Iterable[RepoFile]] = {
-    getCommunities(conn, keyspace, communities, elementIds)
+    log.info(s"Report similar items from DB $keyspace")
+    val sim = getCommunities(conn, keyspace, communities, elementIds).toSeq
+    log.info(s"${sim.length} similar SHA1s")
+    sim
   }
 
   /**
@@ -139,6 +151,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     *         - Map of element to ID
     */
   def findConnectedComponents(conn: Session): (Map[Int, Set[Int]], Map[Int, List[Int]], Map[String, Int]) = {
+    log.info("Finding Connected Components")
     val cc = new DBConnectedComponents(log, conn, tables.hashtables, keyspace)
     val (buckets, elementIds) = cc.makeBuckets()
     val elsToBuckets = cc.elementsToBuckets(buckets)
