@@ -100,7 +100,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @return
     */
   def report(conn: Session): Iterable[Iterable[RepoFile]] = {
-    log.info(s"Report duplicate items form DB $keyspace")
+    log.info(s"Report duplicate items from DB $keyspace")
     val dups = findAllDuplicateItems(conn, keyspace).toSeq
     log.info(s"${dups.length} duplicate SHA1s")
     dups
@@ -136,7 +136,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def reportCommunities(conn: Session,
                         communities: List[(Int, List[Int])],
                         elementIds: Map[String, Int]): Iterable[Iterable[RepoFile]] = {
-    log.info(s"Report similar items form DB $keyspace")
+    log.info(s"Report similar items from DB $keyspace")
     val sim = getCommunities(conn, keyspace, communities, elementIds).toSeq
     log.info(s"${sim.length} similar SHA1s")
     sim
@@ -151,7 +151,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     *         - Map of element to ID
     */
   def findConnectedComponents(conn: Session): (Map[Int, Set[Int]], Map[Int, List[Int]], Map[String, Int]) = {
-    log.info("Finding Connected Componentss")
+    log.info("Finding Connected Components")
     val cc = new DBConnectedComponents(log, conn, tables.hashtables, keyspace)
     val (buckets, elementIds) = cc.makeBuckets()
     val elsToBuckets = cc.elementsToBuckets(buckets)

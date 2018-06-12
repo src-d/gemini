@@ -141,8 +141,8 @@ To build final .jars for all commands
 ./sbt assemblyPackageDependency
 ./sbt assembly
 ```
-Instead of 1 fatJar we bulid 2, separating all the dependencies from actuall application code to allow for
-lower build times in case simple changes.
+Instead of 1 fatJar we bulid 2, separating all the dependencies from actual application code to allow for
+lower build times in case of simple changes.
 
 ### Test
 
