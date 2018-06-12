@@ -79,7 +79,7 @@ object HashSparkApp extends App with Logging {
   parser.parse(args, HashAppConfig()) match {
     case Some(config) =>
       if (config.verbose) {
-        LogManager.getRootLogger.setLevel(Level.INFO)
+        LogManager.getRootLogger.setLevel(Level.WARN)
       }
       val sparkMaster = Properties.envOrElse("MASTER", "local[*]")
       println(s"Running Hashing as Apache Spark job, master: $sparkMaster")
