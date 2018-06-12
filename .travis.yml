@@ -34,6 +34,7 @@ matrix:
       # run all test suite
       - ./sbt test
     before_deploy:
+      - make build || travis_terminate 1
       - VERSION=$TRAVIS_TAG ./scripts/release.sh
     deploy:
       - provider: releases
