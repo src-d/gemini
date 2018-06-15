@@ -10,8 +10,8 @@ import org.eclipse.jgit.lib.ObjectInserter
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine.Engine
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
+import tech.sourced.gemini.cmd.ReportApp
 
-import scala.collection.JavaConverters._
 import scala.io.Source
 
 class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
@@ -97,68 +97,24 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * It is used one query per distinct file
     *
     * @param conn Database connections
+    * @param mode Duplicated items mode
+    * @param ccDirPath directory for connected components
     * @return
     */
-  def report(conn: Session): Iterable[Iterable[RepoFile]] = {
+  def report(conn: Session, mode: String, ccDirPath: String): ReportResult = {
+    val report = new Report(conn, log, keyspace, tables)
+
     log.info(s"Report duplicate items from DB $keyspace")
-    val dups = findAllDuplicateItems(conn, keyspace).toSeq
-    log.info(s"${dups.length} duplicate SHA1s")
-    dups
-  }
+    val duplicates = mode match {
+      case ReportApp.defaultMode => ReportExpandedGroup(report.findAllDuplicateItems())
+      case ReportApp.condensedMode => ReportGrouped(report.reportCassandraCondensed())
+      case ReportApp.groupByMode => ReportExpandedGroup(report.reportCassandraGroupBy())
+    }
+    log.info(s"${duplicates.size} duplicate SHA1s")
 
-  /**
-    * Finds duplicate files among hashed repositories
-    * It is used only one query
-    * (Only supported by Apache Cassandra databases)
-    *
-    * @param conn Database connections
-    * @return
-    */
-  def reportCassandraCondensed(conn: Session): Iterable[DuplicateBlobHash] = {
-    findAllDuplicateBlobHashes(conn, keyspace)
-  }
+    val similarities = report.findSimilarFiles(ccDirPath)
 
-  /**
-    * Finds duplicate files among hashed repositories
-    * It is used one query per unique duplicate file, plus an extra one
-    * (Only supported by Apache Cassandra databases)
-    *
-    * @param conn Database connections
-    * @return
-    */
-  def reportCassandraGroupBy(conn: Session): Iterable[Iterable[RepoFile]] = {
-    reportCassandraCondensed(conn)
-      .map { item =>
-        Database.findFilesByHash(item.sha, conn, keyspace, tables)
-      }
-  }
-
-  def reportCommunities(conn: Session,
-                        communities: List[(Int, List[Int])],
-                        elementIds: Map[String, Int]): Iterable[Iterable[RepoFile]] = {
-    log.info(s"Report similar items from DB $keyspace")
-    val sim = getCommunities(conn, keyspace, communities, elementIds).toSeq
-    log.info(s"${sim.length} similar SHA1s")
-    sim
-  }
-
-  /**
-    * Return connected components from DB hashtables
-    *
-    * @param conn Database connections
-    * @return - Map of connected components groupId to list of elements
-    *         - Map of element ids to list of bucket indices
-    *         - Map of element to ID
-    */
-  def findConnectedComponents(conn: Session): (Map[Int, Set[Int]], Map[Int, List[Int]], Map[String, Int]) = {
-    log.info("Finding Connected Components")
-    val cc = new DBConnectedComponents(log, conn, tables.hashtables, keyspace)
-    val (buckets, elementIds) = cc.makeBuckets()
-    val elsToBuckets = cc.elementsToBuckets(buckets)
-
-    val result = cc.findInBuckets(buckets, elsToBuckets)
-
-    (result, elsToBuckets, elementIds)
+    ReportResult(duplicates, similarities)
   }
 
   def applySchema(session: Session): Unit = {
@@ -182,21 +138,6 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 }
 
-object URLFormatter {
-  private val services = Map(
-    "github.com" -> "https://%s/blob/%s/%s",
-    "bitbucket.org" -> "https://%s/src/%s/%s",
-    "gitlab.com" -> "https://%s/blob/%s/%s"
-  )
-  private val default = ("", "repo: %s commit: %s path: %s")
-
-  def format(repo: String, commit: String, path: String): String = {
-    val urlTemplateByRepo = services.find { case (h, _) => repo.startsWith(h) }.getOrElse(default)._2
-    val repoWithoutSuffix = repo.replaceFirst("\\.git$", "")
-
-    urlTemplateByRepo.format(repoWithoutSuffix, commit, path)
-  }
-}
 
 case class RepoFile(repo: String, commit: String, path: String, sha: String) {
   override def toString: String = URLFormatter.format(repo, commit, path)
@@ -237,51 +178,6 @@ object Gemini {
     objectId.getName
   }
 
-  /**
-    * Finds the blob_hash that are repeated in the database, and how many times
-    * (Only supported by Apache Cassandra databases)
-    *
-    * @param conn     Database connections
-    * @param keyspace Keyspace under data is stored
-    * @return
-    */
-  def findAllDuplicateBlobHashes(conn: Session, keyspace: String): Iterable[DuplicateBlobHash] = {
-    val hash = tables.metaCols.sha
-    val dupCount = "count"
-    val duplicatesCountCql = s"SELECT $hash, COUNT(*) as $dupCount FROM $keyspace.${tables.meta} GROUP BY $hash"
-    conn
-      .execute(new SimpleStatement(duplicatesCountCql))
-      .asScala
-      .filter(_.getLong(dupCount) > 1)
-      .map { r =>
-        DuplicateBlobHash(r.getString(tables.metaCols.sha), r.getLong(dupCount))
-      }
-  }
-
-  /**
-    * Finds the groups of duplicate files identified by the blob_hash
-    *
-    * @param conn     Database connections
-    * @param keyspace Keyspace under data is stored
-    * @return
-    */
-  def findAllDuplicateItems(conn: Session, keyspace: String): Iterable[Iterable[RepoFile]] = {
-    val hash = tables.metaCols.sha
-    val distinctBlobHash = s"SELECT distinct $hash FROM $keyspace.${tables.meta}"
-
-    conn
-      .execute(new SimpleStatement(distinctBlobHash))
-      .asScala
-      .flatMap { r =>
-        val dupes = Database.findFilesByHash(r.getString(hash), conn, keyspace, tables)
-        if (dupes.size > 1) {
-          List(dupes)
-        } else {
-          List()
-        }
-      }
-  }
-
   def findDuplicateProjects(in: File, conn: Session, keyspace: String): Iterable[RepoFile] = {
     //TODO(bzz): project is duplicate if it has all it's files in some other projects
     throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
@@ -289,40 +185,6 @@ object Gemini {
 
   def findSimilarProjects(in: File): Iterable[RepoFile] = {
     throw new UnsupportedOperationException("Finding similar repositories is no implemented yet.")
-  }
-
-  def getCommunities(conn: Session,
-                     keyspace: String,
-                     communities: List[(Int, List[Int])],
-                     elementIds: Map[String, Int]): Iterable[Iterable[RepoFile]] = {
-
-    val idToSha1 = for ((elem, id) <- elementIds) yield (id, elem.split("@")(1))
-
-    // Transform communities of element IDs to communities of sha1s
-    // Equivalent to apollo graph.py BatchedCommunityResolver._gen_hashes
-    // https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L295
-    val communitiesSha1 = communities
-      .map { case (_, community) =>
-        community
-          .filter(idToSha1.contains)
-          .map(idToSha1)
-      }
-      .filter(_.size > 1)
-
-
-    communitiesSha1.map(sha1s => {
-      val cols = tables.metaCols
-      val elems = sha1s.map(st => s"'$st'").mkString(",")
-      val query = s"select sha1, repo, commit, path from $keyspace.${tables.meta} where sha1 in ($elems)"
-
-      conn
-        .execute(new SimpleStatement(query))
-        .asScala
-        .map { row =>
-          RepoFile(row.getString(cols.repo), row.getString(cols.commit),
-            row.getString(cols.path), row.getString(cols.sha))
-        }
-    })
   }
 }
 

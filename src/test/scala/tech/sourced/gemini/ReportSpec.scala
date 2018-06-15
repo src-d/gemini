@@ -61,21 +61,21 @@ class ReportSpec extends FlatSpec
   }
 
   "Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
-    val gemini = Gemini(sparkSession, logger, DUPLICATES)
+    val report = new Report(session, logger, DUPLICATES, Gemini.tables)
 
     println("Query")
-    val report = gemini.reportCassandraCondensed(session)
+    val result = report.reportCassandraCondensed()
     println("Done")
 
-    report should have size expectedDuplicateFiles.size
-    report foreach (_.count should be(2))
+    result should have size expectedDuplicateFiles.size
+    result foreach (_.count should be(2))
   }
 
   "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
-    val gemini = Gemini(sparkSession, logger, DUPLICATES)
+    val report = new Report(session, logger, DUPLICATES, Gemini.tables)
 
     println("Query")
-    val detailedReport = gemini.reportCassandraGroupBy(session)
+    val detailedReport = report.reportCassandraGroupBy()
     println("Done")
 
     val duplicatedFileNames = detailedReport map (_.head.path)
@@ -83,10 +83,10 @@ class ReportSpec extends FlatSpec
   }
 
   "Detailed Report from Database" should "return duplicate files" in {
-    val gemini = Gemini(sparkSession, logger, DUPLICATES)
+    val report = new Report(session, logger, DUPLICATES, Gemini.tables)
 
     println("Query")
-    val detailedReport = gemini.report(session)
+    val detailedReport = report.findAllDuplicateItems()
     println("Done")
 
     val duplicatedFileNames = detailedReport map (_.head.path)
@@ -94,12 +94,12 @@ class ReportSpec extends FlatSpec
   }
 
   "Report from Database with unique files" should "return no duplicate files" in {
-    val gemini = Gemini(sparkSession, logger, UNIQUES)
+    val report = new Report(session, logger, UNIQUES, Gemini.tables)
 
     println("Query")
-    val report = gemini.report(session)
+    val result = report.findAllDuplicateItems()
     println("Done")
 
-    report should have size 0
+    result should have size 0
   }
 }
