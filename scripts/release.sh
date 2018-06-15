@@ -12,9 +12,6 @@ mkdir -p "${dst}/scripts"
 mkdir -p "${dst}/src/main/resources"
 mkdir -p "${dst}/src/main/python"
 
-# need this to get version :/
-cp build.sbt "${dst}/"
-
 # copy java build results (jars) and resources
 cp target/*.jar "${dst}/target/"
 cp -r src/main/resources/* "${dst}/src/main/resources/"

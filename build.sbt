@@ -3,9 +3,10 @@ import sbt.Keys.libraryDependencies
 
 organization := "tech.sourced"
 scalaVersion := "2.11.11"
-version := "0.0.3-SNAPSHOT"
 
 name := "gemini"
+
+enablePlugins(GitVersioning)
 
 libraryDependencies ++= Seq(
   scalaTest % Test,
@@ -38,6 +39,7 @@ libraryDependencies ++= Seq(
 )
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, includeDependency = false)
 assemblyJarName in assembly := s"${name.value}-uber.jar"
+assemblyJarName in assemblyPackageDependency := s"${name.value}-deps.jar"
 
 assemblyMergeStrategy in assembly := {
   case "META-INF/io.netty.versions.properties" => MergeStrategy.last
