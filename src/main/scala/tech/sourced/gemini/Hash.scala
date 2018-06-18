@@ -52,15 +52,20 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     saveHashes(hashResult.hashes, keyspace, tables)
   }
 
-  protected def filesForRepos(repos: DataFrame): DataFrame =
+  protected def filesForRepos(repos: DataFrame): DataFrame = {
+    log.warn("Listing files")
+
     repos
       .getHEAD
       .getCommits
       .getTreeEntries
       .getBlobs
       .filter('is_binary === false)
+  }
 
   protected def extractUast(files: DataFrame): DataFrame = {
+    log.warn("Extracting UASTs")
+
     // TODO(max): get languages from bblfsh directly as soon as
     // https://github.com/bblfsh/client-scala/issues/68 resolved
     val langs = Seq("Java", "Python", "Go", "JavaScript", "TypeScript", "Ruby", "Bash", "Php")
@@ -78,6 +83,8 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
 
   // TODO(max): Try to use DF here instead
   protected def extractFeatures(uastsDF: DataFrame): RDD[RDDFeature] = {
+    log.warn("Extracting features")
+
     var feConfig = SparkFEClient.getConfig(session)
     val rows = uastsDF.flatMap { row =>
       val uastArr = row.getAs[Seq[Array[Byte]]]("uast")
@@ -93,7 +100,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
 
   // TODO(max): Try to use DF here instead
   protected def makeDocFreq(uasts: DataFrame, features: RDD[RDDFeature]): OrderedDocFreq = {
-    log.info("creating document frequencies")
+    log.warn("creating document frequencies")
 
     val docs = uasts.select("document").distinct().count()
 
@@ -112,6 +119,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   protected def hashFeatures(
                               docFreq: OrderedDocFreq,
                               featuresRdd: RDD[RDDFeature]): RDD[RDDHash] = {
+    log.warn("hashing features")
 
     val tf = featuresRdd
       .map(row => (row.key, row.weight))
@@ -131,13 +139,13 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   }
 
   protected def saveDocFreq(docFreq: OrderedDocFreq): Unit = {
-    log.info(s"save document frequencies to ${Gemini.defaultDocFreqFile}")
+    log.warn(s"save document frequencies to ${Gemini.defaultDocFreqFile}")
     // TODO(max) replace with DB later
     docFreq.saveToJson(Gemini.defaultDocFreqFile)
   }
 
   protected def saveMeta(files: DataFrame, keyspace: String, tables: Tables): Unit = {
-    log.info("save meta")
+    log.warn("save meta to DB")
 
     val cols = tables.metaCols
     val renamedFiles = files
@@ -156,7 +164,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   }
 
   protected def saveHashes(rdd: RDD[RDDHash], keyspace: String, tables: Tables): Unit = {
-    log.info("save hashtables")
+    log.warn("save hashtables to DB")
 
     val cols = tables.hashtablesCols
     rdd
