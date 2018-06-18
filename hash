@@ -4,9 +4,8 @@
 E_NO_SPARK=2
 E_BUILD_FAILED=1
 
-version=$(grep "version :=" build.sbt | cut -d'=' -f 2 | tr -d ' ' | tr -d '"')
 jar="target/gemini-uber.jar"
-deps_jar="target/gemini-assembly-${version}-deps.jar"
+deps_jar="target/gemini-deps.jar"
 
 build_command="./sbt assembly"
 build_deps_command="./sbt assemblyPackageDependency"
