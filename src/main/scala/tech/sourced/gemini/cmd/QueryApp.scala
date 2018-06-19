@@ -21,7 +21,7 @@ case class QueryAppConfig(file: String = "",
   * Scala app that searches all hashed repos for a given file.
   */
 object QueryApp extends App {
-  val parser = new scopt.OptionParser[QueryAppConfig]("./query") {
+  val parser = new Parser[QueryAppConfig]("./query") {
     head("Gemini Query")
     note("Finds duplicate file among hashed repositories")
 
@@ -58,7 +58,7 @@ object QueryApp extends App {
       .text("path to a file to query")
   }
 
-  parser.parse(args, QueryAppConfig()) match {
+  parser.parseWithEnv(args, QueryAppConfig()) match {
     case Some(config) =>
       val log = Logger("gemini", config.verbose)
 

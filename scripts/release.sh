@@ -25,7 +25,6 @@ cp hash "${dst}/"
 cp query "${dst}/"
 cp report "${dst}/"
 cp feature_extractor "${dst}/"
-cp scripts/common_params.sh "${dst}/scripts/"
 
 # copy documentation
 cp LICENSE "${dst}/"

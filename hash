@@ -50,8 +50,6 @@ sparkSubmit() {
 # https://issues.apache.org/jira/browse/SPARK-16784
 # spark.executor.extraJavaOptions=-Dlog4j.configuration=log4j-spark.properties
 
-source "${current_dir}/scripts/common_params.sh"
-
 sparkSubmit \
   --class "${app_class}" \
   --master "${MASTER:=local[*]}" \
@@ -61,5 +59,5 @@ sparkSubmit \
   --conf "spark.default.parallelism=8" \
   --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j.properties" \
   "${jar}" \
-  "${COMMAND_PARAMS[@]}"
+  "$@"
 
