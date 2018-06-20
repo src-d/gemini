@@ -1,6 +1,7 @@
 package tech.sourced.gemini
 
 import java.io.{File, PrintWriter}
+import scala.collection.immutable
 
 import scala.util.parsing.json.{JSONArray, JSONObject}
 
@@ -11,11 +12,11 @@ import scala.util.parsing.json.{JSONArray, JSONObject}
   * @param tokens
   * @param df
   */
-case class OrderedDocFreq(docs: Int, tokens: Array[String], df: Map[String, Int]) {
+case class OrderedDocFreq(docs: Int, tokens: immutable.List[String], df: immutable.Map[String, Int]) {
   def saveToJson(filename: String): Unit = {
-    val jsonObj = JSONObject(Map[String, Any](
+    val jsonObj = JSONObject(immutable.Map[String, Any](
       "docs" -> docs,
-      "tokens" -> JSONArray(tokens.toList),
+      "tokens" -> JSONArray(tokens),
       "df" -> JSONObject(df)
     ))
     val w = new PrintWriter(filename)
@@ -26,8 +27,7 @@ case class OrderedDocFreq(docs: Int, tokens: Array[String], df: Map[String, Int]
 
 object OrderedDocFreq {
   def fromJson(file: File): OrderedDocFreq = {
-    val docFreqMap = JSONUtils.parseFile[Map[_, _]](file)
-      .asInstanceOf[Map[String, Any]]
+    val docFreqMap = JSONUtils.parseFile[Map[String, Any]](file)
 
     val docs = docFreqMap.get("docs") match {
       case Some(v) => v.asInstanceOf[Double].toInt
@@ -42,7 +42,7 @@ object OrderedDocFreq {
       case None => throw new Exception("can not parse tokens in docFreq")
     }
 
-    new OrderedDocFreq(docs, tokens.toArray, df)
+    OrderedDocFreq(docs, tokens, df)
   }
 }
 

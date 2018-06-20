@@ -2,13 +2,16 @@ package tech.sourced.gemini
 
 import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
 import tech.sourced.featurext.SparkFEClient
 import tech.sourced.featurext.generated.service.Feature
+
+import scala.collection.immutable
+
 
 case class RDDFeatureKey(token: String, doc: String)
 case class RDDFeature(key: RDDFeatureKey, weight: Long)
@@ -85,7 +88,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   protected def extractFeatures(uastsDF: DataFrame): RDD[RDDFeature] = {
     log.warn("Extracting features")
 
-    var feConfig = SparkFEClient.getConfig(session)
+    val feConfig = SparkFEClient.getConfig(session)
     val rows = uastsDF.flatMap { row =>
       val uastArr = row.getAs[Seq[Array[Byte]]]("uast")
       val features = uastArr.flatMap { byteArr =>
@@ -110,9 +113,9 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
       .map(row => (row._1, 1))
       .reduceByKey((a, b) => a + b)
       .collectAsMap()
-    val tokens = df.keys.toArray[String].sorted
+    val tokens = df.keys.toList.sorted
 
-    new OrderedDocFreq(docs.toInt, tokens, df.toMap[String, Int])
+    OrderedDocFreq(docs.toInt, tokens, immutable.Map(df.toSeq:_*))
   }
 
   // TODO(max): Try to use DF here instead
