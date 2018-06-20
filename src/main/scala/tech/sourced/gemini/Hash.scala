@@ -179,3 +179,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
       .save()
   }
 }
+
+object Hash {
+    def apply(s: SparkSession, log: Slf4jLogger) = new Hash(s, log)
+}

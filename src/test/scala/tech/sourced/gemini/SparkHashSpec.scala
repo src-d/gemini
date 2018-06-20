@@ -32,12 +32,15 @@ class SparkHashSpec extends FlatSpec
     override def filesForRepos(repos: DataFrame): DataFrame =
       super.filesForRepos(repos).filter(col("path").isin(filePaths: _*))
   }
+  object LimitedHash {
+    def apply(s: SparkSession, log: Slf4jLogger) = new LimitedHash(s, log)
+  }
 
   override def beforeAll(): Unit = {
     super.beforeAll()
 
     val gemini = Gemini(sparkSession)
-    var hash = new LimitedHash(sparkSession, log)
+    val hash = LimitedHash(sparkSession, log)
     val repos = gemini.getRepos("src/test/resources/siva/duplicate-files")
     hashResult = hash.forRepos(repos)
   }
