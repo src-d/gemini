@@ -184,5 +184,5 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
 }
 
 object Hash {
-    def apply(s: SparkSession, log: Slf4jLogger) = new Hash(s, log)
+    def apply(s: SparkSession, log: Slf4jLogger): Hash = new Hash(s, log)
 }
