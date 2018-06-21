@@ -5,6 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.storage.StorageLevel
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
 import tech.sourced.featurext.SparkFEClient
@@ -33,8 +34,8 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     * @param repos DataFrame with engine.getRepositories schema
     */
   def forRepos(repos: DataFrame): HashResult = {
-    val files = filesForRepos(repos).cache()
-    val uasts = extractUast(files).cache()
+    val files = filesForRepos(repos).persist(StorageLevel.MEMORY_AND_DISK_SER)
+    val uasts = extractUast(files).persist(StorageLevel.MEMORY_AND_DISK_SER)
     val features = extractFeatures(uasts).cache()
     val docFreq = makeDocFreq(uasts, features)
     val hashes = hashFeatures(docFreq, features)
