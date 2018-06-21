@@ -31,7 +31,7 @@ object HashSparkApp extends App with Logging {
   val repoFormats = Seq("siva", "bare", "standard")
   val printLimit = 100
 
-  val parser = new scopt.OptionParser[HashAppConfig]("./hash") {
+  val parser = new Parser[HashAppConfig]("./hash") {
     head("Gemini Hasher")
     note("Hashes given set of Git repositories, either from FS or as .siva files.")
 
@@ -76,7 +76,7 @@ object HashSparkApp extends App with Logging {
       .text("path to git repositories. Clones in local FS or Siva files in HDFS are supported.")
   }
 
-  parser.parse(args, HashAppConfig()) match {
+  parser.parseWithEnv(args, HashAppConfig()) match {
     case Some(config) =>
       if (config.verbose) {
         LogManager.getRootLogger.setLevel(Level.WARN)

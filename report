@@ -29,11 +29,10 @@ if [[ ! -f "${jar}" ]]; then
     fi
 fi
 
-source "${current_dir}/scripts/common_params.sh"
 
 if [[ -n "$DEV" ]]; then
     echo "Development mode: ON. Using ./sbt to build and run can be slow"
-    exec ./sbt --warn "run-main ${app_class} ${COMMAND_PARAMS[*]}"
+    exec ./sbt --warn "run-main ${app_class} $*"
 else
-    exec java -cp "${jar}:${deps_jar}" "${app_class}" "${COMMAND_PARAMS[@]}"
+    exec java -cp "${jar}:${deps_jar}" "${app_class}" $@
 fi

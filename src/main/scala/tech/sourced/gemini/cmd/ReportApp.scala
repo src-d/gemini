@@ -16,7 +16,7 @@ object ReportApp extends App {
   val groupByMode = "use-group-by"
   val condensedMode = "condensed"
 
-  val parser = new scopt.OptionParser[ReportAppConfig]("./report") {
+  val parser = new Parser[ReportAppConfig]("./report") {
     head("Gemini Report")
     note("Finds duplicated files among hashed repositories." +
       "It uses as many queries as distinct files are stored in the database")
@@ -44,7 +44,7 @@ object ReportApp extends App {
         "condensed - use only one query to find the duplicates.")
   }
 
-  parser.parse(args, ReportAppConfig()) match {
+  parser.parseWithEnv(args, ReportAppConfig()) match {
     case Some(config) =>
       val log = Logger("gemini", config.verbose)
       println(s"Reporting all similar files")
