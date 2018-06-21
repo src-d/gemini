@@ -57,6 +57,8 @@ sparkSubmit \
   --jars "${deps_jar}" \
   --conf "spark.executor.memory=4g" \
   --conf "spark.default.parallelism=8" \
+  --conf "spark.tech.sourced.engine.skip.read.errors=true" \
+  --conf "spark.files.maxPartitionBytes=12582912" \
   --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j.properties" \
   "${jar}" \
   "$@"
