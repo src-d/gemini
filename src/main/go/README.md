@@ -1,11 +1,13 @@
-# gemini
+# gemini go
 > Find similar code in Git repositories
 
-Trivial example of client application in Golang to query for same files.
+Trivial example of the client application in Golang to query Scylla/Cassandra.
+
+*Disclamer*: _this is experimental, only a query for *duplicate files* is supported_.
 
 
 # Run
-Add path to the file you want to search duplicates for and
+Add path to the file you want to search duplicate files for and
 
 ```
 go run src/main/go/query.go <path-to-file>

@@ -85,6 +85,7 @@ matrix:
       - grep "2 duplicates" report_result.txt > /dev/null
       - grep "2 similar files" report_result.txt > /dev/null
       # go query
+      - eval "$(gimme 1.10)"
       - go get ./src/main/go/... || true
       - go run ./src/main/go/query.go ./src/test/resources/LICENSE
 
