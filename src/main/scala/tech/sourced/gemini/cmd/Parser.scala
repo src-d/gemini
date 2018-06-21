@@ -19,7 +19,6 @@ abstract class Parser[C](programName: String) extends scopt.OptionParser[C](prog
     val envNames = options
       .map(opt => opt.fullName)
       .filter(name => name.startsWith("--")) // remove positional arguments
-      .filterNot(name => name == "verbose") // we don't support verbose as env var
       .filterNot(name => cliNames.contains(name)) // don't read env vars for passed flags
       .map(name => name.stripPrefix("--"))
       .map(name => name.replaceAll("-", "_"))
