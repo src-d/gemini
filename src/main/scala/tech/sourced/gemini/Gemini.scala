@@ -36,7 +36,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     // every run should re-process all repos/files
     session.catalog.clearCache()
 
-    val hash = new Hash(session, log)
+    val hash = Hash(session, log)
     val repos = getRepos(reposPath, limit, format)
 
     log.warn("Hashing")
