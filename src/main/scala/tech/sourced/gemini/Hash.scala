@@ -10,7 +10,6 @@ import tech.sourced.engine._
 import tech.sourced.featurext.SparkFEClient
 import tech.sourced.featurext.generated.service.Feature
 
-import scala.collection.immutable
 
 
 case class RDDFeatureKey(token: String, doc: String)
@@ -104,18 +103,15 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   // TODO(max): Try to use DF here instead
   protected def makeDocFreq(uasts: DataFrame, features: RDD[RDDFeature]): OrderedDocFreq = {
     log.warn("creating document frequencies")
-
     val docs = uasts.select("document").distinct().count()
-
     val df = features
       .map(row => (row.key.token, row.key.doc))
       .distinct()
       .map(row => (row._1, 1))
       .reduceByKey((a, b) => a + b)
       .collectAsMap()
-    val tokens = df.keys.toList.sorted
-
-    OrderedDocFreq(docs.toInt, tokens, immutable.Map(df.toSeq:_*))
+    val tokens = df.keys.toArray.sorted
+    OrderedDocFreq(docs.toInt, tokens, df)
   }
 
   // TODO(max): Try to use DF here instead
