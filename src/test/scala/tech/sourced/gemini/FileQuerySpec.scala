@@ -55,7 +55,7 @@ class FileQuerySpec extends FlatSpec
 
   "Read from Database" should "return same results as written" in {
     val gemini = Gemini(null, logger, keyspace)
-    val bblfshClient = BblfshClient.apply(Gemini.defaultBblfshHost, Gemini.defaultBblfshPort)
+    val bblfshClient = BblfshClient(Gemini.defaultBblfshHost, Gemini.defaultBblfshPort)
     val channel = ManagedChannelBuilder
       .forAddress(Gemini.defaultFeHost, Gemini.defaultFePort)
       .usePlaintext(true)
@@ -68,6 +68,8 @@ class FileQuerySpec extends FlatSpec
     duplicates.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
     duplicates.head.repo should be("null/Users/alex/src-d/gemini")
     duplicates.head.commit should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
+    channel.shutdownNow()
+    //TODO(bzz): bblfshClient.shutdownNow() after https://github.com/bblfsh/client-scala/issues/71
   }
 
   /**
@@ -113,6 +115,7 @@ class FileQuerySpec extends FlatSpec
     queryResult = fileQuery.find(dupFile)
 
     server.shutdown()
+    channel.shutdownNow()
   }
 
   it should "return duplicates" in {
