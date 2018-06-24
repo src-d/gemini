@@ -123,19 +123,16 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
 
     val tf = featuresRdd
       .map(row => (row.key, row.weight))
-      .reduceByKey((a, b) => a + b)
+      .reduceByKey(_ + _)
 
-    val tfidf = tf
+    val tfIdf = tf
       .map(row => (row._1.doc, Feature(row._1.token, row._2)))
       .groupByKey()
-      .map { row =>
-        val doc = row._1
-        val features = row._2
-
+      .map { case (doc, features) =>
         RDDHash(doc, FeaturesHash.hashFeatures(docFreq, features))
       }
 
-    tfidf
+    tfIdf
   }
 
   protected def saveDocFreq(docFreq: OrderedDocFreq): Unit = {
@@ -168,10 +165,9 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
 
     val cols = tables.hashtablesCols
     rdd
-      .flatMap(row => {
-        val RDDHash(doc, wmh) = row
-        FeaturesHash.wmhToBands(wmh).zipWithIndex.map{ case(band, i) => (doc, i, band) }
-      })
+      .flatMap { case RDDHash(doc, wmh) =>
+        FeaturesHash.wmhToBands(wmh).zipWithIndex.map{ case (band, i) => (doc, i, band) }
+      }
       .toDF(cols.sha, cols.hashtable, cols.value)
       .write
       .mode("append")
