@@ -1,8 +1,7 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.util
 
 import org.apache.log4j.{Level, LogManager}
-import org.slf4j.LoggerFactory
-import org.slf4j.{Logger => Slf4jLogger}
+import org.slf4j.{LoggerFactory, Logger => Slf4jLogger}
 
 object Logger {
   def apply(name: String, verbose: Boolean = false): Slf4jLogger = {

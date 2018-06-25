@@ -1,4 +1,4 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.util
 
 import java.io.File
 import java.nio.file.Files

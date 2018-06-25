@@ -1,8 +1,10 @@
 package tech.sourced.gemini
 
 import java.nio.ByteBuffer
+
 import org.slf4j.{Logger => Slf4jLogger}
 import org.scalatest.{FlatSpec, Matchers}
+import tech.sourced.gemini.util.Logger
 
 import scala.collection.mutable.ListBuffer
 

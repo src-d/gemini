@@ -1,7 +1,6 @@
 package tech.sourced.gemini
 
 import java.io.File
-import java.util
 
 import com.datastax.driver.core.{Session, SimpleStatement}
 import org.apache.avro.SchemaBuilder
@@ -257,7 +256,7 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
 
         val elementIds = record
           .get("element_ids")
-          .asInstanceOf[util.ArrayList[GenericData.Record]]
+          .asInstanceOf[java.util.ArrayList[GenericData.Record]]
           .asScala
           .toList
           .map(_.get("item").asInstanceOf[Long].toInt)

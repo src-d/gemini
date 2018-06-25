@@ -1,6 +1,7 @@
 package tech.sourced.gemini
 
 import org.scalatest.{FlatSpec, Matchers}
+import tech.sourced.gemini.util.MathUtil
 
 class MathUtilSpec extends FlatSpec
   with Matchers {
