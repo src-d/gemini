@@ -7,6 +7,7 @@ import org.apache.spark.sql.SparkSession
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
 import tech.sourced.featurext.generated.service._
 import org.slf4j.{Logger => Slf4jLogger}
+import tech.sourced.gemini.util.MapAccumulator
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -85,7 +86,7 @@ object SparkFEClient extends Logging {
     client
   }
 
-  def extract(uast: Node, config: Config): Iterable[Feature] = {
+  def extract(uast: Node, config: Config, skippedFiles: Option[MapAccumulator] = None): Iterable[Feature] = {
     val client = getClient(config)
     FEClient.extract(uast, client, log)
   }
