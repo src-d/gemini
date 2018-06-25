@@ -95,7 +95,7 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
     * @return
     */
   def elementsToBuckets(buckets: List[List[Int]]): Map[Int, List[Int]] = {
-    buckets
+    val map = buckets
       .zipWithIndex
       .foldLeft(Map[Int, List[Int]]()) { case (elementToBuckets, (bucket, i)) =>
         bucket.foldLeft(elementToBuckets) { (elementToBuckets, el) =>
@@ -104,6 +104,8 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
           elementToBuckets + (el -> list)
         }
       }
+    log.info(s"ElementsToBuckets map :${map.size}")
+    map
   }
 
   /**
