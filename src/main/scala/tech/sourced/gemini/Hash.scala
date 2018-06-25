@@ -120,18 +120,19 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
                               docFreq: OrderedDocFreq,
                               featuresRdd: RDD[RDDFeature]): RDD[RDDHash] = {
     log.warn("hashing features")
-
     val tf = featuresRdd
       .map(row => (row.key, row.weight))
       .reduceByKey(_ + _)
 
     val tfIdf = tf
       .map(row => (row._1.doc, Feature(row._1.token, row._2)))
-      .groupByKey()
-      .map { case (doc, features) =>
-        RDDHash(doc, FeaturesHash.hashFeatures(docFreq, features))
-      }
-
+      .groupByKey(session.sparkContext.defaultParallelism)
+      .mapPartitions { partIter =>
+        val wmh = FeaturesHash.initWmh(docFreq.tokens.size) // ~1.6 Gb (for 1 PGA bucket)
+        partIter.map { case (doc, features) =>
+          RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features, docFreq)))
+        }
+    }
     tfIdf
   }
 

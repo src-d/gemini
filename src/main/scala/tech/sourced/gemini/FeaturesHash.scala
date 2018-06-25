@@ -13,22 +13,20 @@ object FeaturesHash {
   val defaultHashtablesNum = 20
   val defaultBandSize = 8
 
-  private var tokensSize: Int = _
-  private var wmh: WeightedMinHash = _
-
-  def hashFeatures(
-                    docFreq: OrderedDocFreq,
-                    features: Iterable[Feature],
-                    sampleSize: Int = defaultSampleSize,
-                    seed: Int = defaultSeed): Array[Array[Long]] = synchronized {
-    // keep created WeightedMinHash instance cause the calculation of parameters is expensive for large dimension
-    if (wmh == null || tokensSize != docFreq.tokens.size) {
-      wmh = new WeightedMinHash(docFreq.tokens.size, sampleSize, seed)
-      tokensSize = docFreq.tokens.size
-    }
-
-    val bag = toBagOfFeatures(features, docFreq)
-    wmh.hash(bag)
+  /**
+    * Factory method for initializing WMH data structure
+    * \w default parameters, specific to Gemini.
+    *
+    * Allocates at lest 2*dim*sampleSize memory
+    *
+    * @param dim weight vector size
+    * @param sampleSize number of samples
+    * @param seed
+    * @return
+    */
+  def initWmh(dim: Int, sampleSize: Int = defaultSampleSize, seed: Int = defaultSeed): WeightedMinHash = {
+    val wmh = new WeightedMinHash(dim, sampleSize, seed)
+    wmh
   }
 
   /**
