@@ -2,6 +2,7 @@ package tech.sourced.gemini
 
 import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
@@ -11,6 +12,7 @@ import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
 import tech.sourced.featurext.SparkFEClient
 import tech.sourced.featurext.generated.service.Feature
+import tech.sourced.gemini.util.MapAccumulator
 
 
 
@@ -28,15 +30,26 @@ case class HashResult(files: DataFrame, hashes: RDD[RDDHash], docFreq: OrderedDo
 class Hash(session: SparkSession, log: Slf4jLogger) {
   import session.implicits._
 
+  def report(header: String, countProcessed: Long, skipped: MapAccumulator): Unit = {
+    log.warn(header)
+    val countSkipepd = skipped.value.map(_._2).reduceLeft(_ + _)
+    log.warn(s"Processed: $countProcessed, skipped: $countSkipepd")
+    skipped.value.toSeq.sortBy(-_._2) foreach { case (key, value) => log.warn(s"\t$key -> $value") }
+  }
+
   /**
     * Calculates hashes and docFreq
     *
     * @param repos DataFrame with engine.getRepositories schema
     */
   def forRepos(repos: DataFrame): HashResult = {
+    val feSkippedFiles = mapAccumulator(session.sparkContext, "FE skipped files")
+
     val files = filesForRepos(repos).persist(StorageLevel.MEMORY_AND_DISK_SER)
     val uasts = extractUast(files).persist(StorageLevel.MEMORY_AND_DISK_SER)
-    val features = extractFeatures(uasts).cache()
+    val features = extractFeatures(uasts, feSkippedFiles).cache()
+    report("Feature Extraction exceptions", features.count, feSkippedFiles)
+
     val docFreq = makeDocFreq(uasts, features)
     val hashes = hashFeatures(docFreq, features)
 
@@ -86,7 +99,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   }
 
   // TODO(max): Try to use DF here instead
-  protected def extractFeatures(uastsDF: DataFrame): RDD[RDDFeature] = {
+  protected def extractFeatures(uastsDF: DataFrame, skippedFiles: MapAccumulator): RDD[RDDFeature] = {
     log.warn("Extracting features")
 
     val feConfig = SparkFEClient.getConfig(session)
@@ -94,7 +107,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
       val uastArr = row.getAs[Seq[Array[Byte]]]("uast")
       val features = uastArr.flatMap { byteArr =>
         val uast = Node.parseFrom(byteArr)
-        SparkFEClient.extract(uast, feConfig)
+        SparkFEClient.extract(uast, feConfig, Some(skippedFiles))
       }
       features.map(f => RDDFeature(RDDFeatureKey(f.name, row.getAs[String]("document")), f.weight.toLong))
     }
@@ -175,6 +188,12 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
       .mode("append")
       .cassandraFormat(tables.hashtables, keyspace)
       .save()
+  }
+
+   def mapAccumulator(sc: SparkContext, name: String): MapAccumulator = {
+    val acc = new MapAccumulator
+    sc.register(acc, name)
+    acc
   }
 }
 

@@ -19,7 +19,8 @@ object FEClient {
   val literalsWeight = 264
   val graphletWeight = 548
 
-  def extract(uast: Node, client: FeatureExtractor, log: Slf4jLogger): Iterable[Feature] = {
+  def extract(uast: Node, client: FeatureExtractor, log: Slf4jLogger, skippedFiles: Option[MapAccumulator] = None):
+  Iterable[Feature] = {
     val idRequest = IdentifiersRequest(uast=Some(uast), docfreqThreshold=5, weight = idWeight, splitStem = true)
     val litRequest = LiteralsRequest(uast=Some(uast), docfreqThreshold=5, weight = literalsWeight)
     val graphletRequest = GraphletRequest(uast=Some(uast), docfreqThreshold=5, weight = graphletWeight)
@@ -36,6 +37,7 @@ object FEClient {
     } catch {
       case NonFatal(e) => {
         log.error(s"feature extractor error: ${e.toString}")
+        skippedFiles.foreach(_.add(e.getClass.getSimpleName -> 1))
         Iterable[Feature]()
       }
     }
@@ -68,7 +70,7 @@ object SparkFEClient extends Logging {
     * @return featurext configuration
     */
   def getConfig(session: SparkSession): Config = {
-    if (config == null) {
+    if (config == null) { //TODO(bzz) broadcast Config beforehand and just read it here
       val host = session.conf.get(hostKey, SparkFEClient.defaultHost)
       val port = session.conf.get(portKey, SparkFEClient.defaultPort.toString).toInt
       config = Config(host, port)
@@ -88,7 +90,7 @@ object SparkFEClient extends Logging {
 
   def extract(uast: Node, config: Config, skippedFiles: Option[MapAccumulator] = None): Iterable[Feature] = {
     val client = getClient(config)
-    FEClient.extract(uast, client, log)
+    FEClient.extract(uast, client, log, skippedFiles)
   }
 
 }
