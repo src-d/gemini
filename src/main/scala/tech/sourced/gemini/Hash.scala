@@ -1,6 +1,7 @@
 package tech.sourced.gemini
 
 import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
@@ -39,7 +40,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     val docFreq = makeDocFreq(uasts, features)
     val hashes = hashFeatures(docFreq, features)
 
-    HashResult(files, hashes, docFreq)
+    HashResult(files, hashes, docFreq.value)
   }
 
   /**
@@ -102,7 +103,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   }
 
   // TODO(max): Try to use DF here instead
-  protected def makeDocFreq(uasts: DataFrame, features: RDD[RDDFeature]): OrderedDocFreq = {
+  protected def makeDocFreq(uasts: DataFrame, features: RDD[RDDFeature]): Broadcast[OrderedDocFreq] = {
     log.warn("creating document frequencies")
     val docs = uasts.select("document").distinct().count()
     val df = features
@@ -112,30 +113,28 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
       .reduceByKey((a, b) => a + b)
       .collectAsMap()
     val tokens = df.keys.toArray.sorted
-    OrderedDocFreq(docs.toInt, tokens, df)
+    session.sparkContext.broadcast(OrderedDocFreq(docs.toInt, tokens, df))
   }
 
   // TODO(max): Try to use DF here instead
   protected def hashFeatures(
-                              docFreq: OrderedDocFreq,
+                              docFreq: Broadcast[OrderedDocFreq],
                               featuresRdd: RDD[RDDFeature]): RDD[RDDHash] = {
     log.warn("hashing features")
-
     val tf = featuresRdd
       .map(row => (row.key, row.weight))
-      .reduceByKey((a, b) => a + b)
+      .reduceByKey(_ + _)
 
-    val tfidf = tf
+    val tfIdf = tf
       .map(row => (row._1.doc, Feature(row._1.token, row._2)))
-      .groupByKey()
-      .map { row =>
-        val doc = row._1
-        val features = row._2
-
-        RDDHash(doc, FeaturesHash.hashFeatures(docFreq, features))
-      }
-
-    tfidf
+      .groupByKey(session.sparkContext.defaultParallelism)
+      .mapPartitions { partIter =>
+        val wmh = FeaturesHash.initWmh(docFreq.value.tokens.size) // ~1.6 Gb (for 1 PGA bucket)
+        partIter.map { case (doc, features) =>
+          RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features, docFreq.value)))
+        }
+    }
+    tfIdf
   }
 
   protected def saveDocFreq(docFreq: OrderedDocFreq): Unit = {
@@ -168,10 +167,9 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
 
     val cols = tables.hashtablesCols
     rdd
-      .flatMap(row => {
-        val RDDHash(doc, wmh) = row
-        FeaturesHash.wmhToBands(wmh).zipWithIndex.map{ case(band, i) => (doc, i, band) }
-      })
+      .flatMap { case RDDHash(doc, wmh) =>
+        FeaturesHash.wmhToBands(wmh).zipWithIndex.map{ case (band, i) => (doc, i, band) }
+      }
       .toDF(cols.sha, cols.hashtable, cols.value)
       .write
       .mode("append")
