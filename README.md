@@ -42,7 +42,8 @@ To find all duplicate files in all repositories run
 ./report
 ```
 
-All repositories must be [hashed](#hash) before.
+All repositories must be [hashed](#hash) before and a
+[community detection library](src/main/python/community-detector/README.md#install-dependencies) installed.
 
 ## Requirements
 
