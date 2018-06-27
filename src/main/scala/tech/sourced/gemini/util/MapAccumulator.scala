@@ -19,13 +19,8 @@ class MapAccumulator extends AccumulatorV2[(String, Int), Map[String, Int]] {
   override def value: Map[String, Int] = underlyingMap.toMap
 
   override def add(kv: (String, Int)): Unit = {
-    val k = kv._1
-    val v = kv._2
-    if (!underlyingMap.contains(k)) {
-      underlyingMap += k -> v
-    } else if (underlyingMap(k) != v) {
-      underlyingMap += k -> (v + underlyingMap(k))
-    }
+    val (k, v) = kv
+    underlyingMap += k -> (underlyingMap.getOrElse(k, 0) + v)
   }
 
   override def merge(other: AccumulatorV2[(String, Int), Map[String, Int]]): Unit =
