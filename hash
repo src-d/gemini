@@ -46,6 +46,7 @@ sparkSubmit() {
 #  --conf "spark.local.dir=/spark-temp-data" \
 #  --conf "spark.executor.extraJavaOptions=-Djava.io.tmpdir=/spark-temp-data" \
 #  --conf "spark.eventLog.enabled=true" \
+#  --conf "spark.eventLog.dir=/repositories"
 
 # https://issues.apache.org/jira/browse/SPARK-16784
 # spark.executor.extraJavaOptions=-Dlog4j.configuration=log4j-spark.properties
@@ -55,8 +56,12 @@ sparkSubmit \
   --master "${MASTER:=local[*]}" \
   --name "${app_name}" \
   --jars "${deps_jar}" \
+  --conf "spark.driver.memory=4g" \
   --conf "spark.executor.memory=4g" \
   --conf "spark.default.parallelism=8" \
+  --conf "spark.serializer=org.apache.spark.serializer.KryoSerializer" \
+  --conf "spark.tech.sourced.engine.skip.read.errors=true" \
+  --conf "spark.files.maxPartitionBytes=12582912" \
   --driver-java-options "-Dlog4j.configuration=jar:file:${jar}!/log4j.properties" \
   "${jar}" \
   "$@"

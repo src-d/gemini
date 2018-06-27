@@ -6,9 +6,11 @@ services:
       - ./repositories:/repositories
       - ./query:/query
     environment:
-      DB_HOST: scylla
+      HOST: scylla
       BBLFSH_HOST: bblfshd
       FEATURES_EXTRACTOR_HOST: featurext
+    ports:
+      - "4040:4040"
 
   scylla:
     image: scylladb/scylla:2.0.0
@@ -23,6 +25,8 @@ services:
       - "127.0.0.1"
       - "--memory"
       - "2G"
+    ports:
+      - "9042:9042"
 
   featurext:
     build:
