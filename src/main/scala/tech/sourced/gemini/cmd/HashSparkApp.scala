@@ -4,10 +4,11 @@ import java.net.URI
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
 import org.apache.log4j.{Level, LogManager}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
+import tech.sourced.engine.provider.RepositoryRDDProvider
 import tech.sourced.gemini.Gemini
 
 import scala.util.Properties
@@ -95,7 +96,7 @@ object HashSparkApp extends App with Logging {
         .getOrCreate()
 
       val reposPath = config.reposPath
-      val repos = listRepositories(reposPath, config.format, spark.sparkContext.hadoopConfiguration, config.limit)
+      val repos = listRepositories(reposPath, config.format, spark, config.limit)
       printRepositories(reposPath, repos)
 
       val gemini = Gemini(spark, log, config.keyspace)
@@ -111,7 +112,7 @@ object HashSparkApp extends App with Logging {
       System.exit(2)
   }
 
-  private def printRepositories(reposPath: String, repos: Array[Path]): Unit = {
+  private def printRepositories(reposPath: String, repos: Array[String]): Unit = {
     val numToPrint = Math.min(repos.length, printLimit)
     println(s"Hashing ${repos.length} repositories in: '$reposPath' " +
       s"${if (numToPrint < repos.length) s"(only $numToPrint shown)"}")
@@ -120,22 +121,9 @@ object HashSparkApp extends App with Logging {
       .foreach(repo => println(s"\t$repo"))
   }
 
-  private def listRepositories(path: String, format: String, conf: Configuration, limit: Int): Array[Path] = {
-    val fs = FileSystem.get(new URI(path), conf)
-    val p = new Path(path)
-
-    val paths = format match {
-      case "siva" => findSivaRecursive(p, fs)
-      case _ => fs.listStatus(p).filter(_.isDirectory).map(_.getPath)
-    }
-
+  def listRepositories(path: String, format: String, ss: SparkSession, limit: Int = 0): Array[String] = {
+    val paths = RepositoryRDDProvider(ss.sparkContext).get(path, format).map(_.root).collect()
     if (limit <= 0) paths else paths.take(limit)
   }
 
-  // we don't filter files by extension here, because engine doesn't do it too
-  // it will try to process any file
-  private def findSivaRecursive(p: Path, fs: FileSystem): Array[Path] =
-    fs.listStatus(p).flatMap{ file =>
-      if (file.isDirectory) findSivaRecursive(file.getPath, fs) else Array(file.getPath)
-    }
 }
