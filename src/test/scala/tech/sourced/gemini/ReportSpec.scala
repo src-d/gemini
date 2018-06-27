@@ -4,6 +4,7 @@ import com.datastax.driver.core.Session
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.internal.Logging
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Tag}
+import tech.sourced.gemini.util.Logger
 
 // require cassandra itself, not scylla
 object Cassandra extends Tag("Cassandra")

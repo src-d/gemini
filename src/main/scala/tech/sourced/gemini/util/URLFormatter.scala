@@ -1,4 +1,4 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.util
 
 object URLFormatter {
   private val services = Map(

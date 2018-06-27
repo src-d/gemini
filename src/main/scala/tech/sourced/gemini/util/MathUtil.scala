@@ -1,4 +1,4 @@
-package tech.sourced.gemini
+package tech.sourced.gemini.util
 
 object MathUtil {
   private val maxUint32 = 4294967295L

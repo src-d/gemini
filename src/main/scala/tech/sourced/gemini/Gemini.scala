@@ -11,6 +11,7 @@ import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine.Engine
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
 import tech.sourced.gemini.cmd.ReportApp
+import tech.sourced.gemini.util.{Logger, URLFormatter}
 
 import scala.io.Source
 

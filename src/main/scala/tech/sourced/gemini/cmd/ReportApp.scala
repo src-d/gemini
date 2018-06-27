@@ -2,6 +2,7 @@ package tech.sourced.gemini.cmd
 
 import com.datastax.driver.core.Cluster
 import tech.sourced.gemini._
+import tech.sourced.gemini.util.Logger
 
 
 case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,

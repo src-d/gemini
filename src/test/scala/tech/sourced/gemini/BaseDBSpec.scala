@@ -2,6 +2,7 @@ package tech.sourced.gemini
 
 import com.datastax.driver.core.{Cluster, Session}
 import org.scalatest.{BeforeAndAfterAll, Suite, Tag}
+import tech.sourced.gemini.util.Logger
 
 case class HashtableItem(hashtable: Int, v: String, sha1: String)
 

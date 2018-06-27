@@ -10,6 +10,7 @@ import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.featurext.FEClient
 import tech.sourced.featurext.generated.service.Feature
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
+import tech.sourced.gemini.util.MathUtil
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
