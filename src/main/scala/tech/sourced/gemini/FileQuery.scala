@@ -139,7 +139,7 @@ class FileQuery(conn: Session,
     log.info(s"Reading docFreq from ${docFreqFile.getAbsolutePath}")
     val docFreq = OrderedDocFreq.fromJson(docFreqFile)
 
-    log.info(s"Initialize WMH for ")
+    log.info(s"Initialize WMH")
     val wmh = FeaturesHash.initWmh(docFreq.tokens.size)
 
     log.info("Started hashing a file")

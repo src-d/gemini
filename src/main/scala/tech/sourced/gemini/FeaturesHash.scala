@@ -17,7 +17,7 @@ object FeaturesHash {
     * Factory method for initializing WMH data structure
     * \w default parameters, specific to Gemini.
     *
-    * Allocates at lest 2*dim*sampleSize memory
+    * Allocates at least 2*dim*sampleSize*8 bytes of RAM
     *
     * @param dim weight vector size
     * @param sampleSize number of samples
@@ -44,7 +44,7 @@ object FeaturesHash {
   def toBagOfFeatures(features: Iterable[Feature], docFreq: OrderedDocFreq): Array[Double] = {
     val OrderedDocFreq(docs, tokens, df) = docFreq
 
-    val bag = new Array[Double](tokens.size) //mutable.ArrayBuffer.fill(tokens.size)(0.toDouble)
+    val bag = new Array[Double](tokens.size)
     features.foreach { feature =>
       tokens.search(feature.name) match {
         case Found(idx) => {
