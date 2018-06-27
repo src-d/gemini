@@ -136,13 +136,12 @@ class FileQuery(conn: Session,
   }
 
   protected def hashFile(features: Iterable[Feature], docFreqFile: File): Array[Array[Long]] = {
-    log.info("Reading docFreq")
+    log.info(s"Reading docFreq from ${docFreqFile.getAbsolutePath}")
     val docFreq = OrderedDocFreq.fromJson(docFreqFile)
 
-    log.info("Started hashing file")
+    log.info("Started hashing a file")
     val hash = FeaturesHash.hashFeatures(docFreq, features)
-
-    log.info("Finished hashing file")
+    log.info("Finished hashing a file")
     hash
   }
 }
