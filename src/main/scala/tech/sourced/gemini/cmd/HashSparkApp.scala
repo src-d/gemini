@@ -23,6 +23,8 @@ case class HashAppConfig(reposPath: String = "",
                          feHost: String = Gemini.defaultFeHost,
                          fePort: Int = Gemini.defaultFePort,
                          format: String = "siva",
+                         sparkMemory: String = "4gb",
+                         sparkParallelism: Int = 8,
                          verbose: Boolean = false)
 
 /**
@@ -68,6 +70,13 @@ object HashSparkApp extends App with Logging {
       )
       .action((x, c) => c.copy(format = x))
       .text("format of the stored repositories")
+    opt[String]("spark-memory")
+      .action((x, c) => c.copy(sparkMemory = x))
+      .text("amount of memory to use for the spark driver process")
+    opt[Int]("spark-parallelism")
+      .action((x, c) => c.copy(sparkParallelism = x))
+      .text("default number of spark partitions in RDDs returned by transformations like " +
+        "join, reduceByKey, and parallelize when not set by user.")
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
@@ -87,6 +96,8 @@ object HashSparkApp extends App with Logging {
 
       val spark = SparkSession.builder()
         .master(sparkMaster)
+        .config("spark.driver.memory", config.sparkMemory)
+        .config("spark.default.parallelism", config.sparkParallelism)
         .config("spark.cassandra.connection.host", config.host)
         .config("spark.cassandra.connection.port", config.port)
         .config("spark.tech.sourced.bblfsh.grpc.host", config.bblfshHost)
