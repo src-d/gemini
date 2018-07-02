@@ -157,7 +157,6 @@ object Gemini {
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"
   val defaultFePort: Int = 9001
-  val defaultDocFreqFile: String = "docfreq.json"
 
   val tables = Tables(
     "meta",
