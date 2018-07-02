@@ -81,14 +81,13 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def query(inPath: String,
             conn: Session,
             bblfshClient: BblfshClient,
-            feClient: FeatureExtractor,
-            docFreqPath: String = ""): QueryResult = {
+            feClient: FeatureExtractor): QueryResult = {
     val path = new File(inPath)
     log.info(s"Query for items similar to $path")
     if (path.isDirectory) {
       QueryResult(findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {
-      val fileQuery = new FileQuery(conn, bblfshClient, feClient, docFreqPath, log, keyspace, tables)
+      val fileQuery = new FileQuery(conn, bblfshClient, feClient, log, keyspace, tables)
       fileQuery.find(path)
     }
   }
@@ -163,9 +162,13 @@ object Gemini {
   val tables = Tables(
     "meta",
     "hashtables",
+    "docfreq",
     MetaCols("sha1", "repo", "commit", "path"),
-    HashtablesCols("sha1", "hashtable", "value")
+    HashtablesCols("sha1", "hashtable", "value"),
+    DocFreqCols("id", "docs", "df")
   )
+
+  val docFreqId = "1"
 
   val formatter = new ObjectInserter.Formatter
 

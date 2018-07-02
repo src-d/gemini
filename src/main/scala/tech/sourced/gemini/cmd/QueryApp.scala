@@ -86,8 +86,7 @@ object QueryApp extends App {
           file,
           cassandra,
           bblfshClient,
-          feClient,
-          config.docFreqFile
+          feClient
         )
 
       cassandra.close()
