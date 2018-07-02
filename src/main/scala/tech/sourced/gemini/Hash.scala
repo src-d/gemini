@@ -32,9 +32,10 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
 
   def report(header: String, countProcessed: Long, skipped: MapAccumulator): Unit = {
     log.warn(header)
-    val countSkipepd = skipped.value.map(_._2).reduceLeft(_ + _)
-    log.warn(s"Processed: $countProcessed, skipped: $countSkipepd")
-    skipped.value.toSeq.sortBy(-_._2) foreach { case (key, value) => log.warn(s"\t$key -> $value") }
+    val skippedSeq = skipped.value.toSeq
+    val countSkipped = skippedSeq.map(_._2).sum
+    log.warn(s"Processed: $countProcessed, skipped: $countSkipped")
+    skippedSeq.sortBy(-_._2) foreach { case (key, value) => log.warn(s"\t$key -> $value") }
   }
 
   /**
