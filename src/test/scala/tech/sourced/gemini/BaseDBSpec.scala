@@ -4,6 +4,8 @@ import com.datastax.driver.core.{Cluster, Session}
 import org.scalatest.{BeforeAndAfterAll, Suite, Tag}
 import tech.sourced.gemini.util.Logger
 
+import scala.collection.JavaConversions.mapAsJavaMap
+
 case class HashtableItem(hashtable: Int, v: String, sha1: String)
 
 trait BaseDBSpec extends BeforeAndAfterAll {
@@ -46,6 +48,16 @@ trait BaseDBSpec extends BeforeAndAfterAll {
         VALUES ($ht, $v, '$sha1')"""
       cassandra.execute(cql)
     }
+  }
+
+  def insertDocFreq(docFreq: OrderedDocFreq): Unit = {
+    val cols = Gemini.tables.docFreqCols
+    val javaMap = mapAsJavaMap(docFreq.df)
+
+    cassandra.execute(
+      s"INSERT INTO $keyspace.${Gemini.tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",
+      Gemini.docFreqId, int2Integer(docFreq.docs), javaMap
+    )
   }
 
   override def afterAll(): Unit = {

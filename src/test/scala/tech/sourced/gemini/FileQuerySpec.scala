@@ -89,6 +89,8 @@ class FileQuerySpec extends FlatSpec
     */
   var queryResult : QueryResult = _
   "Query for similar files" should "return results" in {
+    insertDocFreq(OrderedDocFreq.fromJson(new File("src/test/resources/docfreq.json")))
+
     val features = readFeaturesFromFile("src/test/resources/features.json")
 
     val server = ServerBuilder
@@ -108,7 +110,6 @@ class FileQuerySpec extends FlatSpec
       cassandra,
       bblfshStub,
       feStub,
-      "src/test/resources/docfreq.json",
       log,
       keyspace,
       Gemini.tables)
