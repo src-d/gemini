@@ -1,10 +1,9 @@
 package tech.sourced.gemini
 
 import com.datastax.driver.core.{Cluster, Session}
-import org.scalatest.{BeforeAndAfterAll, Suite, Tag}
+import org.scalatest.{BeforeAndAfterAll, Suite}
 import tech.sourced.gemini.util.Logger
-
-import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConverters._
 
 case class HashtableItem(hashtable: Int, v: String, sha1: String)
 
@@ -52,7 +51,7 @@ trait BaseDBSpec extends BeforeAndAfterAll {
 
   def insertDocFreq(docFreq: OrderedDocFreq): Unit = {
     val cols = Gemini.tables.docFreqCols
-    val javaMap = mapAsJavaMap(docFreq.df)
+    val javaMap = docFreq.df.asJava
 
     cassandra.execute(
       s"INSERT INTO $keyspace.${Gemini.tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",

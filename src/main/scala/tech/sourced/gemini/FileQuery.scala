@@ -13,7 +13,6 @@ import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtr
 import tech.sourced.gemini.util.MathUtil
 
 import scala.collection.JavaConverters._
-import scala.collection.JavaConversions.mapAsScalaMap
 import scala.util.control.NonFatal
 
 /**
@@ -137,8 +136,10 @@ class FileQuery(conn: Session,
     if (row == null) {
       None
     } else {
-      val javaDf = row.getMap("df", classOf[java.lang.String], classOf[java.lang.Integer])
-      val df = javaDf.mapValues(Integer2int(_))
+      val df = row
+        .getMap("df", classOf[java.lang.String], classOf[java.lang.Integer])
+        .asScala
+        .mapValues(_.toInt)
 
       Some(OrderedDocFreq(row.getInt(cols.docs), df.keys.toIndexedSeq, df))
     }
