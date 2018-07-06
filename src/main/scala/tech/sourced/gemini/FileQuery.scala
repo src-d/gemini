@@ -36,6 +36,7 @@ case class QueryResult(duplicates: Iterable[RepoFile], similar: Iterable[RepoFil
 class FileQuery(conn: Session,
             bblfshClient: BblfshClient,
             feClient: FeatureExtractor,
+            docFreqPath: String = "",
             log: Slf4jLogger,
             keyspace: String,
             tables: Tables) {
@@ -66,9 +67,13 @@ class FileQuery(conn: Session,
   }
 
   protected def findSimilarForFile(file: File): Seq[String] = {
-    val docFreq = readDocFreq()
+    val docFreq :Option[OrderedDocFreq] = if (docFreqPath.isEmpty) {
+      readDocFreqFromDB()
+    } else {
+      readDocFreqFromFile()
+    }
     if (docFreq.isEmpty) {
-      log.warn("Document frequency table is empty. Skip similarity query")
+      log.warn("Skip similarity query")
       Seq()
     } else {
       extractUAST(file) match {
@@ -129,11 +134,12 @@ class FileQuery(conn: Session,
     result
   }
 
-  protected def readDocFreq(): Option[OrderedDocFreq] = {
+  protected def readDocFreqFromDB(): Option[OrderedDocFreq] = {
     log.info(s"Reading docFreq from DB")
     val cols = tables.docFreqCols
     val row = conn.execute(s"SELECT * FROM ${tables.docFreq} WHERE ${cols.id} = '1'").one()
     if (row == null) {
+      log.warn("Document frequency table is empty.")
       None
     } else {
       val df = row
@@ -142,6 +148,16 @@ class FileQuery(conn: Session,
         .mapValues(_.toInt)
 
       Some(OrderedDocFreq(row.getInt(cols.docs), df.keys.toIndexedSeq, df))
+    }
+  }
+
+  protected def readDocFreqFromFile(): Option[OrderedDocFreq] = {
+    val docFreqFile = new File(docFreqPath)
+    if (!docFreqFile.exists()) {
+      log.warn("Document frequency for weighted min hash wasn't provided.")
+      None
+    } else {
+      Some(OrderedDocFreq.fromJson(docFreqFile))
     }
   }
 

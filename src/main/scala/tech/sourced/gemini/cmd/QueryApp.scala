@@ -15,6 +15,7 @@ case class QueryAppConfig(file: String = "",
                           bblfshPort: Int = Gemini.defaultBblfshPort,
                           feHost: String = Gemini.defaultFeHost,
                           fePort: Int = Gemini.defaultFePort,
+                          docFreqFile: String = "",
                           verbose: Boolean = false)
 
 /**
@@ -49,6 +50,9 @@ object QueryApp extends App {
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
+    opt[String]("doc-freq-file")
+      .action((x, c) => c.copy(docFreqFile = x))
+      .text("path to file with feature frequencies")
     arg[String]("<path-to-file>")
       .required()
       .action((x, c) => c.copy(file = x))
@@ -82,6 +86,7 @@ object QueryApp extends App {
           file,
           cassandra,
           bblfshClient,
+          config.docFreqFile,
           feClient
         )
 

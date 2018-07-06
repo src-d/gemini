@@ -21,6 +21,7 @@ case class HashAppConfig(reposPath: String = "",
                          format: String = "siva",
                          sparkMemory: String = "4gb",
                          sparkParallelism: Int = 8,
+                         docFreqFile: String = "",
                          verbose: Boolean = false)
 
 /**
@@ -76,6 +77,9 @@ object HashSparkApp extends App with Logging {
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
+    opt[String]("doc-freq-file")
+      .action((x, c) => c.copy(docFreqFile = x))
+      .text("path to file with feature frequencies")
     arg[String]("<path-to-git-repos>")
       .required()
       .action((x, c) => c.copy(reposPath = x))
@@ -112,7 +116,7 @@ object HashSparkApp extends App with Logging {
         gemini.applySchema(cassandra)
       }
 
-      gemini.hash(reposPath, config.limit, config.format)
+      gemini.hash(reposPath, config.limit, config.format, config.docFreqFile)
       println("Done")
 
     case None =>

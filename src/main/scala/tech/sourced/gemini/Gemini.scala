@@ -27,7 +27,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param limit
     * @param format
     */
-  def hash(reposPath: String, limit: Int = 0, format: String = "siva"): Unit = {
+  def hash(reposPath: String, limit: Int = 0, format: String = "siva", docFreqPath: String = ""): Unit = {
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }
@@ -44,7 +44,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val result = hash.forRepos(repos)
 
     log.warn("Saving hashes to DB")
-    hash.save(result, keyspace, tables)
+    hash.save(result, keyspace, tables, docFreqPath)
   }
 
   /**
@@ -81,13 +81,14 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def query(inPath: String,
             conn: Session,
             bblfshClient: BblfshClient,
+            docFreqPath: String = "",
             feClient: FeatureExtractor): QueryResult = {
     val path = new File(inPath)
     log.info(s"Query for items similar to $path")
     if (path.isDirectory) {
       QueryResult(findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {
-      val fileQuery = new FileQuery(conn, bblfshClient, feClient, log, keyspace, tables)
+      val fileQuery = new FileQuery(conn, bblfshClient, feClient, docFreqPath, log, keyspace, tables)
       fileQuery.find(path)
     }
   }

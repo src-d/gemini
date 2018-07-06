@@ -29,7 +29,7 @@ case class HashResult(files: DataFrame, hashes: RDD[RDDHash], docFreq: OrderedDo
   * @param session spark session
   * @param log
   */
-class Hash(session: SparkSession, log: Slf4jLogger) {
+class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
   import session.implicits._
 
   def report(header: String, countProcessed: Long, skipped: MapAccumulator): Unit = {
@@ -66,9 +66,14 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     * @param keyspace
     * @param tables
     */
-  def save(hashResult: HashResult, keyspace: String, tables: Tables): Unit ={
+  def save(hashResult: HashResult, keyspace: String, tables: Tables, docFreqPath: String): Unit ={
     saveMeta(hashResult.files, keyspace, tables)
-    saveDocFreq(hashResult.docFreq, keyspace, tables)
+    if (docFreqPath.isEmpty) {
+      saveDocFreqToDB(hashResult.docFreq, keyspace, tables)
+    } else {
+      log.warn(s"save document frequencies to JSON")
+      hashResult.docFreq.saveToJson(docFreqPath)
+    }
     saveHashes(hashResult.hashes, keyspace, tables)
   }
 
@@ -153,7 +158,7 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     tfIdf
   }
 
-  protected def saveDocFreq(docFreq: OrderedDocFreq, keyspace: String, tables: Tables): Unit = {
+  protected def saveDocFreqToDB(docFreq: OrderedDocFreq, keyspace: String, tables: Tables): Unit = {
     log.warn(s"save document frequencies to DB")
     CassandraConnector(session.sparkContext).withSessionDo { cassandra =>
       val cols = tables.docFreqCols
