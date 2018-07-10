@@ -84,14 +84,9 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
   protected def extractUast(files: DataFrame): DataFrame = {
     log.warn("Extracting UASTs")
 
-    // TODO(max): get languages from bblfsh directly as soon as
-    // https://github.com/bblfsh/client-scala/issues/68 resolved
-    val langs = Seq("Java", "Python", "Go", "JavaScript", "TypeScript", "Ruby", "Bash", "Php")
-
     files
       .dropDuplicates("blob_id")
       .classifyLanguages
-      .filter('lang.isin(langs: _*))
       .extractUASTs
       .select("repository_id", "path", "blob_id", "uast")
       .filter(_.getAs[Seq[Array[Byte]]]("uast").nonEmpty)
