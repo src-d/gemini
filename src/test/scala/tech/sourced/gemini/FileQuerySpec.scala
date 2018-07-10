@@ -165,6 +165,10 @@ class FileQuerySpec extends FlatSpec
       override def version(request: VersionRequest): Future[VersionResponse] = {
         Future.successful(VersionResponse())
       }
+
+      override def supportedLanguages(request: SupportedLanguagesRequest): Future[SupportedLanguagesResponse] = {
+        Future.successful(SupportedLanguagesResponse())
+      }
     }
 
     new BblfshServerMock

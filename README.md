@@ -74,6 +74,7 @@ You would need:
  - Apache Cassandra or ScyllaDB
  - Apache Spark
  - Python 3
+ - [Bblfshd](https://github.com/bblfsh/bblfshd/) v2.5.0+
  - Go (optional)
 
 By default, all commands are going to use
