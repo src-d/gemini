@@ -36,7 +36,7 @@ services:
       PYTHONHASHSEED: "0"
 
   bblfshd:
-    image: bblfsh/bblfshd:v2.4.2
+    image: bblfsh/bblfshd:v2.5.0
     privileged: true
     volumes:
       - /var/lib/bblfshd
