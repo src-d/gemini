@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.6
 
 WORKDIR /usr/src/app
 
@@ -6,6 +6,7 @@ COPY src/main/python/feature-extractor/requirements.txt ./
 
 RUN apt-get update && \
     apt-get install -y --no-install-suggests --no-install-recommends libsnappy-dev && \
+    pip install --no-cache-dir pytest && \
     pip install --no-cache-dir -r requirements.txt && \
     apt-get remove -y libsnappy-dev && \
     apt-get remove -y .*-doc .*-man >/dev/null && \
