@@ -63,7 +63,7 @@ class FileQuerySpec extends FlatSpec
       .build()
     val feClient = FeatureExtractorGrpc.stub(channel)
 
-    val QueryResult(duplicates, _) = gemini.query("src/test/resources/LICENSE", cassandra, bblfshClient, feClient)
+    val QueryResult(duplicates, _) = gemini.query("src/test/resources/LICENSE", cassandra, bblfshClient, "", feClient)
 
     duplicates should not be empty
     duplicates.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
@@ -89,6 +89,8 @@ class FileQuerySpec extends FlatSpec
     */
   var queryResult : QueryResult = _
   "Query for similar files" should "return results" in {
+    insertDocFreq(OrderedDocFreq.fromJson(new File("src/test/resources/docfreq.json")))
+
     val features = readFeaturesFromFile("src/test/resources/features.json")
 
     val server = ServerBuilder
@@ -108,7 +110,7 @@ class FileQuerySpec extends FlatSpec
       cassandra,
       bblfshStub,
       feStub,
-      "src/test/resources/docfreq.json",
+      "",
       log,
       keyspace,
       Gemini.tables)

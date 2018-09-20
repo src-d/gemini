@@ -1,5 +1,7 @@
 package tech.sourced.gemini
 
+
+import com.datastax.spark.connector.cql.CassandraConnector
 import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.SparkContext
@@ -13,7 +15,7 @@ import tech.sourced.engine._
 import tech.sourced.featurext.SparkFEClient
 import tech.sourced.featurext.generated.service.Feature
 import tech.sourced.gemini.util.MapAccumulator
-
+import scala.collection.JavaConverters._
 
 
 case class RDDFeatureKey(token: String, doc: String)
@@ -27,7 +29,7 @@ case class HashResult(files: DataFrame, hashes: RDD[RDDHash], docFreq: OrderedDo
   * @param session spark session
   * @param log
   */
-class Hash(session: SparkSession, log: Slf4jLogger) {
+class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
   import session.implicits._
 
   def report(header: String, countProcessed: Long, skipped: MapAccumulator): Unit = {
@@ -64,9 +66,14 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     * @param keyspace
     * @param tables
     */
-  def save(hashResult: HashResult, keyspace: String, tables: Tables): Unit ={
+  def save(hashResult: HashResult, keyspace: String, tables: Tables, docFreqPath: String): Unit ={
     saveMeta(hashResult.files, keyspace, tables)
-    saveDocFreq(hashResult.docFreq)
+    if (docFreqPath.isEmpty) {
+      saveDocFreqToDB(hashResult.docFreq, keyspace, tables)
+    } else {
+      log.warn(s"save document frequencies to JSON")
+      hashResult.docFreq.saveToJson(docFreqPath)
+    }
     saveHashes(hashResult.hashes, keyspace, tables)
   }
 
@@ -146,10 +153,17 @@ class Hash(session: SparkSession, log: Slf4jLogger) {
     tfIdf
   }
 
-  protected def saveDocFreq(docFreq: OrderedDocFreq): Unit = {
-    log.warn(s"save document frequencies to ${Gemini.defaultDocFreqFile}")
-    // TODO(max) replace with DB later
-    docFreq.saveToJson(Gemini.defaultDocFreqFile)
+  protected def saveDocFreqToDB(docFreq: OrderedDocFreq, keyspace: String, tables: Tables): Unit = {
+    log.warn(s"save document frequencies to DB")
+    CassandraConnector(session.sparkContext).withSessionDo { cassandra =>
+      val cols = tables.docFreqCols
+      val javaMap = docFreq.df.asJava
+
+      cassandra.execute(
+        s"INSERT INTO $keyspace.${tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",
+        Gemini.docFreqId, int2Integer(docFreq.docs), javaMap
+      )
+    }
   }
 
   protected def saveMeta(files: DataFrame, keyspace: String, tables: Tables): Unit = {

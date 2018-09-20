@@ -15,7 +15,7 @@ case class QueryAppConfig(file: String = "",
                           bblfshPort: Int = Gemini.defaultBblfshPort,
                           feHost: String = Gemini.defaultFeHost,
                           fePort: Int = Gemini.defaultFePort,
-                          docFreqFile: String = Gemini.defaultDocFreqFile,
+                          docFreqFile: String = "",
                           verbose: Boolean = false)
 
 /**
@@ -86,8 +86,8 @@ object QueryApp extends App {
           file,
           cassandra,
           bblfshClient,
-          feClient,
-          config.docFreqFile
+          config.docFreqFile,
+          feClient
         )
 
       cassandra.close()

@@ -7,6 +7,7 @@ import scala.collection.JavaConverters._
 
 case class MetaCols(sha: String, repo: String, commit: String, path: String)
 case class HashtablesCols(sha: String, hashtable: String, value: String)
+case class DocFreqCols(id: String, docs: String, df: String)
 
 /**
   * Tables is static typed definition of DB schema
@@ -18,8 +19,10 @@ case class HashtablesCols(sha: String, hashtable: String, value: String)
   */
 case class Tables(meta: String,
                   hashtables: String,
+                  docFreq: String,
                   metaCols: MetaCols,
-                  hashtablesCols: HashtablesCols)
+                  hashtablesCols: HashtablesCols,
+                  docFreqCols: DocFreqCols)
 
 /**
   * Database object contains common queries to DB

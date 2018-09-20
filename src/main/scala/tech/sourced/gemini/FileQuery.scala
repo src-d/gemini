@@ -29,7 +29,6 @@ case class QueryResult(duplicates: Iterable[RepoFile], similar: Iterable[RepoFil
   * @param conn db connection
   * @param bblfshClient
   * @param feClient
-  * @param docFreqPath will be replaced by database in future
   * @param log
   * @param keyspace
   * @param tables
@@ -68,46 +67,45 @@ class FileQuery(conn: Session,
   }
 
   protected def findSimilarForFile(file: File): Seq[String] = {
-    val docFreqFile = new File(docFreqPath)
-    if (!docFreqFile.exists()) {
-      log.warn("Document frequency for weighted min hash wasn't provided. Skip similarity query")
+    val docFreq :Option[OrderedDocFreq] = if (docFreqPath.isEmpty) {
+      readDocFreqFromDB()
+    } else {
+      readDocFreqFromFile()
+    }
+    if (docFreq.isEmpty) {
+      log.warn("Skip similarity query")
       Seq()
     } else {
       extractUAST(file) match {
         case Some(node) =>
           val featuresList = extractFeatures(node)
-          findSimilarFiles(featuresList, docFreqFile)
+          findSimilarFiles(featuresList, docFreq.get)
         case _ => Seq()
       }
     }
   }
 
-  private def findSimilarFiles(featuresList: Iterable[Feature], docFreqFile: File): Seq[String] = {
-    if (featuresList.isEmpty) {
-      log.warn(s"file: '${docFreqFile.getPath}' doesn't contain features")
-      Seq()
-    } else {
-      val cols = tables.hashtablesCols
-      val wmh = hashFile(featuresList, docFreqFile)
+  private def findSimilarFiles(featuresList: Iterable[Feature], docFreq: OrderedDocFreq): Seq[String] = {
+    val cols = tables.hashtablesCols
+    val wmh = hashFile(featuresList, docFreq)
 
-      val bands = FeaturesHash.wmhToBands(wmh)
+    val bands = FeaturesHash.wmhToBands(wmh)
 
-      log.info("Looking for similar items")
-      val similar = bands.zipWithIndex.foldLeft(Set[String]()) { case (sim, (band, i)) =>
-        val cql = s"""SELECT ${cols.sha} FROM $keyspace.${tables.hashtables}
-          WHERE ${cols.hashtable}=$i AND ${cols.value}=0x${MathUtil.bytes2hex(band)}"""
-        log.debug(cql)
+    log.info("Looking for similar items")
+    val similar = bands.zipWithIndex.foldLeft(Set[String]()) { case (sim, (band, i)) =>
+      val cql = s"""SELECT ${cols.sha} FROM $keyspace.${tables.hashtables}
+        WHERE ${cols.hashtable}=$i AND ${cols.value}=0x${MathUtil.bytes2hex(band)}"""
+      log.debug(cql)
 
-        val sha1s = conn.execute(new SimpleStatement(cql))
-          .asScala
-          .map(_.getString("sha1"))
+      val sha1s = conn.execute(new SimpleStatement(cql))
+        .asScala
+        .map(_.getString("sha1"))
 
-        sim ++ sha1s
-      }
-      log.info(s"Fetched ${similar.size} items from DB")
-
-      similar.toSeq
+      sim ++ sha1s
     }
+    log.info(s"Fetched ${similar.size} items from DB")
+
+    similar.toSeq
   }
 
   protected def extractUAST(file: File): Option[Node] = {
@@ -136,10 +134,34 @@ class FileQuery(conn: Session,
     result
   }
 
-  protected def hashFile(features: Iterable[Feature], docFreqFile: File): Array[Array[Long]] = {
-    log.info(s"Reading docFreq from ${docFreqFile.getAbsolutePath}")
-    val docFreq = OrderedDocFreq.fromJson(docFreqFile)
+  protected def readDocFreqFromDB(): Option[OrderedDocFreq] = {
+    log.info(s"Reading docFreq from DB")
+    val cols = tables.docFreqCols
+    val row = conn.execute(s"SELECT * FROM ${tables.docFreq} WHERE ${cols.id} = '1'").one()
+    if (row == null) {
+      log.warn("Document frequency table is empty.")
+      None
+    } else {
+      val df = row
+        .getMap("df", classOf[java.lang.String], classOf[java.lang.Integer])
+        .asScala
+        .mapValues(_.toInt)
 
+      Some(OrderedDocFreq(row.getInt(cols.docs), df.keys.toIndexedSeq, df))
+    }
+  }
+
+  protected def readDocFreqFromFile(): Option[OrderedDocFreq] = {
+    val docFreqFile = new File(docFreqPath)
+    if (!docFreqFile.exists()) {
+      log.warn("Document frequency for weighted min hash wasn't provided.")
+      None
+    } else {
+      Some(OrderedDocFreq.fromJson(docFreqFile))
+    }
+  }
+
+  protected def hashFile(features: Iterable[Feature], docFreq: OrderedDocFreq): Array[Array[Long]] = {
     log.info(s"Initialize WMH")
     val wmh = FeaturesHash.initWmh(docFreq.tokens.size)
 

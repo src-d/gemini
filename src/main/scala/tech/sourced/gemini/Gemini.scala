@@ -27,7 +27,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param limit
     * @param format
     */
-  def hash(reposPath: String, limit: Int = 0, format: String = "siva"): Unit = {
+  def hash(reposPath: String, limit: Int = 0, format: String = "siva", docFreqPath: String = ""): Unit = {
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }
@@ -44,7 +44,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val result = hash.forRepos(repos)
 
     log.warn("Saving hashes to DB")
-    hash.save(result, keyspace, tables)
+    hash.save(result, keyspace, tables, docFreqPath)
   }
 
   /**
@@ -81,8 +81,8 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def query(inPath: String,
             conn: Session,
             bblfshClient: BblfshClient,
-            feClient: FeatureExtractor,
-            docFreqPath: String = ""): QueryResult = {
+            docFreqPath: String = "",
+            feClient: FeatureExtractor): QueryResult = {
     val path = new File(inPath)
     log.info(s"Query for items similar to $path")
     if (path.isDirectory) {
@@ -158,14 +158,17 @@ object Gemini {
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"
   val defaultFePort: Int = 9001
-  val defaultDocFreqFile: String = "docfreq.json"
 
   val tables = Tables(
     "meta",
     "hashtables",
+    "docfreq",
     MetaCols("sha1", "repo", "commit", "path"),
-    HashtablesCols("sha1", "hashtable", "value")
+    HashtablesCols("sha1", "hashtable", "value"),
+    DocFreqCols("id", "docs", "df")
   )
+
+  val docFreqId = "1"
 
   val formatter = new ObjectInserter.Formatter
 
