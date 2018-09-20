@@ -5,12 +5,14 @@ import tech.sourced.gemini._
 import tech.sourced.gemini.util.Logger
 
 
-case class ReportAppConfig(host: String = Gemini.defaultCassandraHost,
-                           port: Int = Gemini.defaultCassandraPort,
-                           keyspace: String = Gemini.defautKeyspace,
-                           mode: String = ReportApp.defaultMode,
-                           ccDirPath: String = ".",
-                           verbose: Boolean = false)
+case class ReportAppConfig(
+  host: String = Gemini.defaultCassandraHost,
+  port: Int = Gemini.defaultCassandraPort,
+  keyspace: String = Gemini.defautKeyspace,
+  mode: String = ReportApp.defaultMode,
+  ccDirPath: String = ".",
+  verbose: Boolean = false
+)
 
 object ReportApp extends App {
   val defaultMode = ""

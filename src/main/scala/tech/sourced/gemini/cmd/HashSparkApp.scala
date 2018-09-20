@@ -9,20 +9,22 @@ import tech.sourced.gemini.Gemini
 
 import scala.util.Properties
 
-case class HashAppConfig(reposPath: String = "",
-                         limit: Int = 0,
-                         host: String = Gemini.defaultCassandraHost,
-                         port: Int = Gemini.defaultCassandraPort,
-                         keyspace: String = Gemini.defautKeyspace,
-                         bblfshHost: String = Gemini.defaultBblfshHost,
-                         bblfshPort: Int = Gemini.defaultBblfshPort,
-                         feHost: String = Gemini.defaultFeHost,
-                         fePort: Int = Gemini.defaultFePort,
-                         format: String = "siva",
-                         sparkMemory: String = "4gb",
-                         sparkParallelism: Int = 8,
-                         docFreqFile: String = "",
-                         verbose: Boolean = false)
+case class HashAppConfig(
+  reposPath: String = "",
+  limit: Int = 0,
+  host: String = Gemini.defaultCassandraHost,
+  port: Int = Gemini.defaultCassandraPort,
+  keyspace: String = Gemini.defautKeyspace,
+  bblfshHost: String = Gemini.defaultBblfshHost,
+  bblfshPort: Int = Gemini.defaultBblfshPort,
+  feHost: String = Gemini.defaultFeHost,
+  fePort: Int = Gemini.defaultFePort,
+  format: String = "siva",
+  sparkMemory: String = "4gb",
+  sparkParallelism: Int = 8,
+  docFreqFile: String = "",
+  verbose: Boolean = false
+)
 
 /**
   * Apache Spark app that applied LSH to given repos, using source{d} Engine.
