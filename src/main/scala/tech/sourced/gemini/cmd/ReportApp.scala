@@ -9,15 +9,16 @@ case class ReportAppConfig(
   host: String = Gemini.defaultCassandraHost,
   port: Int = Gemini.defaultCassandraPort,
   keyspace: String = Gemini.defautKeyspace,
-  mode: String = ReportApp.defaultMode,
+  format: String = ReportApp.defaultFmt,
   ccDirPath: String = ".",
-  verbose: Boolean = false
+  verbose: Boolean = false,
+  mode: String = Gemini.fileSimilarityMode
 )
 
 object ReportApp extends App {
-  val defaultMode = ""
-  val groupByMode = "use-group-by"
-  val condensedMode = "condensed"
+  val defaultFmt = ""
+  val defaultFmtGroupBy = "use-group-by"
+  val condensedFmt = "condensed"
 
   val parser = new Parser[ReportAppConfig]("./report") {
     head("Gemini Report")
@@ -39,9 +40,9 @@ object ReportApp extends App {
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
-    opt[String]("mode")
+    opt[String]("format")
       .valueName("use-group-by or condensed")
-      .action((x, c) => c.copy(mode = x))
+      .action((x, c) => c.copy(format = x))
       .text("Only for Apache Cassandra database\n" +
         "use-group-by - use as many queries as unique duplicate files are found, plus one.\n" +
         "condensed - use only one query to find the duplicates.")
@@ -63,7 +64,7 @@ object ReportApp extends App {
       log.info("Checking DB schema")
       gemini.applySchema(cassandra)
 
-      val ReportResult(duplicates, similarities) = gemini.report(cassandra, config.mode, config.ccDirPath)
+      val ReportResult(duplicates, similarities) = gemini.report(cassandra, config.format, config.ccDirPath)
 
       print(duplicates)
       printCommunities(similarities)

@@ -23,14 +23,15 @@ case class HashAppConfig(
   sparkMemory: String = "4gb",
   sparkParallelism: Int = 8,
   docFreqFile: String = "",
-  verbose: Boolean = false
+  verbose: Boolean = false,
+  mode: String = Gemini.fileSimilarityMode
 )
 
 /**
   * Apache Spark app that applied LSH to given repos, using source{d} Engine.
   */
 object HashSparkApp extends App with Logging {
-  val repoFormats = Seq("siva", "bare", "standard")
+  val repoFormats = Seq(Gemini.fileSimilarityMode,  Gemini.funcSimilarityMode)
   val printLimit = 100
 
   val parser = new Parser[HashAppConfig]("./hash") {
@@ -79,6 +80,17 @@ object HashSparkApp extends App with Logging {
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
+    opt[String]('m', "mode")
+      .valueName(Gemini.similarityModes.mkString(" | "))
+      .withFallback(() => Gemini.fileSimilarityMode)
+      .validate(x =>
+        if (Gemini.similarityModes contains x) {
+          success
+        } else {
+          failure(s"similarity mode must be one of: " + Gemini.similarityModes.mkString(" | "))
+        })
+      .action((x, c) => c.copy(format = x))
+      .text("similarity mode to be used")
     opt[String]("doc-freq-file")
       .action((x, c) => c.copy(docFreqFile = x))
       .text("path to file with feature frequencies")

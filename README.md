@@ -117,6 +117,7 @@ All three commands accept parameters for database connection and logging:
  * `-p/--port` - cassandra/scylla db port, default `9042`
  * `-k/--keyspace` - cassandra/scylla db keyspace, default `hashes`
  * `-v/--verbose` - producing more verbose output, default `false`
+ * `-m/--mode` - similarity modes: `file` or `function`, default `file`
 
 For `query` and `hash` commands parameters for bblfsh/features extractor  configuration are available:
 

@@ -17,7 +17,8 @@ case class QueryAppConfig(
   feHost: String = Gemini.defaultFeHost,
   fePort: Int = Gemini.defaultFePort,
   docFreqFile: String = "",
-  verbose: Boolean = false
+  verbose: Boolean = false,
+  mode: String = Gemini.fileSimilarityMode
 )
 
 /**

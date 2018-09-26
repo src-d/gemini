@@ -47,11 +47,20 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     *
     * @param repos DataFrame with engine.getRepositories schema
     */
-  def forRepos(repos: DataFrame): HashResult = {
+  def forRepos(repos: DataFrame, mode: String): HashResult = {
     val feSkippedFiles = mapAccumulator(session.sparkContext, "FE skipped files")
 
     val files = filesForRepos(repos).persist(StorageLevel.MEMORY_AND_DISK_SER)
     val uasts = extractUast(files).persist(StorageLevel.MEMORY_AND_DISK_SER)
+    if (mode == Gemini.funcSimilarityMode) {
+      uasts = uasts.flatMap(extract_functions_from_uast)
+      //- extract functions from UAST
+      //  https://github.com/src-d/ml/blob/7ceecc659648914335a8f375714c35c31b8a9e8f/sourced/ml/transformers/moder.py#L84
+      //- change "document" col, so it has += "_%s:%d" % (name, func.start_position.line)
+      //  https://github.com/src-d/ml/blob/7ceecc659648914335a8f375714c35c31b8a9e8f/sourced/ml/transformers/moder.py#L81
+      //- refactor extractFeatures()
+      //  so different file/func level params are accepted
+    }
     val features = extractFeatures(uasts, feSkippedFiles).cache()
     report("Feature Extraction exceptions", features.count, feSkippedFiles)
 
