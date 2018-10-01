@@ -2,6 +2,8 @@
 
 # A helper script to prepare the python runtime in Travis CI
 
+set -x
+
 sudo apt-get -qq update
 # libsnappy is needed for sourced-ml
 sudo apt-get --no-install-recommends -y install python3-pip libsnappy1 libsnappy-dev
