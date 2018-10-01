@@ -31,7 +31,9 @@ trait BaseSparkSpec extends BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-
+    if (_conf == null) {
+        useDefaultSparkConf()
+    }
     sparkSession = SparkSession.builder()
       .master("local[*]")
       .config(_conf)
