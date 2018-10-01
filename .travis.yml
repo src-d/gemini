@@ -15,10 +15,10 @@ env:
 matrix:
   fast_finish: true
   include:
-  - name: "Integration tests: SBT + Apache Spark local"
+  - name: "Integration tests: SBT + Apache Spark local (DB, FE)"
     before_install:
       - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
-      - ./scripts/install_python.sh
+      - ./scripts/install_python_feature_extractor.sh
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
       # start dependencies
@@ -50,7 +50,8 @@ matrix:
     env:
       - MASTER=spark://127.0.0.1:7077
     before_install:
-      - ./scripts/install_python.sh
+      - ./scripts/install_python_report.sh
+      - ./scripts/install_python_feature_extractor.sh
       - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
       - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
     install:
@@ -96,7 +97,7 @@ matrix:
 
   - name: "Unit tests: Python for Report"
     before_install:
-      - ./scripts/install_python.sh
+      - ./scripts/install_python_report.sh
     script:
       - pytest -v src/main/python/community-detector
 
@@ -105,9 +106,7 @@ matrix:
 
   - name: "Code: Python style check"
     before_install:
-      - sudo apt-get -qq update
-      - sudo apt-get -y install python3-pip
-      - pip3 install --user yapf
+      - pip3 install yapf
     script:
       - make lint-python
 
