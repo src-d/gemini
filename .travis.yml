@@ -9,6 +9,7 @@ services:
 
 env:
   global:
+    - PYENV_VERSION=3.6
     - SPARK_HOME=./spark
 
 matrix:
