@@ -166,7 +166,7 @@ class FileQuery(conn: Session,
     val wmh = FeaturesHash.initWmh(docFreq.tokens.size)
 
     log.info("Started hashing a file")
-    val bag = FeaturesHash.toBagOfFeatures(features, docFreq)
+    val bag = FeaturesHash.toBagOfFeatures(features.iterator, docFreq)
     val hash = wmh.hash(bag)
     log.info("Finished hashing a file")
     hash
