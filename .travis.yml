@@ -18,6 +18,7 @@ matrix:
   - name: "Integration tests: SBT + Apache Spark local (DB, FE)"
     before_install:
       - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
+      - docker exec -it gemini_bblfshd_1 bblfshctl driver list
       - ./scripts/install_python_feature_extractor.sh
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
