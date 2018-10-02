@@ -39,7 +39,7 @@ if [[ ! -f "${SPARK_ARCHIVE}.tgz" ]]; then
     # download spark from archive if not cached
     log "Apache Spark ${SPARK_VERSION} being downloaded from archives"
     start_time=`date +%s`
-    download_with_retry "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/spark-${SPARK_VERSION}/${SPARK_ARCHIVE}.tgz"
+    download_with_retry "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/${SPARK_ARCHIVE}.tgz"
     end_time=`date +%s`
     download_time="$((end_time-start_time))"
     log "Took ${download_time} sec"
