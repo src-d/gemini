@@ -9,24 +9,17 @@ services:
 
 env:
   global:
+    - PYENV_VERSION=3.6
     - SPARK_HOME=./spark
 
 matrix:
   fast_finish: true
   include:
-  - scala: 2.11.2
-    before_install:
-    - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla
-    - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
-    script:
-      # run only tests without external deps (beside DB)
-      - ./sbt "test-only * -- -l tags.FEIntegration -l tags.Bblfsh -l tags.FeatureExtractor"
-
-  - scala: 2.11.2
-    env: INTEGRATION_TESTS=true
+  - name: "Integration tests: SBT + Apache Spark local (DB, FE)"
     before_install:
       - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
-      - ./scripts/install_python.sh
+      - docker exec -it gemini_bblfshd_1 bblfshctl driver list
+      - ./scripts/install_python_feature_extractor.sh
       - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
       # start dependencies
@@ -54,12 +47,12 @@ matrix:
         on:
           branch: experimental
 
-  - scala: 2.11.2
+  - name: "Integration tests: CLI + Apache Spark standalone cluster"
     env:
-      - INTEGRATION_TESTS=true
       - MASTER=spark://127.0.0.1:7077
     before_install:
-      - ./scripts/install_python.sh
+      - ./scripts/install_python_report.sh
+      - ./scripts/install_python_feature_extractor.sh
       - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
       - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
     install:
@@ -89,32 +82,34 @@ matrix:
       - go get ./src/main/go/... || true
       - go run ./src/main/go/query.go ./src/test/resources/LICENSE
 
-  - scala: 2.11.2
-    env: STYLE_CHECK=true
-    script: ./sbt scalastyle
-
-  - scala: 2.11.2
-    env: FE_PYTHON_TEST=true
+  - name: "Integration tests: Python + Scala for Feature Extractor"
     script:
       - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d featurext
       - docker-compose exec featurext pytest -v
       - ./sbt "test-only * -- -n tags.FEIntegration"
 
-  - scala: 2.11.2
-    env: PYTHON_LINT_TESTS=true
+  - name: "Unit tests: Scala (only DB)"
     before_install:
-      - sudo apt-get -qq update
-      - sudo apt-get -y install python3-pip
-      - pip3 install --user yapf
+    - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla
+    - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
     script:
-      - make lint-python
+      # run only tests without external deps (beside DB)
+      - ./sbt "test-only * -- -l tags.FEIntegration -l tags.Bblfsh -l tags.FeatureExtractor"
 
-  - scala: 2.11.2
-    env: PYTHON_LIB_TESTS=true
+  - name: "Unit tests: Python for Report"
     before_install:
-      - ./scripts/install_python.sh
+      - ./scripts/install_python_report.sh
     script:
       - pytest -v src/main/python/community-detector
+
+  - name: "Code: Scala style check"
+    script: ./sbt scalastyle
+
+  - name: "Code: Python style check"
+    before_install:
+      - pip3 install yapf
+    script:
+      - make lint-python
 
 after_failure:
  - docker logs db
