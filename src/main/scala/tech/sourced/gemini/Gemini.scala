@@ -25,7 +25,9 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     *
     * @param reposPath
     * @param limit
-    * @param format
+    * @param format repository input format
+    * @param mode file or func similarity modes
+    * @param docFreqPath (optional) path to DocFreq file. Default: read from DB.
     */
   def hash(reposPath: String, limit: Int = 0, format: String = "siva", mode: String, docFreqPath: String = ""): Unit = {
     if (session == null) {

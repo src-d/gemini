@@ -22,6 +22,7 @@ trait BaseSparkSpec extends BeforeAndAfterAll {
       .set("spark.cassandra.connection.port", Gemini.defaultCassandraPort.toString)
       .set("spark.cassandra.connection.keep_alive_ms", "5000")
       .set("spark.cassandra.connection.timeout_ms", "30000")
+      .set("spark.tech.sourced.bblfsh.grpc.host", "127.0.0.1")
       .set("spark.ui.showConsoleProgress", "false")
       .set("spark.ui.enabled", "false")
       .set("spark.cleaner.ttl", "3600")

@@ -31,7 +31,7 @@ case class HashAppConfig(
   * Apache Spark app that applied LSH to given repos, using source{d} Engine.
   */
 object HashSparkApp extends App with Logging {
-  val repoFormats = Seq(Gemini.fileSimilarityMode,  Gemini.funcSimilarityMode)
+  val repoFormats = Seq("siva", "bare", "standard")
   val printLimit = 100
 
   val parser = new Parser[HashAppConfig]("./hash") {
