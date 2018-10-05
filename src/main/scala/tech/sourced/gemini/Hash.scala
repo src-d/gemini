@@ -8,13 +8,14 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.storage.StorageLevel
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
 import tech.sourced.featurext.SparkFEClient
 import tech.sourced.featurext.generated.service.Feature
 import tech.sourced.gemini.util.MapAccumulator
+
 import scala.collection.JavaConverters._
 
 
@@ -27,7 +28,8 @@ case class HashResult(files: DataFrame, hashes: RDD[RDDHash], docFreq: OrderedDo
   * Implements hashing repositories using Apache Spark
   *
   * @param session spark session
-  * @param log
+  * @param log logger implementation
+  * @param docFreqPath path to DocFreq
   */
 class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
   import session.implicits._
@@ -54,9 +56,9 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     report("Feature Extraction exceptions", features.count, feSkippedFiles)
 
     val docFreq = makeDocFreq(uasts, features)
-    val hashes = hashFeatures(docFreq, features)
+    val hashes = hashFeaturesDF(docFreq.value, features)
 
-    HashResult(files, hashes, docFreq.value)
+    HashResult(files, hashes.rdd, docFreq.value)
   }
 
   /**
@@ -65,6 +67,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     * @param hashResult
     * @param keyspace
     * @param tables
+    * @param docFreqPath
     */
   def save(hashResult: HashResult, keyspace: String, tables: Tables, docFreqPath: String): Unit ={
     saveMeta(hashResult.files, keyspace, tables)
@@ -101,55 +104,87 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       .select("document", "uast")
   }
 
-  // TODO(max): Try to use DF here instead
-  protected def extractFeatures(uastsDF: DataFrame, skippedFiles: MapAccumulator): RDD[RDDFeature] = {
+  def extractFeatures(uastsDF: DataFrame, skippedFiles: MapAccumulator): DataFrame = {
     log.warn("Extracting features")
 
     val feConfig = SparkFEClient.getConfig(session)
-    val rows = uastsDF.flatMap { row =>
-      val uastArr = row.getAs[Seq[Array[Byte]]]("uast")
-      val features = uastArr.flatMap { byteArr =>
-        val uast = Node.parseFrom(byteArr)
-        SparkFEClient.extract(uast, feConfig, Some(skippedFiles))
-      }
-      features.map(f => RDDFeature(RDDFeatureKey(f.name, row.getAs[String]("document")), f.weight.toLong))
-    }
-
-    rows.rdd
+    uastsDF
+      .flatMap { row =>
+        val uastArr = row.getAs[Seq[Array[Byte]]]("uast")
+        val features = uastArr.flatMap { byteArr =>
+          val uast = Node.parseFrom(byteArr)
+          SparkFEClient.extract(uast, feConfig, Some(skippedFiles))
+       }
+        features.map(feat => (feat.name, row.getAs[String]("document"), feat.weight.toLong))
+       }
+      .toDF("feature", "doc", "weight")
   }
 
-  // TODO(max): Try to use DF here instead
-  protected def makeDocFreq(uasts: DataFrame, features: RDD[RDDFeature]): Broadcast[OrderedDocFreq] = {
+  def makeDocFreq(uasts: DataFrame, features: DataFrame): Broadcast[OrderedDocFreq] = {
     log.warn("creating document frequencies")
     val docs = uasts.select("document").distinct().count()
     val df = features
-      .map(row => (row.key.token, row.key.doc))
-      .distinct()
-      .map(row => (row._1, 1))
-      .reduceByKey((a, b) => a + b)
-      .collectAsMap()
+      .select("feature", "doc")
+      .distinct
+      .groupBy("feature")
+      .agg(count("*").alias("cnt"))
+      .map(row => (row.getAs[String]("feature"), row.getAs[Long]("cnt").toInt))
+      .collect.toMap
     val tokens = df.keys.toArray.sorted
     session.sparkContext.broadcast(OrderedDocFreq(docs.toInt, tokens, df))
   }
 
-  // TODO(max): Try to use DF here instead
-  protected def hashFeatures(
-                              docFreq: Broadcast[OrderedDocFreq],
-                              featuresRdd: RDD[RDDFeature]): RDD[RDDHash] = {
+  /**
+    * Hash features using RDD representation.
+    *
+    * This impl is retrofitted to new Dataset API so it is a dorp-in replacement for hashFeaturesDF(),
+    * but it uses RDD inside in order to benefit from groupByKey/mapPartitions perf optimizations.
+    *
+    * This is expected to scale better to full PGA, as hashing is done in parallel for each partition.
+    *
+    * @param docFreq
+    * @param features
+    * @return
+    */
+  def hashFeaturesRDD(
+    docFreq: OrderedDocFreq,
+    features: DataFrame
+  ): Dataset[RDDHash] = {
     log.warn("hashing features")
-    val tf = featuresRdd
-      .map(row => (row.key, row.weight))
+
+    val tf = features.rdd
+      .map { case Row(feature: String, doc: String, weight: Long) => (RDDFeatureKey(feature, doc), weight) }
       .reduceByKey(_ + _)
 
     val tfIdf = tf
       .map(row => (row._1.doc, Feature(row._1.token, row._2)))
       .groupByKey(session.sparkContext.defaultParallelism)
       .mapPartitions { partIter =>
-        val wmh = FeaturesHash.initWmh(docFreq.value.tokens.size) // ~1.6 Gb (for 1 PGA bucket)
+        val wmh = FeaturesHash.initWmh(docFreq.tokens.size) // ~1.6 Gb (for 1 PGA bucket)
         partIter.map { case (doc, features) =>
-          RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features, docFreq.value)))
+          RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features.iterator, docFreq)))
         }
-    }
+      }
+    tfIdf.toDS()
+  }
+
+  /**
+    * Hash features using Dataset representation.
+    */
+  def hashFeaturesDF(
+    docFreq: OrderedDocFreq,
+    features: DataFrame
+  ): Dataset[RDDHash] = {
+    log.warn("hashing features")
+
+    val tf = features.groupBy("feature", "doc").sum("weight").alias("weight")
+    val tfIdf = tf
+      .map { case Row(token: String, doc: String, weight: Long) => (doc, Feature(token, weight)) }
+      .groupByKey { case (doc, _) => doc }
+      .mapGroups { (doc, features) =>
+        val wmh = FeaturesHash.initWmh(docFreq.tokens.size) // ~1.6 Gb RAM (for 1 PGA bucket)
+        RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features.map(_._2), docFreq)))
+      }
     tfIdf
   }
 

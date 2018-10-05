@@ -42,7 +42,7 @@ object FeaturesHash {
     * @param docFreq
     * @return
     */
-  def toBagOfFeatures(features: Iterable[Feature], docFreq: OrderedDocFreq): Array[Double] = {
+  def toBagOfFeatures(features: Iterator[Feature], docFreq: OrderedDocFreq): Array[Double] = {
     val OrderedDocFreq(docs, tokens, df) = docFreq
 
     val bag = new Array[Double](tokens.size)
