@@ -56,7 +56,9 @@ case class Uast2seqExt(weight: Int, seqLen: Int, stride: Int) extends Extractor 
 
 object FEClient {
 
-  val fileLevelExtractors = Seq(IdentifiersExt(194, split = true), GraphletExt(548), LiteralsExt(264))
+  val fileLevelExtractors = Seq(
+    IdentifiersExt(weight = 194, split = true), GraphletExt(weight = 548), LiteralsExt(weight = 264)
+  )
 
   def extract(
     uast: Node,
