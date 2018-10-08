@@ -70,7 +70,7 @@ class SparkHashSpec extends FlatSpec
     val docFreq = hashWithNewGemini().docFreq
     // num of processed files * 2 repo
     docFreq.docs shouldEqual 4
-    docFreq.tokens.size shouldEqual 738
+    docFreq.tokens.size shouldEqual 773
     docFreq.df(docFreq.tokens.head) shouldEqual 3
   }
 
