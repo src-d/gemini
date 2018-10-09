@@ -36,11 +36,28 @@ class SparkHashSpec extends FlatSpec
     def apply(s: SparkSession, log: Slf4jLogger): LimitedHash = new LimitedHash(s, log)
   }
 
-  def hashWithNewGemini(): HashResult = {
+  def hashWithNewGemini(mode: String = "file"): HashResult = {
     val gemini = Gemini(sparkSession)
     val hash = LimitedHash(sparkSession, log)
     val repos = gemini.getRepos("src/test/resources/siva/duplicate-files")
-    hash.forRepos(repos)
+    hash.forRepos(repos, mode)
+  }
+
+  "Hash" should "return correct number of functions" in {
+    val hashResult = hashWithNewGemini("func")
+    val funcs = hashResult.hashes
+    val fCount = funcs.count()
+    print(s"$fCount functions found")
+    funcs.select("doc").show(false)
+    fCount shouldEqual 54
+  }
+
+  "Hash" should "extract functions UASTs in func mode" in {
+    val hashResult = hashWithNewGemini("func")
+
+    val funcs = hashResult.docFreq.tokens
+    println(s"${funcs.length} functions found")
+    println("\t" + funcs.take(10).mkString("\n\t"))
   }
 
   "Hash" should "return correct files" in {

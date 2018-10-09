@@ -130,7 +130,7 @@ object HashSparkApp extends App with Logging {
         gemini.applySchema(cassandra)
       }
 
-      gemini.hash(reposPath, config.limit, config.format, config.docFreqFile)
+      gemini.hash(reposPath, config.limit, config.format, config.mode, config.docFreqFile)
       println("Done")
 
     case None =>

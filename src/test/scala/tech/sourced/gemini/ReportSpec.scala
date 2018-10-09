@@ -49,8 +49,9 @@ class ReportSpec extends FlatSpec
     val gemini = Gemini(sparkSession, logger, keyspace)
     gemini.dropSchema(session)
     gemini.applySchema(session)
-    println(s"Hash ${sivaPath} for keyspace ${keyspace}")
-    gemini.hash(sivaPath)
+    val mode = Gemini.fileSimilarityMode
+    println(s"Hash ${mode} in ${sivaPath} for keyspace ${keyspace}")
+    gemini.hash(sivaPath, mode=mode)
     println("Done")
   }
 

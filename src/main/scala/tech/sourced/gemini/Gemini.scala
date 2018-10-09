@@ -27,7 +27,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * @param limit
     * @param format
     */
-  def hash(reposPath: String, limit: Int = 0, format: String = "siva", docFreqPath: String = ""): Unit = {
+  def hash(reposPath: String, limit: Int = 0, format: String = "siva", mode: String, docFreqPath: String = ""): Unit = {
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }

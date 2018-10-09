@@ -10,28 +10,34 @@ import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.storage.StorageLevel
+import org.bblfsh.client.BblfshClient
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
-import tech.sourced.featurext.SparkFEClient
+import tech.sourced.featurext.{Extractor, FEClient, SparkFEClient}
 import tech.sourced.featurext.generated.service.Feature
 import tech.sourced.gemini.util.MapAccumulator
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 
 case class RDDFeatureKey(token: String, doc: String)
+
 case class RDDFeature(key: RDDFeatureKey, weight: Long)
+
 case class RDDHash(doc: String, wmh: Array[Array[Long]])
-case class HashResult(files: DataFrame, hashes: RDD[RDDHash], docFreq: OrderedDocFreq)
+
+case class HashResult(files: DataFrame, hashes: Dataset[RDDHash], docFreq: OrderedDocFreq)
 
 /**
   * Implements hashing repositories using Apache Spark
   *
-  * @param session spark session
-  * @param log logger implementation
+  * @param session     spark session
+  * @param log         logger implementation
   * @param docFreqPath path to DocFreq
   */
 class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
+
   import session.implicits._
 
   def report(header: String, countProcessed: Long, skipped: MapAccumulator): Unit = {
@@ -51,23 +57,33 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     val feSkippedFiles = mapAccumulator(session.sparkContext, "FE skipped files")
 
     val files = filesForRepos(repos).persist(StorageLevel.MEMORY_AND_DISK_SER)
-    val uasts = extractUast(files).persist(StorageLevel.MEMORY_AND_DISK_SER)
+    var uasts = extractUast(files).persist(StorageLevel.MEMORY_AND_DISK_SER)
+
+    var extractors = FEClient.fileLevelExtractors
     if (mode == Gemini.funcSimilarityMode) {
-      uasts = uasts.flatMap(extract_functions_from_uast)
-      //- extract functions from UAST
-      //  https://github.com/src-d/ml/blob/7ceecc659648914335a8f375714c35c31b8a9e8f/sourced/ml/transformers/moder.py#L84
-      //- change "document" col, so it has += "_%s:%d" % (name, func.start_position.line)
-      //  https://github.com/src-d/ml/blob/7ceecc659648914335a8f375714c35c31b8a9e8f/sourced/ml/transformers/moder.py#L81
-      //- refactor extractFeatures()
-      //  so different file/func level params are accepted
+      log.warn(s"Mode: $mode")
+      uasts = uasts
+        .flatMap { row =>
+          val doc = row(0).asInstanceOf[String]
+          val uastArr = row(1).asInstanceOf[Seq[Array[Byte]]]
+
+          uastArr.map(Node.parseFrom).flatMap { uast =>
+            Hash.extractFunctions(uast).map { case (fnName, fnUast) =>
+              val docFn = s"${doc}_$fnName:${fnUast.getStartPosition.line}"
+              (docFn, Seq(fnUast.toByteArray))
+            }
+          }
+        }
+        .toDF("document", "uast")
+      extractors = FEClient.funcLevelExtractors
     }
-    val features = extractFeatures(uasts, feSkippedFiles).cache()
+    val features = extractFeatures(uasts, extractors, feSkippedFiles).cache()
     report("Feature Extraction exceptions", features.count, feSkippedFiles)
 
     val docFreq = makeDocFreq(uasts, features)
     val hashes = hashFeaturesDF(docFreq.value, features)
 
-    HashResult(files, hashes.rdd, docFreq.value)
+    HashResult(files, hashes, docFreq.value)
   }
 
   /**
@@ -78,15 +94,15 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     * @param tables
     * @param docFreqPath
     */
-  def save(hashResult: HashResult, keyspace: String, tables: Tables, docFreqPath: String): Unit ={
+  def save(hashResult: HashResult, keyspace: String, tables: Tables, docFreqPath: String): Unit = {
     saveMeta(hashResult.files, keyspace, tables)
     if (docFreqPath.isEmpty) {
       saveDocFreqToDB(hashResult.docFreq, keyspace, tables)
     } else {
-      log.warn(s"save document frequencies to JSON")
+      log.warn(s"save document frequencies in JSON to {docFreqPath}")
       hashResult.docFreq.saveToJson(docFreqPath)
     }
-    saveHashes(hashResult.hashes, keyspace, tables)
+    saveHashes(hashResult.hashes.rdd, keyspace, tables)
   }
 
   protected def filesForRepos(repos: DataFrame): DataFrame = {
@@ -113,7 +129,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       .select("document", "uast")
   }
 
-  def extractFeatures(uastsDF: DataFrame, skippedFiles: MapAccumulator): DataFrame = {
+  def extractFeatures(uastsDF: DataFrame, extractors: Seq[Extractor], skippedFiles: MapAccumulator): DataFrame = {
     log.warn("Extracting features")
 
     val feConfig = SparkFEClient.getConfig(session)
@@ -122,10 +138,10 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
         val uastArr = row.getAs[Seq[Array[Byte]]]("uast")
         val features = uastArr.flatMap { byteArr =>
           val uast = Node.parseFrom(byteArr)
-          SparkFEClient.extract(uast, feConfig, Some(skippedFiles))
-       }
+          SparkFEClient.extract(uast, feConfig, extractors, Some(skippedFiles))
+        }
         features.map(feat => (feat.name, row.getAs[String]("document"), feat.weight.toLong))
-       }
+      }
       .toDF("feature", "doc", "weight")
   }
 
@@ -235,7 +251,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     val cols = tables.hashtablesCols
     rdd
       .flatMap { case RDDHash(doc, wmh) =>
-        FeaturesHash.wmhToBands(wmh).zipWithIndex.map{ case (band, i) => (doc, i, band) }
+        FeaturesHash.wmhToBands(wmh).zipWithIndex.map { case (band, i) => (doc, i, band) }
       }
       .toDF(cols.sha, cols.hashtable, cols.value)
       .write
@@ -244,7 +260,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       .save()
   }
 
-   def mapAccumulator(sc: SparkContext, name: String): MapAccumulator = {
+  def mapAccumulator(sc: SparkContext, name: String): MapAccumulator = {
     val acc = new MapAccumulator
     sc.register(acc, name)
     acc
@@ -252,5 +268,40 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
 }
 
 object Hash {
-    def apply(s: SparkSession, log: Slf4jLogger): Hash = new Hash(s, log)
+  /**
+    * Extracts functions from UAST
+    * https://github.com/src-d/ml/blob/7ceecc659648914335a8f375714c35c31b8a9e8f/sourced/ml/transformers/moder.py#L84
+    *
+    * @param uast
+    * @return (function name, UAST)
+    */
+  def extractFunctions(uast: Node): Iterable[(String, Node)] = {
+    val FuncXpath = "//*[@roleFunction and @roleDeclaration]"
+    val FuncNameXpath = "/*[@roleFunction and @roleIdentifier and @roleName] " +
+      "| /*/*[@roleFunction and @roleIdentifier and @roleName]"
+
+    val nested = mutable.Set[Node]()
+    val allFuncs = BblfshClient.filter(uast, FuncXpath)
+
+    allFuncs.foreach { func =>
+      if (!nested.contains(func)) {
+        BblfshClient.filter(func, FuncXpath).foreach { nestedFunc =>
+          if (!func.equals(nestedFunc)) {
+            nested.add(nestedFunc)
+          }
+        }
+      }
+    }
+
+    allFuncs.flatMap { func =>
+      if (!nested.contains(func)) {
+        val name = BblfshClient.filter(func, FuncNameXpath).map(_.token).mkString("+")
+        Iterable((name, func))
+      } else {
+        Iterable()
+      }
+    }
+  }
+
+  def apply(s: SparkSession, log: Slf4jLogger): Hash = new Hash(s, log)
 }

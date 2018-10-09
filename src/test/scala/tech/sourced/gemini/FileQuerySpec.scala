@@ -10,7 +10,6 @@ import io.grpc.{ManagedChannelBuilder, ServerBuilder}
 import org.apache.spark.internal.Logging
 import org.bblfsh.client.BblfshClient
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import tags.DB
 import tech.sourced.featurext.generated.service.FeatureExtractorGrpc.FeatureExtractor
 import tech.sourced.featurext.generated.service._
 import tech.sourced.gemini.util.Logger

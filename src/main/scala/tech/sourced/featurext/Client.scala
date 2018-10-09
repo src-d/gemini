@@ -59,6 +59,7 @@ object FEClient {
   val fileLevelExtractors = Seq(
     IdentifiersExt(weight = 194, split = true), GraphletExt(weight = 548), LiteralsExt(weight = 264)
   )
+  val funcLevelExtractors = Seq(IdentifiersExt(535, true), GraphletExt(5707), Uast2seqExt(369, 3, 1))
 
   def extract(
     uast: Node,
@@ -129,9 +130,13 @@ object SparkFEClient extends Logging {
     client
   }
 
-  def extract(uast: Node, config: Config, skippedFiles: Option[MapAccumulator] = None): Iterable[Feature] = {
+  def extract(
+    uast: Node, config: Config,
+    configuredFeatureExtractors: Seq[Extractor],
+    skippedFiles: Option[MapAccumulator] = None
+  ): Iterable[Feature] = {
     val client = getClient(config)
-    FEClient.extract(uast, client, FEClient.fileLevelExtractors, log, skippedFiles)
+    FEClient.extract(uast, client, configuredFeatureExtractors, log, skippedFiles)
   }
 
 }
