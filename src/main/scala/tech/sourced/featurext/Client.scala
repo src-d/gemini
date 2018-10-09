@@ -9,31 +9,72 @@ import tech.sourced.featurext.generated.service._
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.gemini.util.MapAccumulator
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.util.control.NonFatal
 
-object FEClient {
-  val idWeight = 194
-  val literalsWeight = 264
-  val graphletWeight = 548
 
-  def extract(uast: Node, client: FeatureExtractor, log: Slf4jLogger, skippedFiles: Option[MapAccumulator] = None):
-  Iterable[Feature] = {
-    val idRequest = IdentifiersRequest(uast=Some(uast), docfreqThreshold=5, weight = idWeight, splitStem = true)
-    val litRequest = LiteralsRequest(uast=Some(uast), docfreqThreshold=5, weight = literalsWeight)
-    val graphletRequest = GraphletRequest(uast=Some(uast), docfreqThreshold=5, weight = graphletWeight)
-    client.identifiers(idRequest)
+sealed abstract class Extractor {
+  val Threshold = 5
+  def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply]
+  def extractFeatures(client: FeatureExtractor, uast: Node): Future[Seq[Feature]] = {
+    extract(client, uast).map(_.features) //avoids duplication of FeaturesReply->Feature code
+  }
+}
+
+case class IdentifiersExt(weight: Int, split: Boolean) extends Extractor {
+  override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
+    val req = IdentifiersRequest(uast = Some(uast), docfreqThreshold = Threshold, weight = weight, splitStem = split)
+    client.identifiers(req)
+  }
+}
+
+case class GraphletExt(weight: Int) extends Extractor {
+  override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
+    val req = GraphletRequest(uast = Some(uast), docfreqThreshold = Threshold, weight = weight)
+    client.graphlet(req)
+  }
+}
+
+case class LiteralsExt(weight: Int) extends Extractor {
+  override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
+    val req = LiteralsRequest(uast = Some(uast), docfreqThreshold = Threshold, weight = weight)
+    client.literals(req)
+  }
+}
+
+case class Uast2seqExt(weight: Int, seqLen: Int, stride: Int) extends Extractor {
+  override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
+    val req = Uast2seqRequest(
+      uast = Some(uast), docfreqThreshold = Threshold, weight = weight
+      //TODO(bzz): add seqLen = seqLen, stride = stride
+    )
+    client.uast2Seq(req)
+  }
+}
+
+object FEClient {
+
+  val fileLevelExtractors = Seq(
+    IdentifiersExt(weight = 194, split = true), GraphletExt(weight = 548), LiteralsExt(weight = 264)
+  )
+
+  def extract(
+    uast: Node,
+    client: FeatureExtractor,
+    configuredFeatureExtractors: Seq[Extractor],
+    log: Slf4jLogger,
+    skippedFiles: Option[MapAccumulator] = None
+  ): Iterable[Feature] = {
+
+    val features = Future
+      .sequence(configuredFeatureExtractors.map { fe =>
+        fe.extractFeatures(client, uast)
+      })
 
     try {
-      val features = for {
-        idResponse <- client.identifiers(idRequest)
-        litResponse <- client.literals(litRequest)
-        graphletResponse <- client.graphlet(graphletRequest)
-      } yield idResponse.features ++ litResponse.features ++ graphletResponse.features
-
-      Await.result(features, Duration(30, SECONDS))
+      Await.result(features, Duration(30, SECONDS)).flatten
     } catch {
       case NonFatal(e) => {
         log.error(s"feature extractor error: ${e.toString}")
@@ -42,10 +83,10 @@ object FEClient {
       }
     }
   }
-
 }
 
 object SparkFEClient extends Logging {
+
   case class Config(host: String, port: Int)
 
   /** Key used for the option to specify the host of the feature extractor grpc service. */
@@ -90,7 +131,7 @@ object SparkFEClient extends Logging {
 
   def extract(uast: Node, config: Config, skippedFiles: Option[MapAccumulator] = None): Iterable[Feature] = {
     val client = getClient(config)
-    FEClient.extract(uast, client, log, skippedFiles)
+    FEClient.extract(uast, client, FEClient.fileLevelExtractors, log, skippedFiles)
   }
 
 }

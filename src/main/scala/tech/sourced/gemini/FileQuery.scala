@@ -33,13 +33,15 @@ case class QueryResult(duplicates: Iterable[RepoFile], similar: Iterable[RepoFil
   * @param keyspace
   * @param tables
   */
-class FileQuery(conn: Session,
-            bblfshClient: BblfshClient,
-            feClient: FeatureExtractor,
-            docFreqPath: String = "",
-            log: Slf4jLogger,
-            keyspace: String,
-            tables: Tables) {
+class FileQuery(
+  conn: Session,
+  bblfshClient: BblfshClient,
+  feClient: FeatureExtractor,
+  docFreqPath: String = "",
+  log: Slf4jLogger,
+  keyspace: String,
+  tables: Tables
+) {
 
   /**
     * find similar and duplicates for a file
@@ -129,7 +131,7 @@ class FileQuery(conn: Session,
 
   protected def extractFeatures(uast: Node): Iterable[Feature] = {
     log.debug(s"uast received: ${uast.toString}")
-    val result = FEClient.extract(uast, feClient, log)
+    val result = FEClient.extract(uast, feClient, FEClient.fileLevelExtractors, log)
     log.debug(s"features: ${result.toString}")
     result
   }
