@@ -59,7 +59,11 @@ object FEClient {
   val fileLevelExtractors = Seq(
     IdentifiersExt(weight = 194, split = true), GraphletExt(weight = 548), LiteralsExt(weight = 264)
   )
-  val funcLevelExtractors = Seq(IdentifiersExt(535, true), GraphletExt(5707), Uast2seqExt(369, 3, 1))
+  val funcLevelExtractors = Seq(
+    IdentifiersExt(weight = 535, true),
+    GraphletExt(weight = 5707),
+    Uast2seqExt(weight = 369, seqLen = 3, stride = 1)
+  )
 
   def extract(
     uast: Node,
