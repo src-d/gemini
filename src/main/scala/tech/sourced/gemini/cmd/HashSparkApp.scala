@@ -89,7 +89,7 @@ object HashSparkApp extends App with Logging {
         } else {
           failure(s"similarity mode must be one of: " + Gemini.similarityModes.mkString(" | "))
         })
-      .action((x, c) => c.copy(format = x))
+      .action((x, c) => c.copy(mode = x))
       .text("similarity mode to be used")
     opt[String]("doc-freq-file")
       .action((x, c) => c.copy(docFreqFile = x))
