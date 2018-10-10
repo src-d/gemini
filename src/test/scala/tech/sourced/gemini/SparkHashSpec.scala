@@ -47,17 +47,7 @@ class SparkHashSpec extends FlatSpec
     val hashResult = hashWithNewGemini("func")
     val funcs = hashResult.hashes
     val fCount = funcs.count()
-    print(s"$fCount functions found")
-    funcs.select("doc").show(false)
     fCount shouldEqual 54
-  }
-
-  "Hash" should "extract functions UASTs in func mode" in {
-    val hashResult = hashWithNewGemini("func")
-
-    val funcs = hashResult.docFreq.tokens
-    println(s"${funcs.length} functions found")
-    println("\t" + funcs.take(10).mkString("\n\t"))
   }
 
   "Hash" should "return correct files" in {
@@ -89,6 +79,12 @@ class SparkHashSpec extends FlatSpec
     docFreq.docs shouldEqual 4
     docFreq.tokens.size shouldEqual 773
     docFreq.df(docFreq.tokens.head) shouldEqual 3
+  }
+
+  "Hash" should "generate docFreq in func mode" in {
+    val docFreq = hashWithNewGemini("func").docFreq
+    docFreq.docs shouldEqual 54
+    docFreq.tokens.size shouldEqual 1347
   }
 
   "Hash with limit" should "collect files only from limit repos" in {
