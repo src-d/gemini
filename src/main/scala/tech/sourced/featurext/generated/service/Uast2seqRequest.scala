@@ -11,8 +11,19 @@ package tech.sourced.featurext.generated.service
 final case class Uast2seqRequest(
     uast: scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node] = None,
     docfreqThreshold: _root_.scala.Int = 0,
-    weight: _root_.scala.Int = 0
+    weight: _root_.scala.Int = 0,
+    stride: _root_.scala.Int = 0,
+    seqLen: _root_.scala.collection.Seq[_root_.scala.Int] = _root_.scala.collection.Seq.empty
     ) extends scalapb.GeneratedMessage with scalapb.Message[Uast2seqRequest] with scalapb.lenses.Updatable[Uast2seqRequest] {
+    private[this] def seqLenSerializedSize = {
+      if (__seqLenSerializedSizeField == 0) __seqLenSerializedSizeField = {
+        var __s: _root_.scala.Int = 0
+        seqLen.foreach(__i => __s += _root_.com.google.protobuf.CodedOutputStream.computeInt32SizeNoTag(__i))
+        __s
+      }
+      __seqLenSerializedSizeField
+    }
+    @transient private[this] var __seqLenSerializedSizeField: _root_.scala.Int = 0
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
@@ -20,6 +31,11 @@ final case class Uast2seqRequest(
       if (uast.isDefined) { __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(uast.get.serializedSize) + uast.get.serializedSize }
       if (docfreqThreshold != 0) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt32Size(2, docfreqThreshold) }
       if (weight != 0) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt32Size(3, weight) }
+      if (stride != 0) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt32Size(4, stride) }
+      if(seqLen.nonEmpty) {
+        val __localsize = seqLenSerializedSize
+        __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__localsize) + __localsize
+      }
       __size
     }
     final override def serializedSize: _root_.scala.Int = {
@@ -48,11 +64,24 @@ final case class Uast2seqRequest(
           _output__.writeInt32(3, __v)
         }
       };
+      {
+        val __v = stride
+        if (__v != 0) {
+          _output__.writeInt32(4, __v)
+        }
+      };
+      if (seqLen.nonEmpty) {
+        _output__.writeTag(5, 2)
+        _output__.writeUInt32NoTag(seqLenSerializedSize)
+        seqLen.foreach(_output__.writeInt32NoTag)
+      };
     }
     def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.generated.service.Uast2seqRequest = {
       var __uast = this.uast
       var __docfreqThreshold = this.docfreqThreshold
       var __weight = this.weight
+      var __stride = this.stride
+      val __seqLen = (_root_.scala.collection.immutable.Vector.newBuilder[_root_.scala.Int] ++= this.seqLen)
       var _done__ = false
       while (!_done__) {
         val _tag__ = _input__.readTag()
@@ -64,13 +93,27 @@ final case class Uast2seqRequest(
             __docfreqThreshold = _input__.readInt32()
           case 24 =>
             __weight = _input__.readInt32()
+          case 32 =>
+            __stride = _input__.readInt32()
+          case 40 =>
+            __seqLen += _input__.readInt32()
+          case 42 => {
+            val length = _input__.readRawVarint32()
+            val oldLimit = _input__.pushLimit(length)
+            while (_input__.getBytesUntilLimit > 0) {
+              __seqLen += _input__.readInt32
+            }
+            _input__.popLimit(oldLimit)
+          }
           case tag => _input__.skipField(tag)
         }
       }
       tech.sourced.featurext.generated.service.Uast2seqRequest(
           uast = __uast,
           docfreqThreshold = __docfreqThreshold,
-          weight = __weight
+          weight = __weight,
+          stride = __stride,
+          seqLen = __seqLen.result()
       )
     }
     def getUast: gopkg.in.bblfsh.sdk.v1.uast.generated.Node = uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.generated.Node.defaultInstance)
@@ -78,6 +121,11 @@ final case class Uast2seqRequest(
     def withUast(__v: gopkg.in.bblfsh.sdk.v1.uast.generated.Node): Uast2seqRequest = copy(uast = Option(__v))
     def withDocfreqThreshold(__v: _root_.scala.Int): Uast2seqRequest = copy(docfreqThreshold = __v)
     def withWeight(__v: _root_.scala.Int): Uast2seqRequest = copy(weight = __v)
+    def withStride(__v: _root_.scala.Int): Uast2seqRequest = copy(stride = __v)
+    def clearSeqLen = copy(seqLen = _root_.scala.collection.Seq.empty)
+    def addSeqLen(__vs: _root_.scala.Int*): Uast2seqRequest = addAllSeqLen(__vs)
+    def addAllSeqLen(__vs: TraversableOnce[_root_.scala.Int]): Uast2seqRequest = copy(seqLen = seqLen ++ __vs)
+    def withSeqLen(__v: _root_.scala.collection.Seq[_root_.scala.Int]): Uast2seqRequest = copy(seqLen = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => uast.orNull
@@ -89,6 +137,11 @@ final case class Uast2seqRequest(
           val __t = weight
           if (__t != 0) __t else null
         }
+        case 4 => {
+          val __t = stride
+          if (__t != 0) __t else null
+        }
+        case 5 => seqLen
       }
     }
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
@@ -97,6 +150,8 @@ final case class Uast2seqRequest(
         case 1 => uast.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
         case 2 => _root_.scalapb.descriptors.PInt(docfreqThreshold)
         case 3 => _root_.scalapb.descriptors.PInt(weight)
+        case 4 => _root_.scalapb.descriptors.PInt(stride)
+        case 5 => _root_.scalapb.descriptors.PRepeated(seqLen.map(_root_.scalapb.descriptors.PInt)(_root_.scala.collection.breakOut))
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
@@ -111,7 +166,9 @@ object Uast2seqRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.fe
     tech.sourced.featurext.generated.service.Uast2seqRequest(
       __fieldsMap.get(__fields.get(0)).asInstanceOf[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]],
       __fieldsMap.getOrElse(__fields.get(1), 0).asInstanceOf[_root_.scala.Int],
-      __fieldsMap.getOrElse(__fields.get(2), 0).asInstanceOf[_root_.scala.Int]
+      __fieldsMap.getOrElse(__fields.get(2), 0).asInstanceOf[_root_.scala.Int],
+      __fieldsMap.getOrElse(__fields.get(3), 0).asInstanceOf[_root_.scala.Int],
+      __fieldsMap.getOrElse(__fields.get(4), Nil).asInstanceOf[_root_.scala.collection.Seq[_root_.scala.Int]]
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.generated.service.Uast2seqRequest] = _root_.scalapb.descriptors.Reads{
@@ -120,7 +177,9 @@ object Uast2seqRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.fe
       tech.sourced.featurext.generated.service.Uast2seqRequest(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).flatMap(_.as[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]]),
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Int]).getOrElse(0),
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Int]).getOrElse(0)
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Int]).getOrElse(0),
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(4).get).map(_.as[_root_.scala.Int]).getOrElse(0),
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(5).get).map(_.as[_root_.scala.collection.Seq[_root_.scala.Int]]).getOrElse(_root_.scala.collection.Seq.empty)
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
@@ -142,8 +201,12 @@ object Uast2seqRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.fe
     def optionalUast: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]] = field(_.uast)((c_, f_) => c_.copy(uast = f_))
     def docfreqThreshold: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.docfreqThreshold)((c_, f_) => c_.copy(docfreqThreshold = f_))
     def weight: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.weight)((c_, f_) => c_.copy(weight = f_))
+    def stride: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.stride)((c_, f_) => c_.copy(stride = f_))
+    def seqLen: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.collection.Seq[_root_.scala.Int]] = field(_.seqLen)((c_, f_) => c_.copy(seqLen = f_))
   }
   final val UAST_FIELD_NUMBER = 1
   final val DOCFREQTHRESHOLD_FIELD_NUMBER = 2
   final val WEIGHT_FIELD_NUMBER = 3
+  final val STRIDE_FIELD_NUMBER = 4
+  final val SEQLEN_FIELD_NUMBER = 5
 }
