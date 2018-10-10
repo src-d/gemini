@@ -42,9 +42,13 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
     def Uast2seq(self, request, context):
         """Extract uast2seq weighted set"""
 
+        seq_len = list(request.seqLen) if request.seqLen else None
+
         extractor = UastSeqBagExtractor(
             docfreq_threshold=request.docfreqThreshold,
-            weight=request.weight or 1)
+            weight=request.weight or 1,
+            stride=request.stride or 1,
+            seq_len=seq_len or 5)
 
         return self._create_response(extractor.extract(request.uast))
 

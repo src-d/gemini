@@ -84,9 +84,13 @@ class TestServer(unittest.TestCase):
 
         response = self.stub.Uast2seq(
             service_pb2.Uast2seqRequest(
-                docfreqThreshold=5, uast=self.uast, weight=2))
+                docfreqThreshold=5,
+                uast=self.uast,
+                weight=2,
+                stride=2,
+                seqLen=[1]))
 
-        self.assertEqual(response.features[0].weight, 2)
+        self.assertEqual(response.features[0].weight, 6)
 
         response = self.stub.Graphlet(
             service_pb2.GraphletRequest(
