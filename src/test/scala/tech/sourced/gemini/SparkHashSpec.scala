@@ -24,10 +24,12 @@ class SparkHashSpec extends FlatSpec
     ".gitignore",
     // should be processed
     "archiver.go",
-    "archiver_test.go"
+    "archiver_test.go",
+    // exists only in repos for func mode
+    "funcs.go"
   )
 
-  // don't process content of repos to speedup tests
+  // don't process all content of repos to speedup tests
   class LimitedHash(s: SparkSession, log: Slf4jLogger) extends Hash(s, log) {
     override def filesForRepos(repos: DataFrame): DataFrame =
       super.filesForRepos(repos).filter(col("path").isin(filePaths: _*))
@@ -39,7 +41,7 @@ class SparkHashSpec extends FlatSpec
   def hashWithNewGemini(mode: String = "file"): HashResult = {
     val gemini = Gemini(sparkSession)
     val hash = LimitedHash(sparkSession, log)
-    val repos = gemini.getRepos("src/test/resources/siva/duplicate-files")
+    val repos = gemini.getRepos(s"src/test/resources/siva/duplicate-${mode}s")
     hash.forRepos(repos, mode)
   }
 
@@ -47,7 +49,7 @@ class SparkHashSpec extends FlatSpec
     val hashResult = hashWithNewGemini("func")
     val funcs = hashResult.hashes
     val fCount = funcs.count()
-    fCount shouldEqual 54
+    fCount shouldEqual 2
   }
 
   "Hash" should "return correct files" in {
@@ -83,8 +85,8 @@ class SparkHashSpec extends FlatSpec
 
   "Hash" should "generate docFreq in func mode" in {
     val docFreq = hashWithNewGemini("func").docFreq
-    docFreq.docs shouldEqual 54
-    docFreq.tokens.size shouldEqual 1347
+    docFreq.docs shouldEqual 2
+    docFreq.tokens.size shouldEqual 79
   }
 
   "Hash with limit" should "collect files only from limit repos" in {
