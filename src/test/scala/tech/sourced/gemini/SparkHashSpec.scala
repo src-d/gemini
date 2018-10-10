@@ -1,10 +1,7 @@
 package tech.sourced.gemini
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.gemini.cmd.HashSparkApp
 
 @tags.Bblfsh
@@ -24,32 +21,14 @@ class SparkHashSpec extends FlatSpec
     ".gitignore",
     // should be processed
     "archiver.go",
-    "archiver_test.go",
-    // exists only in repos for func mode
-    "funcs.go"
+    "archiver_test.go"
   )
 
-  // don't process all content of repos to speedup tests
-  class LimitedHash(s: SparkSession, log: Slf4jLogger) extends Hash(s, log) {
-    override def filesForRepos(repos: DataFrame): DataFrame =
-      super.filesForRepos(repos).filter(col("path").isin(filePaths: _*))
-  }
-  object LimitedHash {
-    def apply(s: SparkSession, log: Slf4jLogger): LimitedHash = new LimitedHash(s, log)
-  }
-
-  def hashWithNewGemini(mode: String = "file"): HashResult = {
+  def hashWithNewGemini(): HashResult = {
     val gemini = Gemini(sparkSession)
-    val hash = LimitedHash(sparkSession, log)
-    val repos = gemini.getRepos(s"src/test/resources/siva/duplicate-${mode}s")
-    hash.forRepos(repos, mode)
-  }
-
-  "Hash" should "return correct number of functions" in {
-    val hashResult = hashWithNewGemini("func")
-    val funcs = hashResult.hashes
-    val fCount = funcs.count()
-    fCount shouldEqual 2
+    val hash = LimitedHash(sparkSession, log, filePaths)
+    val repos = gemini.getRepos(s"src/test/resources/siva/duplicate-files")
+    hash.forRepos(repos, "file")
   }
 
   "Hash" should "return correct files" in {
@@ -81,12 +60,6 @@ class SparkHashSpec extends FlatSpec
     docFreq.docs shouldEqual 4
     docFreq.tokens.size shouldEqual 773
     docFreq.df(docFreq.tokens.head) shouldEqual 3
-  }
-
-  "Hash" should "generate docFreq in func mode" in {
-    val docFreq = hashWithNewGemini("func").docFreq
-    docFreq.docs shouldEqual 2
-    docFreq.tokens.size shouldEqual 79
   }
 
   "Hash with limit" should "collect files only from limit repos" in {

@@ -1,8 +1,10 @@
 package tech.sourced.gemini
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
-import org.scalatest.{BeforeAndAfterAll, Suite, Tag}
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions.col
+import org.scalatest.{BeforeAndAfterAll, Suite}
+import org.slf4j.{Logger => Slf4jLogger}
 
 trait BaseSparkSpec extends BeforeAndAfterAll {
   this: Suite =>
@@ -56,5 +58,14 @@ trait BaseSparkSpec extends BeforeAndAfterAll {
       sparkSession.stop()
     }
     sparkSession = null
+  }
+
+  // don't process all content of repos to speedup tests
+  class LimitedHash(s: SparkSession, log: Slf4jLogger, filePaths: Seq[String]) extends Hash(s, log) {
+    override def filesForRepos(repos: DataFrame): DataFrame =
+      super.filesForRepos(repos).filter(col("path").isin(filePaths: _*))
+  }
+  object LimitedHash {
+    def apply(s: SparkSession, log: Slf4jLogger, paths: Seq[String]): LimitedHash = new LimitedHash(s, log, paths)
   }
 }
