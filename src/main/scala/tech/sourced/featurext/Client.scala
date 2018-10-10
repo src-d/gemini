@@ -44,11 +44,10 @@ case class LiteralsExt(weight: Int) extends Extractor {
   }
 }
 
-case class Uast2seqExt(weight: Int, seqLen: Int, stride: Int) extends Extractor {
+case class Uast2seqExt(weight: Int, seqLen: Seq[Int], stride: Int) extends Extractor {
   override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
     val req = Uast2seqRequest(
-      uast = Some(uast), docfreqThreshold = Threshold, weight = weight
-      //TODO(bzz): add seqLen = seqLen, stride = stride
+      uast = Some(uast), docfreqThreshold = Threshold, weight = weight, stride = stride, seqLen = seqLen
     )
     client.uast2Seq(req)
   }
@@ -62,7 +61,7 @@ object FEClient {
   val funcLevelExtractors = Seq(
     IdentifiersExt(weight = 535, true),
     GraphletExt(weight = 5707),
-    Uast2seqExt(weight = 369, seqLen = 3, stride = 1)
+    Uast2seqExt(weight = 369, seqLen = Seq(3), stride = 1)
   )
 
   def extract(
