@@ -48,8 +48,10 @@ trait BaseSparkSpec extends BeforeAndAfterAll {
     // commented due to "Cannot call methods on a stopped SparkContext"
     // but for tests we don't really need to stop spark
     // it will be stopped automatically when tests exit
-
     // resetSparkContext()
+
+    // make sure different suites don't use the same cache
+    cleanSparkCache()
     super.afterAll()
   }
 
@@ -58,6 +60,12 @@ trait BaseSparkSpec extends BeforeAndAfterAll {
       sparkSession.stop()
     }
     sparkSession = null
+  }
+
+  def cleanSparkCache(): Unit = {
+    if (sparkSession != null) {
+      sparkSession.sqlContext.clearCache()
+    }
   }
 
   // don't process all content of repos to speedup tests
