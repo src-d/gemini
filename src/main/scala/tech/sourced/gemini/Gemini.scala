@@ -25,9 +25,11 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     *
     * @param reposPath
     * @param limit
-    * @param format
+    * @param format repository input format
+    * @param mode file or func similarity modes
+    * @param docFreqPath (optional) path to DocFreq file. Default: read from DB.
     */
-  def hash(reposPath: String, limit: Int = 0, format: String = "siva", docFreqPath: String = ""): Unit = {
+  def hash(reposPath: String, limit: Int = 0, format: String = "siva", mode: String, docFreqPath: String = ""): Unit = {
     if (session == null) {
       throw new UnsupportedOperationException("Hashing requires a SparkSession.")
     }
@@ -41,7 +43,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val repos = getRepos(reposPath, limit, format)
 
     log.warn("Hashing")
-    val result = hash.forRepos(repos)
+    val result = hash.forRepos(repos, mode)
 
     log.warn("Saving hashes to DB")
     hash.save(result, keyspace, tables, docFreqPath)
@@ -98,18 +100,18 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * It is used one query per distinct file
     *
     * @param conn Database connections
-    * @param mode Duplicated items mode
+    * @param format Duplicated items mode
     * @param ccDirPath directory for connected components
     * @return
     */
-  def report(conn: Session, mode: String, ccDirPath: String): ReportResult = {
+  def report(conn: Session, format: String, ccDirPath: String): ReportResult = {
     val report = new Report(conn, log, keyspace, tables)
 
     log.info(s"Report duplicate items from DB $keyspace")
-    val duplicates = mode match {
-      case ReportApp.defaultMode => ReportExpandedGroup(report.findAllDuplicateItems())
-      case ReportApp.condensedMode => ReportGrouped(report.reportCassandraCondensed())
-      case ReportApp.groupByMode => ReportExpandedGroup(report.reportCassandraGroupBy())
+    val duplicates = format match {
+      case ReportApp.defaultFmt => ReportExpandedGroup(report.findAllDuplicateItems())
+      case ReportApp.defaultFmtGroupBy => ReportExpandedGroup(report.reportCassandraGroupBy())
+      case ReportApp.condensedFmt => ReportGrouped(report.reportCassandraCondensed())
     }
     log.info(s"${duplicates.size} duplicate SHA1s")
 
@@ -158,6 +160,11 @@ object Gemini {
   val defaultBblfshPort: Int = 9432
   val defaultFeHost: String = "127.0.0.1"
   val defaultFePort: Int = 9001
+
+  val fileSimilarityMode: String = "file"
+  val funcSimilarityMode: String = "func"
+  val similarityModes = Seq(Gemini.fileSimilarityMode,  Gemini.funcSimilarityMode)
+
 
   val tables = Tables(
     "meta",

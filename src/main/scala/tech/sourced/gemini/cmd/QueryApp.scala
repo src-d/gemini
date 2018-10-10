@@ -7,16 +7,19 @@ import tech.sourced.featurext.generated.service.FeatureExtractorGrpc
 import tech.sourced.gemini.util.Logger
 import tech.sourced.gemini.{Gemini, QueryResult}
 
-case class QueryAppConfig(file: String = "",
-                          host: String = Gemini.defaultCassandraHost,
-                          port: Int = Gemini.defaultCassandraPort,
-                          keyspace: String = Gemini.defautKeyspace,
-                          bblfshHost: String = Gemini.defaultBblfshHost,
-                          bblfshPort: Int = Gemini.defaultBblfshPort,
-                          feHost: String = Gemini.defaultFeHost,
-                          fePort: Int = Gemini.defaultFePort,
-                          docFreqFile: String = "",
-                          verbose: Boolean = false)
+case class QueryAppConfig(
+  file: String = "",
+  host: String = Gemini.defaultCassandraHost,
+  port: Int = Gemini.defaultCassandraPort,
+  keyspace: String = Gemini.defautKeyspace,
+  bblfshHost: String = Gemini.defaultBblfshHost,
+  bblfshPort: Int = Gemini.defaultBblfshPort,
+  feHost: String = Gemini.defaultFeHost,
+  fePort: Int = Gemini.defaultFePort,
+  docFreqFile: String = "",
+  verbose: Boolean = false,
+  mode: String = Gemini.fileSimilarityMode
+)
 
 /**
   * Scala app that searches all hashed repos for a given file.

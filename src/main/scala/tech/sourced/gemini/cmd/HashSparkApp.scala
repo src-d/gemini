@@ -9,20 +9,23 @@ import tech.sourced.gemini.Gemini
 
 import scala.util.Properties
 
-case class HashAppConfig(reposPath: String = "",
-                         limit: Int = 0,
-                         host: String = Gemini.defaultCassandraHost,
-                         port: Int = Gemini.defaultCassandraPort,
-                         keyspace: String = Gemini.defautKeyspace,
-                         bblfshHost: String = Gemini.defaultBblfshHost,
-                         bblfshPort: Int = Gemini.defaultBblfshPort,
-                         feHost: String = Gemini.defaultFeHost,
-                         fePort: Int = Gemini.defaultFePort,
-                         format: String = "siva",
-                         sparkMemory: String = "4gb",
-                         sparkParallelism: Int = 8,
-                         docFreqFile: String = "",
-                         verbose: Boolean = false)
+case class HashAppConfig(
+  reposPath: String = "",
+  limit: Int = 0,
+  host: String = Gemini.defaultCassandraHost,
+  port: Int = Gemini.defaultCassandraPort,
+  keyspace: String = Gemini.defautKeyspace,
+  bblfshHost: String = Gemini.defaultBblfshHost,
+  bblfshPort: Int = Gemini.defaultBblfshPort,
+  feHost: String = Gemini.defaultFeHost,
+  fePort: Int = Gemini.defaultFePort,
+  format: String = "siva",
+  sparkMemory: String = "4gb",
+  sparkParallelism: Int = 8,
+  docFreqFile: String = "",
+  verbose: Boolean = false,
+  mode: String = Gemini.fileSimilarityMode
+)
 
 /**
   * Apache Spark app that applied LSH to given repos, using source{d} Engine.
@@ -77,6 +80,17 @@ object HashSparkApp extends App with Logging {
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
+    opt[String]('m', "mode")
+      .valueName(Gemini.similarityModes.mkString(" | "))
+      .withFallback(() => Gemini.fileSimilarityMode)
+      .validate(x =>
+        if (Gemini.similarityModes contains x) {
+          success
+        } else {
+          failure(s"similarity mode must be one of: " + Gemini.similarityModes.mkString(" | "))
+        })
+      .action((x, c) => c.copy(mode = x))
+      .text("similarity mode to be used")
     opt[String]("doc-freq-file")
       .action((x, c) => c.copy(docFreqFile = x))
       .text("path to file with feature frequencies")
@@ -116,7 +130,7 @@ object HashSparkApp extends App with Logging {
         gemini.applySchema(cassandra)
       }
 
-      gemini.hash(reposPath, config.limit, config.format, config.docFreqFile)
+      gemini.hash(reposPath, config.limit, config.format, config.mode, config.docFreqFile)
       println("Done")
 
     case None =>

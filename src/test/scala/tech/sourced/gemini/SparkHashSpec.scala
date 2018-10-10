@@ -36,11 +36,18 @@ class SparkHashSpec extends FlatSpec
     def apply(s: SparkSession, log: Slf4jLogger): LimitedHash = new LimitedHash(s, log)
   }
 
-  def hashWithNewGemini(): HashResult = {
+  def hashWithNewGemini(mode: String = "file"): HashResult = {
     val gemini = Gemini(sparkSession)
     val hash = LimitedHash(sparkSession, log)
     val repos = gemini.getRepos("src/test/resources/siva/duplicate-files")
-    hash.forRepos(repos)
+    hash.forRepos(repos, mode)
+  }
+
+  "Hash" should "return correct number of functions" in {
+    val hashResult = hashWithNewGemini("func")
+    val funcs = hashResult.hashes
+    val fCount = funcs.count()
+    fCount shouldEqual 54
   }
 
   "Hash" should "return correct files" in {
@@ -72,6 +79,12 @@ class SparkHashSpec extends FlatSpec
     docFreq.docs shouldEqual 4
     docFreq.tokens.size shouldEqual 773
     docFreq.df(docFreq.tokens.head) shouldEqual 3
+  }
+
+  "Hash" should "generate docFreq in func mode" in {
+    val docFreq = hashWithNewGemini("func").docFreq
+    docFreq.docs shouldEqual 54
+    docFreq.tokens.size shouldEqual 1347
   }
 
   "Hash with limit" should "collect files only from limit repos" in {
