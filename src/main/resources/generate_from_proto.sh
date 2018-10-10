@@ -7,7 +7,7 @@ set -e
 # Python server
 
 echo "Installing grpcio"
-pip3 install grpcio==1.10.0 grpcio-tools==1.10.0
+pip3 install grpcio==1.13.0 grpcio-tools==1.13.0
 echo "Generating Python code from .proto to src/main/python/feature-extractor/pb"
 python3 -m grpc_tools.protoc -Isrc/main/proto \
 --python_out=src/main/python/feature-extractor/pb --grpc_python_out=src/main/python/feature-extractor/pb \
