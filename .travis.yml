@@ -1,7 +1,7 @@
 dist: trusty
 language: scala
 scala:
-   - 2.11.2
+  - 2.11.2
 
 sudo: required
 services:
@@ -15,104 +15,109 @@ env:
 matrix:
   fast_finish: true
   include:
-  - name: "Integration tests: SBT + Apache Spark local (DB, FE)"
-    before_install:
-      - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
-      - docker exec -it gemini_bblfshd_1 bblfshctl driver list
-      - ./scripts/install_python_feature_extractor.sh
-      - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
-    script:
-      # start dependencies
-      - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
-      # run all test suite
-      - ./sbt test
-    before_deploy:
-      - make build || travis_terminate 1
-      - VERSION=$TRAVIS_TAG ./scripts/release.sh
-    deploy:
-      - provider: releases
-        api_key:
-          secure: $GITHUB_TOKEN
-        file_glob: true
-        file: gemini_$TRAVIS_TAG.tar.gz
-        skip_cleanup: true
-        on:
-          tags: true
-      - provider: script
-        script: make docker-push-latest
-        on:
-          tags: true
-      - provider: script
-        script: make docker-push
-        on:
-          branch: experimental
+    - name: 'Integration tests: SBT + Apache Spark local (DB, FE)'
+      before_install:
+        - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
+        - docker exec -it gemini_bblfshd_1 bblfshctl driver list
+        - ./scripts/install_python_feature_extractor.sh
+        - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
+      script:
+        # start dependencies
+        - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
+        # run all test suite
+        - ./sbt test
+      before_deploy:
+        - make build || travis_terminate 1
+        - VERSION=$TRAVIS_TAG ./scripts/release.sh
+      deploy:
+        - provider: releases
+          api_key:
+            secure: $GITHUB_TOKEN
+          file_glob: true
+          file: gemini_$TRAVIS_TAG.tar.gz
+          skip_cleanup: true
+          on:
+            tags: true
+        - provider: script
+          script: make docker-push-latest
+          on:
+            tags: true
+        - provider: script
+          script: make docker-push
+          on:
+            branch: experimental
 
-  - name: "Integration tests: CLI + Apache Spark standalone cluster"
-    env:
-      - MASTER=spark://127.0.0.1:7077
-    before_install:
-      - ./scripts/install_python_report.sh
-      - ./scripts/install_python_feature_extractor.sh
-      - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
-      - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
-    install:
-      - make build
-    script:
-      # start dependencies
-      - ./scripts/start_apache_spark_cluster.sh "127.0.0.1" "7077" || travis_terminate 1
-      - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
-      # hashing test repositories
-      - ./hash src/test/resources/siva || travis_terminate 1
-      # query without similarity
-      - ./query ./src/test/resources/LICENSE
-      # report without similarity
-      - ./report
-      # query with similarity
-      - ./query ./src/test/resources/consumer.go | tee query_result.txt
-      # check both identical & similar files appeared in output
-      - grep "Duplicates of ./src/test/resources/consumer.go" query_result.txt > /dev/null
-      - grep "Similar files of ./src/test/resources/consumer.go" query_result.txt > /dev/null
-      # report with similarity
-      - ./report | tee report_result.txt
-      # check both identical & similar files appeared in output
-      - grep "2 duplicates" report_result.txt > /dev/null
-      - grep "2 similar files" report_result.txt > /dev/null
-      # go query
-      - eval "$(gimme 1.10)"
-      - go get ./src/main/go/... || true
-      - go run ./src/main/go/query.go ./src/test/resources/LICENSE
+    - name: 'Integration tests: CLI + Apache Spark standalone cluster'
+      env:
+        - MASTER=spark://127.0.0.1:7077
+      before_install:
+        - ./scripts/install_python_report.sh
+        - ./scripts/install_python_feature_extractor.sh
+        - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla bblfshd
+        - ./scripts/get_apache_spark.sh "2.2.0" "2.7" || travis_terminate 1
+      install:
+        - make build
+      script:
+        # start dependencies
+        - ./scripts/start_apache_spark_cluster.sh "127.0.0.1" "7077" || travis_terminate 1
+        - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
+        # hashing test repositories
+        - ./hash src/test/resources/siva || travis_terminate 1
+        # query without similarity
+        - ./query ./src/test/resources/LICENSE
+        # report without similarity
+        - ./report
+        # query with similarity
+        - ./query ./src/test/resources/consumer.go | tee query_result.txt
+        # check both identical & similar files appeared in output
+        - grep "Duplicates of ./src/test/resources/consumer.go" query_result.txt > /dev/null
+        - grep "Similar files of ./src/test/resources/consumer.go" query_result.txt > /dev/null
+        # report with similarity
+        - ./report | tee report_result.txt
+        # check both identical & similar files appeared in output
+        - grep "2 duplicates" report_result.txt > /dev/null
+        - grep "2 similar files" report_result.txt > /dev/null
+        # hashing funcs
+        - ./hash -m func ./src/test/resources/siva/duplicate-funcs || travis_terminate 1
+        # query with similarity (funcs)
+        - ./query -m func ./src/test/resources/func_mod.go | tee query_result.txt
+        - grep "Similar funcs of ./src/test/resources/func_mod.go" query_result.txt > /dev/null
+        # go query
+        - eval "$(gimme 1.10)"
+        - go get ./src/main/go/... || true
+        - go run ./src/main/go/query.go ./src/test/resources/LICENSE
 
-  - name: "Integration tests: Python + Scala for Feature Extractor"
-    script:
-      - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d featurext
-      - docker-compose exec featurext pytest -v
-      - ./sbt "test-only * -- -n tags.FEIntegration"
+    - name: 'Integration tests: Python + Scala for Feature Extractor'
+      script:
+        - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d featurext
+        - docker-compose exec featurext pytest -v
+        - ./sbt "test-only * -- -n tags.FEIntegration"
 
-  - name: "Unit tests: Scala (only DB)"
-    before_install:
-    - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla
-    - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
-    script:
-      # run only tests without external deps (beside DB)
-      - ./sbt "test-only * -- -l tags.FEIntegration -l tags.Bblfsh -l tags.FeatureExtractor"
+    - name: 'Unit tests: Scala (only DB)'
+      before_install:
+        - docker-compose -f docker-compose.yml -f docker-compose.host.yml up -d scylla
+        - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
+      script:
+        # run only tests without external deps (beside DB)
+        - ./sbt "test-only * -- -l tags.FEIntegration -l tags.Bblfsh -l tags.FeatureExtractor"
 
-  - name: "Unit tests: Python for Report"
-    before_install:
-      - ./scripts/install_python_report.sh
-    script:
-      - pytest -v src/main/python/community-detector
+    - name: 'Unit tests: Python for Report'
+      before_install:
+        - ./scripts/install_python_report.sh
+      script:
+        - pytest -v src/main/python/community-detector
 
-  - name: "Code: Scala style check"
-    script: ./sbt scalastyle
+    - name: 'Code: Scala style check'
+      script: ./sbt scalastyle
 
-  - name: "Code: Python style check"
-    before_install:
-      - pip3 install yapf
-    script:
-      - make lint-python
+    - name: 'Code: Python style check'
+      before_install:
+        - pip3 install yapf
+      script:
+        - make lint-python
 
 after_failure:
- - docker logs db
+  - docker logs db
 
 before_cache:
   # Cleanup the cached directories to avoid unnecessary cache updates
