@@ -37,6 +37,8 @@ message Uast2seqRequest {
   gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
   int32 docfreqThreshold = 2;
   int32 weight = 3;
+  int32 stride = 4;
+  repeated int32 seqLen = 5;
 }
 
 // The graphlet request message containing extractor configuration and uast.
