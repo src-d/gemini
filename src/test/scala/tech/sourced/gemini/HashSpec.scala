@@ -29,8 +29,8 @@ class HashSpec extends FlatSpec
 
     val featuresDf = sparkSession.createDataFrame(features).toDF("feature", "doc", "weight")
 
-    val df = hasher.hashFeaturesDF(docFreq, featuresDf).collect()
-    val rdd = hasher.hashFeaturesRDD(docFreq, featuresDf).collect()
+    val df = hasher.hashFeaturesDF(docFreq, featuresDf, FeaturesHash.fileParams.sampleSize).collect()
+    val rdd = hasher.hashFeaturesRDD(docFreq, featuresDf, FeaturesHash.fileParams.sampleSize).collect()
 
     rdd.length should be equals (df.length)
     rdd.map(_.doc) should contain theSameElementsInOrderAs df.map(_.doc)
