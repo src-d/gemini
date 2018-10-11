@@ -36,7 +36,7 @@ class SparkFuncHashSpec extends FlatSpec
   "Hash" should "generate docFreq in func mode" in {
     val docFreq = hashWithNewGemini().docFreq
     docFreq.docs shouldEqual 2
-    docFreq.tokens.size shouldEqual 79
+    docFreq.tokens.size shouldEqual 66
   }
 
 }
