@@ -62,7 +62,13 @@ class FileQuerySpec extends FlatSpec
       .build()
     val feClient = FeatureExtractorGrpc.stub(channel)
 
-    val QueryResult(duplicates, _) = gemini.query("src/test/resources/LICENSE", cassandra, bblfshClient, "", feClient)
+    val QueryResult(duplicates, _) = gemini.query(
+      "src/test/resources/LICENSE",
+      cassandra,
+      bblfshClient,
+      Gemini.fileSimilarityMode,
+      "",
+      feClient)
 
     duplicates should not be empty
     duplicates.head.sha should be("097f4a292c384e002c5b5ce8e15d746849af7b37") // git hash-object -w LICENSE
@@ -112,7 +118,8 @@ class FileQuerySpec extends FlatSpec
       "",
       log,
       keyspace,
-      Gemini.tables)
+      Gemini.tables,
+      Gemini.fileSimilarityMode)
 
     queryResult = fileQuery.find(dupFile)
 
@@ -131,7 +138,7 @@ class FileQuerySpec extends FlatSpec
     val QueryResult(_, similar) = queryResult
 
     similar.size shouldEqual 1
-    similar.last shouldEqual similarFile
+    similar.last shouldEqual SimilarFile(similarFile)
   }
 
   // If we would need this mock somewhere else better to move them in traits
