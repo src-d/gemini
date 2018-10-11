@@ -15,13 +15,24 @@ import tech.sourced.gemini.util.MathUtil
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
+abstract class SimilarItem {
+  def toString: String
+}
+
+case class SimilarFile(file: RepoFile) extends SimilarItem {
+  override def toString: String = file.toString()
+}
+case class SimilarFunc(file: RepoFile, name: String, line: String) extends SimilarItem {
+  override def toString: String = s"${file} function: ${name} line: ${line}"
+}
+
 /**
   * QueryResult contains iterators for full duplicates and similar files
   *
   * @param duplicates
   * @param similar
   */
-case class QueryResult(duplicates: Iterable[RepoFile], similar: Iterable[RepoFile])
+case class QueryResult(duplicates: Iterable[RepoFile], similar: Iterable[SimilarItem])
 
 /**
   * FileQuery queries similar and duplicated files
@@ -40,7 +51,8 @@ class FileQuery(
   docFreqPath: String = "",
   log: Slf4jLogger,
   keyspace: String,
-  tables: Tables
+  tables: Tables,
+  mode: String
 ) {
 
   /**
@@ -57,10 +69,22 @@ class FileQuery(
     val similarShas = findSimilarForFile(file)
       .map(_.split("@")(1)) // value for sha1 in Apollo hashtables is 'path@sha1', but we need only hashes
       .filterNot(sha => duplicatedShas.contains(sha))
-    log.info(s"${similarShas.length} SHA1's found to be similar, after filtering duplicates")
+    log.info(s"${similarShas.size} SHA1's found to be similar, after filtering duplicates")
 
-    val similar = similarShas.flatMap(sha1 => Database.findFilesByHash(sha1, conn, keyspace, tables))
     log.info("Looking up similar files metadata from DB")
+    val similar = mode match {
+      case Gemini.fileSimilarityMode => similarShas
+        .flatMap(sha1 => Database.findFilesByHash(sha1, conn, keyspace, tables))
+        .map(SimilarFile(_))
+      case Gemini.funcSimilarityMode => similarShas.flatMap(item => {
+        // item for functions is sha1_func_name:line
+        val Array(sha1, rest) = item.split("_", 2)
+        val Array(name, line) = rest.split(":")
+
+        Database.findFilesByHash(sha1, conn, keyspace, tables).map(SimilarFunc(_, name, line))
+      })
+    }
+
     QueryResult(duplicates, similar)
   }
 
@@ -68,7 +92,7 @@ class FileQuery(
     Database.findFilesByHash(Gemini.computeSha1(file), conn, keyspace, tables)
   }
 
-  protected def findSimilarForFile(file: File): Seq[String] = {
+  protected def findSimilarForFile(file: File): Iterable[String] = {
     val docFreq :Option[OrderedDocFreq] = if (docFreqPath.isEmpty) {
       readDocFreqFromDB()
     } else {
@@ -80,18 +104,31 @@ class FileQuery(
     } else {
       extractUAST(file) match {
         case Some(node) =>
-          val featuresList = extractFeatures(node)
-          findSimilarFiles(featuresList, docFreq.get)
+          mode match {
+            case Gemini.fileSimilarityMode => findSimilarItems(extractFeatures(node), docFreq.get)
+            case Gemini.funcSimilarityMode => {
+              Hash.extractFunctions(node).flatMap { case (fnName, fnUast) =>
+                log.debug(s"looking for similar functions of function ${fnName}")
+                val feats = FEClient.extract(fnUast, feClient, FEClient.funcLevelExtractors, log)
+                findSimilarItems(feats, docFreq.get)
+              }
+            }
+          }
         case _ => Seq()
       }
     }
   }
 
-  private def findSimilarFiles(featuresList: Iterable[Feature], docFreq: OrderedDocFreq): Seq[String] = {
-    val cols = tables.hashtablesCols
-    val wmh = hashFile(featuresList, docFreq)
+  private def findSimilarItems(featuresList: Iterable[Feature], docFreq: OrderedDocFreq): Seq[String] = {
+    val FeaturesHashOpts(sampleSize, htnum, bandSize) = mode match {
+      case Gemini.fileSimilarityMode => FeaturesHash.fileParams
+      case Gemini.funcSimilarityMode => FeaturesHash.funcParams
+    }
 
-    val bands = FeaturesHash.wmhToBands(wmh)
+    val cols = tables.hashtablesCols
+    val wmh = hashFile(featuresList, docFreq, sampleSize)
+
+    val bands = FeaturesHash.wmhToBands(wmh, htnum, bandSize)
 
     log.info("Looking for similar items")
     val similar = bands.zipWithIndex.foldLeft(Set[String]()) { case (sim, (band, i)) =>
@@ -163,9 +200,9 @@ class FileQuery(
     }
   }
 
-  protected def hashFile(features: Iterable[Feature], docFreq: OrderedDocFreq): Array[Array[Long]] = {
+  protected def hashFile(features: Iterable[Feature], docFreq: OrderedDocFreq, sampleSize: Int): Array[Array[Long]] = {
     log.info(s"Initialize WMH")
-    val wmh = FeaturesHash.initWmh(docFreq.tokens.size)
+    val wmh = FeaturesHash.initWmh(docFreq.tokens.size, sampleSize)
 
     log.info("Started hashing a file")
     val bag = FeaturesHash.toBagOfFeatures(features.iterator, docFreq)
