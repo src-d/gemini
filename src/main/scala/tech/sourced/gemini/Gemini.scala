@@ -46,7 +46,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     val result = hash.forRepos(repos, mode)
 
     log.warn("Saving hashes to DB")
-    hash.save(result, keyspace, tables, docFreqPath)
+    hash.save(result, keyspace, tables, docFreqPath, mode)
   }
 
   /**

@@ -5,14 +5,21 @@ import tech.sourced.gemini.util.MathUtil
 
 import scala.collection.Searching._
 
+case class FeaturesHashOpts(sampleSize: Int, hashtablesNum: Int, bandSize: Int)
+
 object FeaturesHash {
   // All params below must be the same for hash & query
   val defaultSeed = 0
-  val defaultSampleSize = 160
+
   // Depend on threshold and sample_size
-  // this values calculated for threshold=0.8 and sample_size=128
-  val defaultHashtablesNum = 20
-  val defaultBandSize = 8
+  // this values calculated for threshold=0.6456707644812872 and sample_size=160
+  val fileParams = FeaturesHashOpts(sampleSize = 160, hashtablesNum = 20, bandSize = 8)
+  // this values calculated for threshold=0.592 and sample_size=256
+  val funcParams = FeaturesHashOpts(sampleSize = 256, hashtablesNum = 32, bandSize = 8)
+
+  val defaultSampleSize = fileParams.sampleSize
+  val defaultHashtablesNum = fileParams.hashtablesNum
+  val defaultBandSize = fileParams.bandSize
 
   /**
     * Factory method for initializing WMH data structure

@@ -81,7 +81,12 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     report("Feature Extraction exceptions", features.count, feSkippedFiles)
 
     val docFreq = makeDocFreq(uasts, features)
-    val hashes = hashFeaturesDF(docFreq.value, features)
+
+    val FeaturesHashOpts(sampleSize, _, _) = mode match {
+      case Gemini.fileSimilarityMode => FeaturesHash.fileParams
+      case Gemini.funcSimilarityMode => FeaturesHash.funcParams
+    }
+    val hashes = hashFeaturesDF(docFreq.value, features, sampleSize)
 
     HashResult(files, hashes, docFreq.value)
   }
@@ -94,7 +99,11 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     * @param tables
     * @param docFreqPath
     */
-  def save(hashResult: HashResult, keyspace: String, tables: Tables, docFreqPath: String): Unit = {
+  def save(hashResult: HashResult,
+           keyspace: String,
+           tables: Tables,
+           docFreqPath: String,
+           mode: String = Gemini.fileSimilarityMode): Unit = {
     saveMeta(hashResult.files, keyspace, tables)
     if (docFreqPath.isEmpty) {
       saveDocFreqToDB(hashResult.docFreq, keyspace, tables)
@@ -102,7 +111,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       log.warn(s"save document frequencies in JSON to {docFreqPath}")
       hashResult.docFreq.saveToJson(docFreqPath)
     }
-    saveHashes(hashResult.hashes.rdd, keyspace, tables)
+    saveHashes(hashResult.hashes.rdd, keyspace, tables, mode)
   }
 
   protected def filesForRepos(repos: DataFrame): DataFrame = {
@@ -173,7 +182,8 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     */
   def hashFeaturesRDD(
     docFreq: OrderedDocFreq,
-    features: DataFrame
+    features: DataFrame,
+    sampleSize: Int
   ): Dataset[RDDHash] = {
     log.warn("hashing features")
 
@@ -185,7 +195,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       .map(row => (row._1.doc, Feature(row._1.token, row._2)))
       .groupByKey(session.sparkContext.defaultParallelism)
       .mapPartitions { partIter =>
-        val wmh = FeaturesHash.initWmh(docFreq.tokens.size) // ~1.6 Gb (for 1 PGA bucket)
+        val wmh = FeaturesHash.initWmh(docFreq.tokens.size, sampleSize) // ~1.6 Gb (for 1 PGA bucket)
         partIter.map { case (doc, features) =>
           RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features.iterator, docFreq)))
         }
@@ -198,7 +208,8 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     */
   def hashFeaturesDF(
     docFreq: OrderedDocFreq,
-    features: DataFrame
+    features: DataFrame,
+    sampleSize: Int
   ): Dataset[RDDHash] = {
     log.warn("hashing features")
 
@@ -207,7 +218,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       .map { case Row(token: String, doc: String, weight: Long) => (doc, Feature(token, weight)) }
       .groupByKey { case (doc, _) => doc }
       .mapGroups { (doc, features) =>
-        val wmh = FeaturesHash.initWmh(docFreq.tokens.size) // ~1.6 Gb RAM (for 1 PGA bucket)
+        val wmh = FeaturesHash.initWmh(docFreq.tokens.size, sampleSize) // ~1.6 Gb RAM (for 1 PGA bucket)
         RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features.map(_._2), docFreq)))
       }
     tfIdf
@@ -245,13 +256,18 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       .save()
   }
 
-  protected def saveHashes(rdd: RDD[RDDHash], keyspace: String, tables: Tables): Unit = {
+  protected def saveHashes(rdd: RDD[RDDHash], keyspace: String, tables: Tables, mode: String): Unit = {
     log.warn("save hashtables to DB")
+
+    val FeaturesHashOpts(_, htnum, bandSize) = mode match {
+      case Gemini.fileSimilarityMode => FeaturesHash.fileParams
+      case Gemini.funcSimilarityMode => FeaturesHash.funcParams
+    }
 
     val cols = tables.hashtablesCols
     rdd
       .flatMap { case RDDHash(doc, wmh) =>
-        FeaturesHash.wmhToBands(wmh).zipWithIndex.map { case (band, i) => (doc, i, band) }
+        FeaturesHash.wmhToBands(wmh, htnum, bandSize).zipWithIndex.map { case (band, i) => (doc, i, band) }
       }
       .toDF(cols.sha, cols.hashtable, cols.value)
       .write
