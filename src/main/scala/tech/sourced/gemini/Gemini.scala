@@ -197,5 +197,13 @@ object Gemini {
   def findSimilarProjects(in: File): Iterable[SimilarItem] = {
     throw new UnsupportedOperationException("Finding similar repositories is no implemented yet.")
   }
+
+  // item for functions is sha1_func_name:line
+  def splitFuncItem(item: String): (String, String, String) = {
+    val Array(sha1, rest) = item.split("_", 2)
+    val Array(name, line) = rest.split(":")
+
+    (sha1, name, line)
+  }
 }
 
