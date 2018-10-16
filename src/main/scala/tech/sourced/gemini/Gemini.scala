@@ -83,6 +83,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   def query(inPath: String,
             conn: Session,
             bblfshClient: BblfshClient,
+            mode: String,
             docFreqPath: String = "",
             feClient: FeatureExtractor): QueryResult = {
     val path = new File(inPath)
@@ -90,7 +91,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     if (path.isDirectory) {
       QueryResult(findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {
-      val fileQuery = new FileQuery(conn, bblfshClient, feClient, docFreqPath, log, keyspace, tables)
+      val fileQuery = new FileQuery(conn, bblfshClient, feClient, docFreqPath, log, keyspace, tables, mode)
       fileQuery.find(path)
     }
   }
@@ -150,6 +151,7 @@ case class DuplicateBlobHash(sha: String, count: Long) {
   override def toString: String = s"$sha ($count duplicates)"
 }
 
+
 object Gemini {
 
   val defaultCassandraHost: String = "127.0.0.1"
@@ -194,7 +196,7 @@ object Gemini {
     throw new UnsupportedOperationException("Finding duplicate repositories is no implemented yet.")
   }
 
-  def findSimilarProjects(in: File): Iterable[RepoFile] = {
+  def findSimilarProjects(in: File): Iterable[SimilarItem] = {
     throw new UnsupportedOperationException("Finding similar repositories is no implemented yet.")
   }
 }

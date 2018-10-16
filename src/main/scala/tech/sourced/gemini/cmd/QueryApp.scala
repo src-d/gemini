@@ -56,6 +56,17 @@ object QueryApp extends App {
     opt[String]("doc-freq-file")
       .action((x, c) => c.copy(docFreqFile = x))
       .text("path to file with feature frequencies")
+    opt[String]('m', "mode")
+      .valueName(Gemini.similarityModes.mkString(" | "))
+      .withFallback(() => Gemini.fileSimilarityMode)
+      .validate(x =>
+        if (Gemini.similarityModes contains x) {
+          success
+        } else {
+          failure(s"similarity mode must be one of: " + Gemini.similarityModes.mkString(" | "))
+        })
+      .action((x, c) => c.copy(mode = x))
+      .text("similarity mode to be used")
     arg[String]("<path-to-file>")
       .required()
       .action((x, c) => c.copy(file = x))
@@ -89,6 +100,7 @@ object QueryApp extends App {
           file,
           cassandra,
           bblfshClient,
+          config.mode,
           config.docFreqFile,
           feClient
         )
@@ -103,9 +115,9 @@ object QueryApp extends App {
       }
 
       if (similar.isEmpty) {
-        println(s"No similar files for $file found.")
+        println(s"No similar ${config.mode}s for $file found.")
       } else {
-        println(s"Similar files of $file:\n\t" + (similar mkString "\n\t"))
+        println(s"Similar ${config.mode}s of $file:\n\t" + (similar mkString "\n\t"))
       }
 
     case None =>

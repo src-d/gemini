@@ -108,7 +108,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     if (docFreqPath.isEmpty) {
       saveDocFreqToDB(hashResult.docFreq, keyspace, tables)
     } else {
-      log.warn(s"save document frequencies in JSON to {docFreqPath}")
+      log.warn(s"save document frequencies in JSON to ${docFreqPath}")
       hashResult.docFreq.saveToJson(docFreqPath)
     }
     saveHashes(hashResult.hashes.rdd, keyspace, tables, mode)
