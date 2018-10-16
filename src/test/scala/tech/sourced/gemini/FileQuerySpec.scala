@@ -5,7 +5,7 @@ import java.nio.file.Files
 
 import gopkg.in.bblfsh.sdk.v1.protocol.generated.ProtocolServiceGrpc.ProtocolService
 import gopkg.in.bblfsh.sdk.v1.protocol.generated._
-import gopkg.in.bblfsh.sdk.v1.uast.generated.Node
+import gopkg.in.bblfsh.sdk.v1.uast.generated.{Node, Role}
 import io.grpc.{ManagedChannelBuilder, ServerBuilder}
 import org.apache.spark.internal.Logging
 import org.bblfsh.client.BblfshClient
@@ -44,13 +44,19 @@ class FileQuerySpec extends FlatSpec
     "LICENSE",
     "097f4a292c384e002c5b5ce8e15d746849af7b37"
   )
+  var funcFile = RepoFile(
+    "null/Users/smacker/tmp/func-level-repo/.git",
+    "27f7db976994baf808b205c1ca95ba961cebf59d",
+    "funcs.go",
+    "cf4cf63cf8da4243dd04bd7e1c09ecfda2567d7e"
+  )
 
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    val hashtables = readHashItemsFromFile("src/test/resources/hashtables.json")
-    insertHashtables(hashtables)
-    insertMeta(Array(duplicateFile, similarFile, licenceFile))
+    insertHashtables(readHashItemsFromFile("src/test/resources/hashtables.json"))
+    insertHashtables(readHashItemsFromFile("src/test/resources/hashtables_func.json"))
+    insertMeta(Array(duplicateFile, similarFile, licenceFile, funcFile))
   }
 
   "Read from Database" should "return same results as written" in {
@@ -139,6 +145,51 @@ class FileQuerySpec extends FlatSpec
 
     similar.size shouldEqual 1
     similar.last shouldEqual SimilarFile(similarFile)
+  }
+
+  "Query for similar funcs" should "return results" in {
+    insertDocFreq(OrderedDocFreq.fromJson(new File("src/test/resources/docfreq_func.json")))
+
+    val features = readFeaturesFromFile("src/test/resources/features_func.json")
+
+    val uast = new Node(
+      roles = Seq(Role.FUNCTION, Role.DECLARATION),
+      children = Seq(new Node(
+        roles = Seq(Role.FUNCTION, Role.IDENTIFIER, Role.NAME),
+        token = "TestFunc"
+      ))
+    )
+    val server = ServerBuilder
+      .forPort(0)
+      .addService(ProtocolServiceGrpc.bindService(bblfshMock(uast), ExecutionContext.global))
+      .addService(FeatureExtractorGrpc.bindService(feMock(features), ExecutionContext.global))
+      .build
+      .start()
+
+    val channel = ManagedChannelBuilder.forAddress("localhost", server.getPort).usePlaintext(true).build()
+    val bblfshStub = BblfshClient("localhost", server.getPort)
+    val feStub = FeatureExtractorGrpc.stub(channel)
+
+    val similarFile = new File("src/test/resources/func_mod.go")
+    val fileQuery = new FileQuery(
+      cassandra,
+      bblfshStub,
+      feStub,
+      "",
+      log,
+      keyspace,
+      Gemini.tables,
+      Gemini.funcSimilarityMode)
+
+    queryResult = fileQuery.find(similarFile)
+
+    channel.shutdownNow()
+    server.shutdown()
+
+    val QueryResult(duplicates, similar) = queryResult
+
+    duplicates.size shouldEqual 0
+    similar.size shouldEqual 1
   }
 
   // If we would need this mock somewhere else better to move them in traits
