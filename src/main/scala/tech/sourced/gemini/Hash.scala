@@ -235,7 +235,7 @@ class Hash(session: SparkSession,
 
       cassandra.execute(
         s"INSERT INTO $keyspace.${tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",
-        Gemini.docFreqId, int2Integer(docFreq.docs), javaMap
+        mode, int2Integer(docFreq.docs), javaMap
       )
     }
   }

@@ -177,8 +177,6 @@ object Gemini {
     DocFreqCols("id", "docs", "df")
   )
 
-  val docFreqId = "1"
-
   val formatter = new ObjectInserter.Formatter
 
   def apply(ss: SparkSession, log: Slf4jLogger = Logger("gemini"), keyspace: String = defautKeyspace): Gemini =

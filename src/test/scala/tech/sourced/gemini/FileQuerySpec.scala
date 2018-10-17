@@ -100,7 +100,7 @@ class FileQuerySpec extends FlatSpec
     */
   var queryResult : QueryResult = _
   "Query for similar files" should "return results" in {
-    insertDocFreq(OrderedDocFreq.fromJson(new File("src/test/resources/docfreq.json")))
+    insertDocFreq(OrderedDocFreq.fromJson(new File("src/test/resources/docfreq.json")), Gemini.fileSimilarityMode)
 
     val features = readFeaturesFromFile("src/test/resources/features.json")
 
@@ -148,7 +148,7 @@ class FileQuerySpec extends FlatSpec
   }
 
   "Query for similar funcs" should "return results" in {
-    insertDocFreq(OrderedDocFreq.fromJson(new File("src/test/resources/docfreq_func.json")))
+    insertDocFreq(OrderedDocFreq.fromJson(new File("src/test/resources/docfreq_func.json")), Gemini.funcSimilarityMode)
 
     val features = readFeaturesFromFile("src/test/resources/features_func.json")
 
