@@ -200,7 +200,7 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     similarFiles ++ similarFuncs
   }
 
-  def findSimilarFiles(ccDirPath: String): Iterable[Iterable[SimilarItem]] = {
+  def findSimilarItems(ccDirPath: String): Iterable[Iterable[SimilarItem]] = {
 
     val (connectedComponents, elsToBuckets, elementIds) = findConnectedComponents()
     saveConnectedComponents(connectedComponents, elsToBuckets, ccDirPath)
