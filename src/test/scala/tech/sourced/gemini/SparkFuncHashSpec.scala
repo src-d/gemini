@@ -21,9 +21,9 @@ class SparkFuncHashSpec extends FlatSpec
 
   def hashWithNewGemini(): HashResult = {
     val gemini = Gemini(sparkSession)
-    val hash = LimitedHash(sparkSession, log, filePaths)
+    val hash = LimitedHash(sparkSession, log, Gemini.funcSimilarityMode, filePaths)
     val repos = gemini.getRepos(s"src/test/resources/siva/duplicate-funcs")
-    hash.forRepos(repos, "func")
+    hash.forRepos(repos)
   }
 
   "Hash" should "return correct number of functions" in {

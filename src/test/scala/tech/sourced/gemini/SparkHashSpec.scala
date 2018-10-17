@@ -26,9 +26,9 @@ class SparkHashSpec extends FlatSpec
 
   def hashWithNewGemini(): HashResult = {
     val gemini = Gemini(sparkSession)
-    val hash = LimitedHash(sparkSession, log, filePaths)
+    val hash = LimitedHash(sparkSession, log, Gemini.fileSimilarityMode, filePaths)
     val repos = gemini.getRepos(s"src/test/resources/siva/duplicate-files")
-    hash.forRepos(repos, "file")
+    hash.forRepos(repos)
   }
 
   "Hash" should "return correct files" in {

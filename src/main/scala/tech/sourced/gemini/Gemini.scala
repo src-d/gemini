@@ -39,14 +39,14 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     // every run should re-process all repos/files
     session.catalog.clearCache()
 
-    val hash = Hash(session, log)
+    val hash = Hash(session, log, mode)
     val repos = getRepos(reposPath, limit, format)
 
     log.warn("Hashing")
-    val result = hash.forRepos(repos, mode)
+    val result = hash.forRepos(repos)
 
     log.warn("Saving hashes to DB")
-    hash.save(result, keyspace, tables, docFreqPath, mode)
+    hash.save(result, keyspace, tables, docFreqPath)
   }
 
   /**
