@@ -21,6 +21,7 @@ matrix:
         - docker exec -it gemini_bblfshd_1 bblfshctl driver list
         - ./scripts/install_python_feature_extractor.sh
         - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
+        - ./scripts/install_python_report.sh
       script:
         # start dependencies
         - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
