@@ -34,7 +34,7 @@ case class HashResult(files: DataFrame, hashes: Dataset[RDDHash], docFreq: Order
   *
   * @param session     spark session
   * @param log         logger implementation
-  * @param mode        filse or functions hashing
+  * @param mode        Gemini.fileSimilarityMode or Gemini.funcSimilarityMode
   * @param docFreqPath path to DocFreq
   */
 class Hash(session: SparkSession,
