@@ -39,10 +39,11 @@ trait BaseDBSpec extends BeforeAndAfterAll {
     }
   }
 
-  def insertHashtables(items: Iterable[HashtableItem]): Unit = {
+  def insertHashtables(items: Iterable[HashtableItem], mode: String): Unit = {
+    val hashtablesTable = s"${Gemini.tables.hashtables}_${mode}"
     val cols = Gemini.tables.hashtablesCols
     items.foreach { case HashtableItem(ht, v, sha1) =>
-      val cql = s"""INSERT INTO $keyspace.${Gemini.tables.hashtables}
+      val cql = s"""INSERT INTO $keyspace.${hashtablesTable}
         (${cols.hashtable}, ${cols.value}, ${cols.sha})
         VALUES ($ht, $v, '$sha1')"""
       cassandra.execute(cql)

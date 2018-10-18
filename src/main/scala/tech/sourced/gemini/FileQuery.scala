@@ -123,6 +123,7 @@ class FileQuery(
       case Gemini.funcSimilarityMode => FeaturesHash.funcParams
     }
 
+    val hashtablesTable = s"${tables.hashtables}_${mode}"
     val cols = tables.hashtablesCols
     val wmh = hashFile(featuresList, docFreq, sampleSize)
 
@@ -130,7 +131,7 @@ class FileQuery(
 
     log.info("Looking for similar items")
     val similar = bands.zipWithIndex.foldLeft(Set[String]()) { case (sim, (band, i)) =>
-      val cql = s"""SELECT ${cols.sha} FROM $keyspace.${tables.hashtables}
+      val cql = s"""SELECT ${cols.sha} FROM $keyspace.${hashtablesTable}
         WHERE ${cols.hashtable}=$i AND ${cols.value}=0x${MathUtil.bytes2hex(band)}"""
       log.debug(cql)
 

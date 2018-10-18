@@ -54,8 +54,8 @@ class FileQuerySpec extends FlatSpec
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    insertHashtables(readHashItemsFromFile("src/test/resources/hashtables.json"))
-    insertHashtables(readHashItemsFromFile("src/test/resources/hashtables_func.json"))
+    insertHashtables(readHashItemsFromFile("src/test/resources/hashtables.json"), Gemini.fileSimilarityMode)
+    insertHashtables(readHashItemsFromFile("src/test/resources/hashtables_func.json"), Gemini.funcSimilarityMode)
     insertMeta(Array(duplicateFile, similarFile, licenceFile, funcFile))
   }
 

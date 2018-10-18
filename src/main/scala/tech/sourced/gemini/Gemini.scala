@@ -116,7 +116,9 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     }
     log.info(s"${duplicates.size} duplicate SHA1s")
 
-    val similarities = report.findSimilarItems(ccDirPath)
+    val similarities =
+      report.findSimilarItems(ccDirPath, Gemini.fileSimilarityMode) ++
+      report.findSimilarItems(ccDirPath, Gemini.funcSimilarityMode)
 
     ReportResult(duplicates, similarities)
   }

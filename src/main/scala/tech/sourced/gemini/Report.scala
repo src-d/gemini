@@ -63,10 +63,11 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
   }
 
   def reportCommunities(communities: List[(Int, List[Int])],
-                        elementIds: Map[String, Int]): Iterable[Iterable[SimilarItem]] = {
+                        elementIds: Map[String, Int],
+                        mode: String): Iterable[Iterable[SimilarItem]] = {
     log.info(s"Report similar items from DB $keyspace")
-    val sim = getCommunities(communities, elementIds).toSeq
-    log.info(s"${sim.length} similar SHA1s")
+    val sim = getCommunities(communities, elementIds, mode).toSeq
+    log.info(s"${sim.length} similar communities")
     sim
   }
 
@@ -77,9 +78,10 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     *         - Map of element ids to list of bucket indices
     *         - Map of element to ID
     */
-  def findConnectedComponents(): (Map[Int, Set[Int]], Map[Int, List[Int]], Map[String, Int]) = {
-    log.info("Finding Connected Components")
-    val cc = new DBConnectedComponents(log, conn, tables.hashtables, keyspace)
+  def findConnectedComponents(mode: String): (Map[Int, Set[Int]], Map[Int, List[Int]], Map[String, Int]) = {
+    log.info(s"Finding ${mode} connected components")
+    val hashtablesTable = s"${tables.hashtables}_${mode}"
+    val cc = new DBConnectedComponents(log, conn, hashtablesTable, keyspace)
     val (buckets, elementIds) = cc.makeBuckets()
     val elsToBuckets = cc.elementsToBuckets(buckets)
 
@@ -132,7 +134,8 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
   case class funcElem(sha1: String, name: String, line: String)
 
   def getCommunities(communities: List[(Int, List[Int])],
-                     elementIds: Map[String, Int]): Iterable[Iterable[SimilarItem]] = {
+                     elementIds: Map[String, Int],
+                     mode: String): Iterable[Iterable[SimilarItem]] = {
 
     val idToElem = for ((elem, id) <- elementIds) yield (id, elem.split("@")(1))
 
@@ -147,27 +150,38 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
       }
       .filter(_.size > 1)
 
-    val (communitiesFiles, communitiesFuncs) = communitiesElem
-      .foldLeft(List[List[String]](), List[List[funcElem]]()) { (result, elems) =>
-        val (files, funcs) = result
-
-        val isFuncCommunity = elems(0).contains("_")
-
-        if (isFuncCommunity) {
-          val funcElems = elems.map { elem =>
-            val (sha1, name, line) = Gemini.splitFuncItem(elem)
-            funcElem(sha1, name, line)
-          }
-
-          (files, funcs :+ funcElems)
-        } else {
-          (files :+ elems, funcs)
-        }
+    mode match {
+      case Gemini.fileSimilarityMode => getSimilarFiles(communitiesElem)
+      case Gemini.funcSimilarityMode => getSimilarFuncs(communitiesElem)
     }
+  }
 
+  def getSimilarFiles(communities: List[List[String]]): Iterable[Iterable[SimilarFile]] = {
     val cols = tables.metaCols
 
-    val similarFuncs = communitiesFuncs.map(community => {
+    communities.map(sha1s => {
+      val elems = sha1s.map(st => s"'$st'").mkString(",")
+      val query = s"select sha1, repo, commit, path from $keyspace.${tables.meta} where sha1 in ($elems)"
+
+      conn
+        .execute(new SimpleStatement(query))
+        .asScala
+        .map { row =>
+          SimilarFile(RepoFile(row.getString(cols.repo), row.getString(cols.commit),
+            row.getString(cols.path), row.getString(cols.sha)))
+        }
+    })
+  }
+
+  def getSimilarFuncs(communities: List[List[String]]): Iterable[Iterable[SimilarFunc]] = {
+    val cols = tables.metaCols
+
+    communities.map(community => {
+      community.map { elem =>
+        val (sha1, name, line) = Gemini.splitFuncItem(elem)
+        funcElem(sha1, name, line)
+      }
+    }).map(community => {
       val elems = community.map(elem => s"'${elem.sha1}'").mkString(",")
       val query = s"select sha1, repo, commit, path from $keyspace.${tables.meta} where sha1 in ($elems)"
 
@@ -183,26 +197,12 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
 
       community.map { elem => SimilarFunc(shaToFile(elem.sha1), elem.name, elem.line)}
     })
-
-    val similarFiles = communitiesFiles.map(sha1s => {
-      val elems = sha1s.map(st => s"'$st'").mkString(",")
-      val query = s"select sha1, repo, commit, path from $keyspace.${tables.meta} where sha1 in ($elems)"
-
-      conn
-        .execute(new SimpleStatement(query))
-        .asScala
-        .map { row =>
-          SimilarFile(RepoFile(row.getString(cols.repo), row.getString(cols.commit),
-            row.getString(cols.path), row.getString(cols.sha)))
-        }
-    })
-
-    similarFiles ++ similarFuncs
   }
 
-  def findSimilarItems(ccDirPath: String): Iterable[Iterable[SimilarItem]] = {
 
-    val (connectedComponents, elsToBuckets, elementIds) = findConnectedComponents()
+  def findSimilarItems(ccDirPath: String, mode: String): Iterable[Iterable[SimilarItem]] = {
+
+    val (connectedComponents, elsToBuckets, elementIds) = findConnectedComponents(mode)
     saveConnectedComponents(connectedComponents, elsToBuckets, ccDirPath)
 
     log.info("Detecting communities in Python")
@@ -211,9 +211,9 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
 
     if (rc == 0) {
       val communities = readCommunities(ccDirPath)
-      reportCommunities(communities, elementIds)
+      reportCommunities(communities, elementIds, mode)
     } else {
-      log.error(s"Failed to execute '${pythonCmd}', skipping similarity report")
+      log.error(s"Failed to execute '${pythonCmd}', skipping ${mode} similarity report")
       Iterable[Iterable[SimilarItem]]()
     }
   }
