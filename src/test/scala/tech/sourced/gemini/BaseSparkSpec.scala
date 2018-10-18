@@ -69,11 +69,15 @@ trait BaseSparkSpec extends BeforeAndAfterAll {
   }
 
   // don't process all content of repos to speedup tests
-  class LimitedHash(s: SparkSession, log: Slf4jLogger, filePaths: Seq[String]) extends Hash(s, log) {
+  class LimitedHash(s: SparkSession,
+                    log: Slf4jLogger,
+                    mode: String,
+                    filePaths: Seq[String]) extends Hash(s, log, mode) {
     override def filesForRepos(repos: DataFrame): DataFrame =
       super.filesForRepos(repos).filter(col("path").isin(filePaths: _*))
   }
   object LimitedHash {
-    def apply(s: SparkSession, log: Slf4jLogger, paths: Seq[String]): LimitedHash = new LimitedHash(s, log, paths)
+    def apply(s: SparkSession, log: Slf4jLogger, mode: String, paths: Seq[String]): LimitedHash =
+      new LimitedHash(s, log, mode, paths)
   }
 }

@@ -176,7 +176,7 @@ class FileQuery(
   protected def readDocFreqFromDB(): Option[OrderedDocFreq] = {
     log.info(s"Reading docFreq from DB")
     val cols = tables.docFreqCols
-    val row = conn.execute(s"SELECT * FROM ${tables.docFreq} WHERE ${cols.id} = '1'").one()
+    val row = conn.execute(s"SELECT * FROM ${tables.docFreq} WHERE ${cols.id} = '${mode}'").one()
     if (row == null) {
       log.warn("Document frequency table is empty.")
       None

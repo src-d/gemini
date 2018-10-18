@@ -34,9 +34,13 @@ case class HashResult(files: DataFrame, hashes: Dataset[RDDHash], docFreq: Order
   *
   * @param session     spark session
   * @param log         logger implementation
+  * @param mode        Gemini.fileSimilarityMode or Gemini.funcSimilarityMode
   * @param docFreqPath path to DocFreq
   */
-class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
+class Hash(session: SparkSession,
+           log: Slf4jLogger,
+           mode: String = Gemini.fileSimilarityMode,
+           docFreqPath: String = "") {
 
   import session.implicits._
 
@@ -53,7 +57,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
     *
     * @param repos DataFrame with engine.getRepositories schema
     */
-  def forRepos(repos: DataFrame, mode: String): HashResult = {
+  def forRepos(repos: DataFrame): HashResult = {
     val feSkippedFiles = mapAccumulator(session.sparkContext, "FE skipped files")
 
     val files = filesForRepos(repos).persist(StorageLevel.MEMORY_AND_DISK_SER)
@@ -102,8 +106,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
   def save(hashResult: HashResult,
            keyspace: String,
            tables: Tables,
-           docFreqPath: String,
-           mode: String = Gemini.fileSimilarityMode): Unit = {
+           docFreqPath: String): Unit = {
     saveMeta(hashResult.files, keyspace, tables)
     if (docFreqPath.isEmpty) {
       saveDocFreqToDB(hashResult.docFreq, keyspace, tables)
@@ -111,7 +114,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       log.warn(s"save document frequencies in JSON to ${docFreqPath}")
       hashResult.docFreq.saveToJson(docFreqPath)
     }
-    saveHashes(hashResult.hashes.rdd, keyspace, tables, mode)
+    saveHashes(hashResult.hashes.rdd, keyspace, tables)
   }
 
   protected def filesForRepos(repos: DataFrame): DataFrame = {
@@ -232,7 +235,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
 
       cassandra.execute(
         s"INSERT INTO $keyspace.${tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",
-        Gemini.docFreqId, int2Integer(docFreq.docs), javaMap
+        mode, int2Integer(docFreq.docs), javaMap
       )
     }
   }
@@ -256,7 +259,7 @@ class Hash(session: SparkSession, log: Slf4jLogger, docFreqPath: String = "") {
       .save()
   }
 
-  protected def saveHashes(rdd: RDD[RDDHash], keyspace: String, tables: Tables, mode: String): Unit = {
+  protected def saveHashes(rdd: RDD[RDDHash], keyspace: String, tables: Tables): Unit = {
     log.warn("save hashtables to DB")
 
     val FeaturesHashOpts(_, htnum, bandSize) = mode match {
@@ -319,5 +322,5 @@ object Hash {
     }
   }
 
-  def apply(s: SparkSession, log: Slf4jLogger): Hash = new Hash(s, log)
+  def apply(s: SparkSession, log: Slf4jLogger, mode: String = Gemini.fileSimilarityMode): Hash = new Hash(s, log, mode)
 }

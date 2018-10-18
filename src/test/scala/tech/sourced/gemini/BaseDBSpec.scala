@@ -49,13 +49,13 @@ trait BaseDBSpec extends BeforeAndAfterAll {
     }
   }
 
-  def insertDocFreq(docFreq: OrderedDocFreq): Unit = {
+  def insertDocFreq(docFreq: OrderedDocFreq, mode: String): Unit = {
     val cols = Gemini.tables.docFreqCols
     val javaMap = docFreq.df.asJava
 
     cassandra.execute(
       s"INSERT INTO $keyspace.${Gemini.tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",
-      Gemini.docFreqId, int2Integer(docFreq.docs), javaMap
+      mode, int2Integer(docFreq.docs), javaMap
     )
   }
 
