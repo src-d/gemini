@@ -112,7 +112,7 @@ class ReportSpec extends FlatSpec
     val report = new Report(session, logger, DUPLICATES, Gemini.tables)
 
     println("Query")
-    val similarGroups = report.findSimilarItems("/tmp/report-files-test")
+    val similarGroups = report.findSimilarItems("/tmp/report-files-test", Gemini.fileSimilarityMode)
     println("Done")
 
     similarGroups should have size 6
@@ -128,7 +128,7 @@ class ReportSpec extends FlatSpec
     val report = new Report(session, logger, DUP_FUNCS, Gemini.tables)
 
     println("Query")
-    val similarGroups = report.findSimilarItems("/tmp/report-funcs-test")
+    val similarGroups = report.findSimilarItems("/tmp/report-funcs-test", Gemini.funcSimilarityMode)
     println("Done")
 
     similarGroups should have size 1

@@ -267,6 +267,7 @@ class Hash(session: SparkSession,
       case Gemini.funcSimilarityMode => FeaturesHash.funcParams
     }
 
+    val hashtablesTable = s"${tables.hashtables}_${mode}"
     val cols = tables.hashtablesCols
     rdd
       .flatMap { case RDDHash(doc, wmh) =>
@@ -275,7 +276,7 @@ class Hash(session: SparkSession,
       .toDF(cols.sha, cols.hashtable, cols.value)
       .write
       .mode("append")
-      .cassandraFormat(tables.hashtables, keyspace)
+      .cassandraFormat(hashtablesTable, keyspace)
       .save()
   }
 
