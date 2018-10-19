@@ -77,9 +77,7 @@ class FileQuery(
         .flatMap(sha1 => Database.findFilesByHash(sha1, conn, keyspace, tables))
         .map(SimilarFile(_))
       case Gemini.funcSimilarityMode => similarShas.flatMap(item => {
-        // item for functions is sha1_func_name:line
-        val Array(sha1, rest) = item.split("_", 2)
-        val Array(name, line) = rest.split(":")
+        val (sha1, name, line) = Gemini.splitFuncItem(item)
 
         Database.findFilesByHash(sha1, conn, keyspace, tables).map(SimilarFunc(_, name, line))
       })

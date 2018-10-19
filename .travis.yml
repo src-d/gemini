@@ -21,6 +21,7 @@ matrix:
         - docker exec -it gemini_bblfshd_1 bblfshctl driver list
         - ./scripts/install_python_feature_extractor.sh
         - tar -xzf src/test/resources/weighted-minhash/csv.tar.gz -C src/test/resources/weighted-minhash/
+        - ./scripts/install_python_report.sh
       script:
         # start dependencies
         - VIRTUAL_ENV=None IN_BACKGROUND=1 ./feature_extractor
@@ -72,16 +73,17 @@ matrix:
         # check both identical & similar files appeared in output
         - grep "Duplicates of ./src/test/resources/consumer.go" query_result.txt > /dev/null
         - grep "Similar files of ./src/test/resources/consumer.go" query_result.txt > /dev/null
-        # report with similarity
-        - ./report | tee report_result.txt
-        # check both identical & similar files appeared in output
-        - grep "2 duplicates" report_result.txt > /dev/null
-        - grep "2 similar files" report_result.txt > /dev/null
         # hashing funcs
         - ./hash -m func ./src/test/resources/siva/duplicate-funcs || travis_terminate 1
         # query with similarity (funcs)
         - ./query -m func ./src/test/resources/func_mod.go | tee query_result.txt
         - grep "Similar funcs of ./src/test/resources/func_mod.go" query_result.txt > /dev/null
+        # report with similarity
+        - ./report | tee report_result.txt
+        # check both identical & similar files/functions appeared in output
+        - grep "2 duplicates" report_result.txt > /dev/null
+        - grep "2 similar files" report_result.txt > /dev/null
+        - grep "2 similar functions" report_result.txt > /dev/null
         # go query
         - eval "$(gimme 1.10)"
         - go get ./src/main/go/... || true

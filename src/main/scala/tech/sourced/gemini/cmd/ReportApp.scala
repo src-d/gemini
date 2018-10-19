@@ -79,8 +79,8 @@ object ReportApp extends App {
 
   def print(report: ReportDuplicates): Unit = {
     report match {
-      case e if e.empty() => println(s"No duplicates found.")
-      case ReportGrouped(v) => println(s"Duplicates found:\n\t" + (v mkString "\n\t"))
+      case e if e.empty() => println(s"No duplicated files found.")
+      case ReportGrouped(v) => println(s"Duplicated files found:\n\t" + (v mkString "\n\t"))
       case ReportExpandedGroup(v) =>
         v.foreach { item =>
           val count = item.size
@@ -89,13 +89,17 @@ object ReportApp extends App {
     }
   }
 
-  def printCommunities(report: Iterable[Iterable[RepoFile]]): Unit = {
+  def printCommunities(report: Iterable[Iterable[SimilarItem]]): Unit = {
     if (report.isEmpty) {
-      println(s"No similar files found.")
+      println(s"No similarities found.")
     } else {
       report.foreach { community =>
         val count = community.size
-        println(s"$count similar files:\n\t${community.mkString("\n\t")}\n")
+        val typeName = community.head match {
+          case SimilarFunc(_, _, _) => "functions"
+          case _ => "files"
+        }
+        println(s"$count similar ${typeName}:\n\t${community.mkString("\n\t")}\n")
       }
     }
   }
