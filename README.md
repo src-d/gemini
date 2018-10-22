@@ -33,8 +33,6 @@ To find all duplicate of the single file run
 ./query <path-to-single-file>
 ```
 
-There is an example of a client in a Golang under [src/main/go](src/main/go)
-
 ### Report
 To find all duplicate files in all repositories run
 
@@ -75,7 +73,6 @@ You would need:
  - Apache Spark
  - Python 3
  - [Bblfshd](https://github.com/bblfsh/bblfshd/) v2.5.0+
- - Go (optional)
 
 By default, all commands are going to use
  - **Apache Cassandra or ScyllaDB** instance available at `localhost:9042`
