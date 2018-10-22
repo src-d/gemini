@@ -78,6 +78,9 @@ matrix:
         # query with similarity (funcs)
         - ./query -m func ./src/test/resources/func_mod.go | tee query_result.txt
         - grep "Similar funcs of ./src/test/resources/func_mod.go" query_result.txt > /dev/null
+        # query with filter (funcs)
+        - ./query -m func "./src/test/resources/func_mod.go:B:12" | tee query_result.txt
+        - grep "Similar funcs of ./src/test/resources/func_mod.go:B:12" query_result.txt > /dev/null
         # report with similarity
         - ./report | tee report_result.txt
         # check both identical & similar files/functions appeared in output
