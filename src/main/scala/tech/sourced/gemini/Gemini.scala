@@ -79,7 +79,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   /**
     * Search for duplicates and similar items to the given one.
     *
-    * @param inPath path to an item
+    * @param inPath path to an item in format path/to/file:func:line (func:line) are optional
     * @param conn   Database connection
     * @return
     */
