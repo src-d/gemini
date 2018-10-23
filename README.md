@@ -5,7 +5,7 @@ Gemini is a tool for searching for similar 'items' in source code repositories.
 Supported granularity level or items are:
  - repositories (TBD)
  - files
- - functions (TBD)
+ - functions
 
 ## Run
 
@@ -26,6 +26,12 @@ To pre-process number of repositories for a quick finding of the duplicates run
 
 Input format of the repositories is the same as in [src-d/Engine](https://github.com/src-d/engine).
 
+To pre-process repositories for search of similar functions run:
+
+```
+./hash -m func ./src/test/resources/siva
+```
+
 ### Query
 To find all duplicate of the single file run
 
@@ -33,8 +39,20 @@ To find all duplicate of the single file run
 ./query <path-to-single-file>
 ```
 
+To find all similar function defined in a file run:
+
+```
+./query -m func <path-to-single-file>
+```
+
+If you are interested in similarities of only 1 function defined in the file you can run:
+
+```
+./query -m func <path-to-single-file>:<function name>:<line number where the function is defined>
+```
+
 ### Report
-To find all duplicate files in all repositories run
+To find all duplicate files and similar functions in all repositories run
 
 ```
 ./report
@@ -114,10 +132,10 @@ All three commands accept parameters for database connection and logging:
  * `-p/--port` - cassandra/scylla db port, default `9042`
  * `-k/--keyspace` - cassandra/scylla db keyspace, default `hashes`
  * `-v/--verbose` - producing more verbose output, default `false`
+
+For `query` and `hash` commands parameters for bblfsh/features extractor configuration are available:
+
  * `-m/--mode` - similarity modes: `file` or `function`, default `file`
-
-For `query` and `hash` commands parameters for bblfsh/features extractor  configuration are available:
-
  * `--bblfsh-host` - babelfish server host, default `127.0.0.1`
  * `--bblfsh-port` - babelfish server port, default `9432`
  * `--features-extractor-host` - features-extractor host, default `127.0.0.1`
