@@ -14,6 +14,7 @@ import tech.sourced.gemini.cmd.ReportApp
 import tech.sourced.gemini.util.{Logger, URLFormatter}
 
 import scala.io.Source
+import scala.util.matching.Regex
 
 class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.defautKeyspace) {
 
@@ -73,10 +74,12 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     }
   }
 
+  val fileWithFuncPattern: Regex = "(.+):(.+):([0-9]+)".r
+
   /**
     * Search for duplicates and similar items to the given one.
     *
-    * @param inPath path to an item
+    * @param inPath path to an item in format path/to/file:func:line (func:line) are optional
     * @param conn   Database connection
     * @return
     */
@@ -86,13 +89,17 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
             mode: String,
             docFreqPath: String = "",
             feClient: FeatureExtractor): QueryResult = {
-    val path = new File(inPath)
-    log.info(s"Query for items similar to $path")
+    log.info(s"Query for items similar to $inPath")
+    val (path, fnFilter) = fileWithFuncPattern.findFirstMatchIn(inPath) match {
+      case Some(m) => (new File(m.group(1)), Some(m.group(2), m.group(3).toInt))
+      case None => (new File(inPath), None)
+    }
+
     if (path.isDirectory) {
       QueryResult(findDuplicateProjects(path, conn, keyspace), findSimilarProjects(path))
     } else {
       val fileQuery = new FileQuery(conn, bblfshClient, feClient, docFreqPath, log, keyspace, tables, mode)
-      fileQuery.find(path)
+      fileQuery.find(path, fnFilter)
     }
   }
 

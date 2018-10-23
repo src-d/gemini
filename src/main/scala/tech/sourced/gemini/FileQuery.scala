@@ -59,14 +59,19 @@ class FileQuery(
     * find similar and duplicates for a file
     *
     * @param file
+    * @param fnFilter look up only function from the filter
     * @return
     */
-  def find(file: File): QueryResult = {
+  def find(file: File, fnFilter: Option[(String, Int)] = None): QueryResult = {
+    if (fnFilter.isDefined && mode != Gemini.funcSimilarityMode) {
+      log.error("Filter for function is ignored file query mode")
+    }
+
     val duplicates = findDuplicatesOfFile(file)
     val duplicatedShas = duplicates.map(_.sha).toSeq
     log.info(s"${duplicatedShas.length} duplicate SHA1s")
 
-    val similarShas = findSimilarForFile(file)
+    val similarShas = findSimilarForFile(file, fnFilter)
       .map(_.split("@")(1)) // value for sha1 in Apollo hashtables is 'path@sha1', but we need only hashes
       .filterNot(sha => duplicatedShas.contains(sha))
     log.info(s"${similarShas.size} SHA1's found to be similar, after filtering duplicates")
@@ -90,7 +95,7 @@ class FileQuery(
     Database.findFilesByHash(Gemini.computeSha1(file), conn, keyspace, tables)
   }
 
-  protected def findSimilarForFile(file: File): Iterable[String] = {
+  protected def findSimilarForFile(file: File, fnFilter: Option[(String, Int)] = None): Iterable[String] = {
     val docFreq :Option[OrderedDocFreq] = if (docFreqPath.isEmpty) {
       readDocFreqFromDB()
     } else {
@@ -105,8 +110,15 @@ class FileQuery(
           mode match {
             case Gemini.fileSimilarityMode => findSimilarItems(extractFeatures(node), docFreq.get)
             case Gemini.funcSimilarityMode => {
-              Hash.extractFunctions(node).flatMap { case (fnName, fnUast) =>
-                log.debug(s"looking for similar functions of function ${fnName}")
+              var funcs = Hash.extractFunctions(node)
+              funcs = fnFilter match {
+                case Some((fnName, fnLine)) => funcs.filter { case (name, uast) =>
+                  fnName == name && uast.getStartPosition.line == fnLine
+                }
+                case None => funcs
+              }
+              funcs.flatMap { case (fnName, fnUast) =>
+                log.info(s"looking for similar functions of function ${fnName}")
                 val feats = FEClient.extract(fnUast, feClient, FEClient.funcLevelExtractors, log)
                 findSimilarItems(feats, docFreq.get)
               }
