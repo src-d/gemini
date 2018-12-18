@@ -2,10 +2,13 @@
 > Find similar code in Git repositories
 
 Gemini is a tool for searching for similar 'items' in source code repositories.
-Supported granularity level or items are:
- - repositories (TBD)
- - files
- - functions
+The supported granularity levels for items are:
+
+- repositories (TBD)
+- files
+- functions
+
+Gemini is based on its sister research project codenamed [Apollo](https://github.com/src-d/apollo).
 
 ## Run
 
@@ -18,6 +21,7 @@ Supported granularity level or items are:
 You would need to prefix commands with `docker-compose exec gemini` if you run it in docker. Read below how to start gemini in docker or standalone mode.
 
 ### Hash
+
 To pre-process number of repositories for a quick finding of the duplicates run
 
 ```
@@ -33,6 +37,7 @@ To pre-process repositories for search of similar functions run:
 ```
 
 ### Query
+
 To find all duplicate of the single file run
 
 ```
@@ -52,6 +57,7 @@ If you are interested in similarities of only 1 function defined in the file you
 ```
 
 ### Report
+
 To find all duplicate files and similar functions in all repositories run
 
 ```
@@ -119,6 +125,7 @@ docker exec -it some-scylla cqlsh
 
 
 ### External Apache Spark cluster
+
 Just set url to the Spark Master though env var
 ```
 MASTER="spark://<spark-master-url>" ./hash <path>
