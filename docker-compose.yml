@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 services:
   gemini:
     build: .
@@ -10,35 +10,31 @@ services:
       BBLFSH_HOST: bblfshd
       FEATURES_EXTRACTOR_HOST: featurext
     ports:
-      - "4040:4040"
+      - '4040:4040'
 
   scylla:
     image: scylladb/scylla:2.0.0
     volumes:
       - /var/lib/scylla
     command:
-      - "--broadcast-address"
-      - "127.0.0.1"
-      - "--listen-address"
-      - "0.0.0.0"
-      - "--broadcast-rpc-address"
-      - "127.0.0.1"
-      - "--memory"
-      - "2G"
+      - '--broadcast-address'
+      - '127.0.0.1'
+      - '--listen-address'
+      - '0.0.0.0'
+      - '--broadcast-rpc-address'
+      - '127.0.0.1'
+      - '--memory'
+      - '2G'
     ports:
-      - "9042:9042"
+      - '9042:9042'
 
   featurext:
     build:
       context: .
       dockerfile: FE.Dockerfile
     environment:
-      PYTHONHASHSEED: "0"
+      PYTHONHASHSEED: '0'
 
   bblfshd:
-    image: bblfsh/bblfshd:v2.5.0
+    image: bblfsh/bblfshd:v2.11.0-drivers
     privileged: true
-    volumes:
-      - /var/lib/bblfshd
-    entrypoint: ["/bin/sh"]
-    command: ["-c", "bblfshd & sleep 5 && bblfshctl driver install --recommended && tail -f /dev/null"]
