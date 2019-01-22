@@ -29,8 +29,6 @@ sealed abstract class ReportDuplicates(v: Iterable[Any]) {
   def size(): Int = v.size
 }
 
-case class ReportByLine(v: Iterable[RepoFile]) extends ReportDuplicates(v)
-
 case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends ReportDuplicates(v)
 
 class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) {
