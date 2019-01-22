@@ -127,7 +127,7 @@ object ReportApp extends App {
     mapper.registerModule(DefaultScalaModule)
 
     val str = mapper.writeValueAsString(Map(
-      "duplicates" -> duplicates,
+      "duplicates" -> duplicates.asInstanceOf[ReportExpandedGroup].v,
       "similarities" -> similarities
     ))
     println(str)
