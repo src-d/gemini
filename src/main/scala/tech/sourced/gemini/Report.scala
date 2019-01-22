@@ -21,15 +21,13 @@ import scala.sys.process._
   */
 case class ReportResult(duplicates: ReportDuplicates, similar: Iterable[Iterable[SimilarItem]])
 
-sealed abstract class ReportDuplicates(v: Iterable[Any]) {
+case class ReportDuplicates(v: Iterable[Iterable[RepoFile]]) {
   def empty(): Boolean = {
     v.isEmpty
   }
 
   def size(): Int = v.size
 }
-
-case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends ReportDuplicates(v)
 
 class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) {
 

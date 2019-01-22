@@ -97,13 +97,13 @@ object ReportApp extends App {
   def printAsText(result: ReportResult): Unit = {
     val ReportResult(duplicates, similarities) = result
 
-    duplicates match {
-      case e if e.empty() => println(s"No duplicated files found.")
-      case ReportExpandedGroup(v) =>
-        v.foreach { item =>
-          val count = item.size
-          println(s"$count duplicates:\n\t" + (item mkString "\n\t") + "\n")
-        }
+    if (duplicates.empty()) {
+      println(s"No duplicated files found.")
+    } else {
+      duplicates.v.foreach { item =>
+        val count = item.size
+        println(s"$count duplicates:\n\t" + (item mkString "\n\t") + "\n")
+      }
     }
 
     if (similarities.isEmpty) {
@@ -127,7 +127,7 @@ object ReportApp extends App {
     mapper.registerModule(DefaultScalaModule)
 
     val str = mapper.writeValueAsString(Map(
-      "duplicates" -> duplicates.asInstanceOf[ReportExpandedGroup].v,
+      "duplicates" -> duplicates.v,
       "similarities" -> similarities
     ))
     println(str)
