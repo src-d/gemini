@@ -153,6 +153,11 @@ Hash command specific arguments:
  * `-l/--limit` - limit the number of repositories to be processed. All repositories will be processed by default
  * `-f/--format` - format of the stored repositories. Supported input data formats that repositories could be stored in are `siva`, `bare` or `standard`, default `siva`
 
+Report specific arguments:
+
+ * `--output-format` - output format: text or json
+ * `--cassandra` - Enable advanced cql queries for Apache Cassandra database
+
 ## Development
 
 ### Compile & Run
