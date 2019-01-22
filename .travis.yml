@@ -124,8 +124,6 @@ before_cache:
   # Cleanup the cached directories to avoid unnecessary cache updates
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
   - find $HOME/.sbt        -name "*.lock"               -print -delete
-  # make bblfsh images readable
-  - sudo chmod -R 777 $HOME/bblfsh-drivers/images
 
 cache:
   directories:
@@ -133,5 +131,4 @@ cache:
     - $HOME/.sbt
     - $HOME/.ivy2/cache
     - $HOME/.coursier
-    - $HOME/bblfsh-drivers/images
     - $HOME/.cache/pip/wheels

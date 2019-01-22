@@ -1,18 +1,16 @@
-version: "3"
+version: '3'
 services:
   gemini:
-    network_mode: "host"
+    network_mode: 'host'
 
   scylla:
     ports:
-      - "9042:9042"
+      - '9042:9042'
 
   featurext:
     ports:
-      - "9001:9001"
+      - '9001:9001'
 
   bblfshd:
     ports:
-      - "9432:9432"
-    volumes:
-      - $HOME/bblfsh-drivers:/var/lib/bblfshd
+      - '9432:9432'
