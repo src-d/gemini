@@ -12,11 +12,11 @@ case class ReportAppConfig(
   host: String = Gemini.defaultCassandraHost,
   port: Int = Gemini.defaultCassandraPort,
   keyspace: String = Gemini.defautKeyspace,
-  format: String = ReportApp.defaultFmt,
   ccDirPath: String = ".",
-  verbose: Boolean = false,
   mode: String = Gemini.fileSimilarityMode,
-  output: String = ReportApp.defaultOutput
+  output: String = ReportApp.defaultOutput,
+  cassandra: Boolean = false,
+  verbose: Boolean = false
 )
 
 object ReportApp extends App {
@@ -27,7 +27,6 @@ object ReportApp extends App {
 
   val defaultFmt = ""
   val defaultFmtGroupBy = "use-group-by"
-  val condensedFmt = "condensed"
 
   val parser = new Parser[ReportAppConfig]("./report") {
     head("Gemini Report")
@@ -59,12 +58,9 @@ object ReportApp extends App {
         })
       .action((x, c) => c.copy(output = x))
       .text("output format")
-    opt[String]("format")
-      .valueName("use-group-by or condensed")
-      .action((x, c) => c.copy(format = x))
-      .text("Only for Apache Cassandra database\n" +
-        "use-group-by - use as many queries as unique duplicate files are found, plus one.\n" +
-        "condensed - use only one query to find the duplicates.")
+    opt[Boolean]("cassandra")
+      .action((x, c) => c.copy(cassandra = x))
+      .text("Enable advanced cql queries for Apache Cassandra database")
   }
 
   parser.parseWithEnv(args, ReportAppConfig()) match {
@@ -83,7 +79,7 @@ object ReportApp extends App {
       log.info("Checking DB schema")
       gemini.applySchema(cassandra)
 
-      val result = gemini.report(cassandra, config.format, config.ccDirPath)
+      val result = gemini.report(cassandra, config.cassandra, config.ccDirPath)
 
       config.output match {
         case `outputText` => printAsText(result)
@@ -103,7 +99,6 @@ object ReportApp extends App {
 
     duplicates match {
       case e if e.empty() => println(s"No duplicated files found.")
-      case ReportGrouped(v) => println(s"Duplicated files found:\n\t" + (v mkString "\n\t"))
       case ReportExpandedGroup(v) =>
         v.foreach { item =>
           val count = item.size
