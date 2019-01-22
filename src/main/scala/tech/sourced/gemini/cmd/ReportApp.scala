@@ -48,7 +48,7 @@ object ReportApp extends App {
     opt[Unit]('v', "verbose")
       .action((_, c) => c.copy(verbose = true))
       .text("producing more verbose debug output")
-    opt[String]("output")
+    opt[String]("output-format")
       .valueName(outputs.mkString(" | "))
       .validate(x =>
         if (outputs contains x) {
