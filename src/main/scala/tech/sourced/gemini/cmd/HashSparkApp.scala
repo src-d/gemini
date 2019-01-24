@@ -24,7 +24,8 @@ case class HashAppConfig(
   sparkParallelism: Int = 8,
   docFreqFile: String = "",
   verbose: Boolean = false,
-  mode: String = Gemini.fileSimilarityMode
+  mode: String = Gemini.fileSimilarityMode,
+  gcsKeyFile: String = ""
 )
 
 /**
@@ -94,6 +95,9 @@ object HashSparkApp extends App with Logging {
     opt[String]("doc-freq-file")
       .action((x, c) => c.copy(docFreqFile = x))
       .text("path to file with feature frequencies")
+    opt[String]("gcs-keyfile")
+      .action((x, c) => c.copy(gcsKeyFile = x))
+      .text("path to JSON keyfile for authentication in Google Cloud Storage")
     arg[String]("<path-to-git-repos>")
       .required()
       .action((x, c) => c.copy(reposPath = x))
@@ -119,6 +123,10 @@ object HashSparkApp extends App with Logging {
         .config("spark.tech.sourced.featurext.grpc.host", config.feHost)
         .config("spark.tech.sourced.featurext.grpc.port", config.fePort)
         .getOrCreate()
+
+      if (config.gcsKeyFile.nonEmpty) {
+        spark.sparkContext.hadoopConfiguration.set("google.cloud.auth.service.account.json.keyfile", config.gcsKeyFile)
+      }
 
       val reposPath = config.reposPath
       val repos = listRepositories(reposPath, config.format, spark, config.limit)
