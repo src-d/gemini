@@ -152,6 +152,7 @@ Hash command specific arguments:
 
  * `-l/--limit` - limit the number of repositories to be processed. All repositories will be processed by default
  * `-f/--format` - format of the stored repositories. Supported input data formats that repositories could be stored in are `siva`, `bare` or `standard`, default `siva`
+ * `--gcs-keyfile` - path to [JSON keyfile](https://cloud.google.com/storage/docs/authentication) for authentication in Google Cloud Storage
 
 ## Development
 

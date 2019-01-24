@@ -24,10 +24,11 @@ object Dependencies {
   lazy val hadoopCommon = ("org.apache.hadoop" % "hadoop-common" % "2.6.5")
     .exclude("com.sun.jersey", "jersey-server")
     .exclude("commons-beanutils", "commons-beanutils-core")
-  lazy val scalapb = "com.thesamet.scalapb" %% "scalapb-runtime" % "0.7.1"
-  lazy val scalapbGrpc = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % "0.7.1"
+  lazy val scalapb = "com.thesamet.scalapb" %% "scalapb-runtime" % "0.8.4"
+  lazy val scalapbGrpc = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % "0.8.4"
   lazy val ioGrpc = "io.grpc" % "grpc-netty" % "1.10.0"
   lazy val commonsMath = "org.apache.commons" % "commons-math3" % "3.6.1"
   lazy val bblfshClient = "org.bblfsh" % "bblfsh-client" % "1.8.2"
   lazy val scalaJsonParser = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7"
+  lazy val gcs = "com.google.cloud.bigdataoss" % "gcs-connector" % "hadoop2-1.9.11"
 }

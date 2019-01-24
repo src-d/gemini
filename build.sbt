@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
   scalapbGrpc % Compile,
   engine % Compile,
   jgit % Compile,
+  gcs % Compile,
   fixNetty,
   cassandraDriverMetrics % Provided, //needed for using Driver \wo Spark from SparkConnector
   cassandraSparkConnector % Compile,
