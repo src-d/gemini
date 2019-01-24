@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
   engine % Compile,
   jgit % Compile,
   gcs % Compile,
+  hadoopAws % Compile,
   fixNetty,
   cassandraDriverMetrics % Provided, //needed for using Driver \wo Spark from SparkConnector
   cassandraSparkConnector % Compile,
@@ -34,7 +35,6 @@ libraryDependencies ++= Seq(
   bblfshClient % Compile,
   avro % Compile,
   parquetAvro % Compile,
-  hadoopCommon % Compile,
   scalaJsonParser % Compile //needed for docFreq reading
   //TODO(bzz): remove scalaJsonParser at https://github.com/src-d/gemini/issues/112
 )
@@ -44,6 +44,7 @@ assemblyJarName in assemblyPackageDependency := s"${name.value}-deps.jar"
 
 assemblyMergeStrategy in assembly := {
   case "META-INF/io.netty.versions.properties" => MergeStrategy.last
+  case "mime.types" => MergeStrategy.last
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
