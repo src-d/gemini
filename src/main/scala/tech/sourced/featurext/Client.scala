@@ -25,21 +25,30 @@ sealed abstract class Extractor {
 
 case class IdentifiersExt(weight: Int, split: Boolean) extends Extractor {
   override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
-    val req = IdentifiersRequest(uast = Some(uast), docfreqThreshold = Threshold, weight = weight, splitStem = split)
+    val req = IdentifiersRequest(
+      uast = Some(uast),
+      options = Some(IdentifiersOptions(docfreqThreshold = Threshold, weight = weight, splitStem = split))
+    )
     client.identifiers(req)
   }
 }
 
 case class GraphletExt(weight: Int) extends Extractor {
   override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
-    val req = GraphletRequest(uast = Some(uast), docfreqThreshold = Threshold, weight = weight)
+    val req = GraphletRequest(
+      uast = Some(uast),
+      options = Some(GraphletOptions(docfreqThreshold = Threshold, weight = weight))
+    )
     client.graphlet(req)
   }
 }
 
 case class LiteralsExt(weight: Int) extends Extractor {
   override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
-    val req = LiteralsRequest(uast = Some(uast), docfreqThreshold = Threshold, weight = weight)
+    val req = LiteralsRequest(
+      uast = Some(uast),
+      options = Some(LiteralsOptions(docfreqThreshold = Threshold, weight = weight))
+    )
     client.literals(req)
   }
 }
@@ -47,21 +56,48 @@ case class LiteralsExt(weight: Int) extends Extractor {
 case class Uast2seqExt(weight: Int, seqLen: Seq[Int], stride: Int) extends Extractor {
   override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
     val req = Uast2seqRequest(
-      uast = Some(uast), docfreqThreshold = Threshold, weight = weight, stride = stride, seqLen = seqLen
+      uast = Some(uast),
+      options = Some(Uast2seqOptions(docfreqThreshold = Threshold, weight = weight, stride = stride, seqLen = seqLen))
     )
     client.uast2Seq(req)
   }
 }
 
+case class BatchExt(identifiers: Option[IdentifiersOptions],
+                    literals: Option[LiteralsOptions],
+                    uast2Seq: Option[Uast2seqOptions],
+                    graphlet: Option[GraphletOptions]) extends Extractor {
+  override def extract(client: FeatureExtractor, uast: Node): Future[FeaturesReply] = {
+    val req = ExtractRequest(
+      uast = Some(uast),
+      identifiers = identifiers,
+      literals = literals,
+      uast2Seq = uast2Seq,
+      graphlet = graphlet
+    )
+    client.extract(req)
+  }
+}
+
 object FEClient {
 
+  val defaultThreshold = 5
+
   val fileLevelExtractors = Seq(
-    IdentifiersExt(weight = 194, split = true), GraphletExt(weight = 548), LiteralsExt(weight = 264)
+    BatchExt(
+      identifiers = Some(IdentifiersOptions(docfreqThreshold = defaultThreshold, weight = 194, splitStem = true)),
+      graphlet = Some(GraphletOptions(docfreqThreshold = defaultThreshold, weight = 548)),
+      uast2Seq = None,
+      literals = Some(LiteralsOptions(docfreqThreshold = defaultThreshold, weight = 264))
+    )
   )
   val funcLevelExtractors = Seq(
-    IdentifiersExt(weight = 535, true),
-    GraphletExt(weight = 5707),
-    Uast2seqExt(weight = 369, seqLen = Seq(3), stride = 1)
+    BatchExt(
+      identifiers = Some(IdentifiersOptions(docfreqThreshold = defaultThreshold, weight = 535, splitStem = true)),
+      graphlet = Some(GraphletOptions(docfreqThreshold = defaultThreshold, weight = 5707)),
+      uast2Seq = Some(Uast2seqOptions(docfreqThreshold = defaultThreshold, weight = 369, seqLen = Seq(3), stride = 1)),
+      literals = None
+    )
   )
 
   def extract(

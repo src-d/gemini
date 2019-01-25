@@ -10,18 +10,14 @@ package tech.sourced.featurext.generated.service
 @SerialVersionUID(0L)
 final case class IdentifiersRequest(
     uast: scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node] = None,
-    docfreqThreshold: _root_.scala.Int = 0,
-    weight: _root_.scala.Int = 0,
-    splitStem: _root_.scala.Boolean = false
+    options: scala.Option[tech.sourced.featurext.generated.service.IdentifiersOptions] = None
     ) extends scalapb.GeneratedMessage with scalapb.Message[IdentifiersRequest] with scalapb.lenses.Updatable[IdentifiersRequest] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
       var __size = 0
       if (uast.isDefined) { __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(uast.get.serializedSize) + uast.get.serializedSize }
-      if (docfreqThreshold != 0) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt32Size(2, docfreqThreshold) }
-      if (weight != 0) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt32Size(3, weight) }
-      if (splitStem != false) { __size += _root_.com.google.protobuf.CodedOutputStream.computeBoolSize(4, splitStem) }
+      if (options.isDefined) { __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(options.get.serializedSize) + options.get.serializedSize }
       __size
     }
     final override def serializedSize: _root_.scala.Int = {
@@ -38,30 +34,15 @@ final case class IdentifiersRequest(
         _output__.writeUInt32NoTag(__v.serializedSize)
         __v.writeTo(_output__)
       };
-      {
-        val __v = docfreqThreshold
-        if (__v != 0) {
-          _output__.writeInt32(2, __v)
-        }
-      };
-      {
-        val __v = weight
-        if (__v != 0) {
-          _output__.writeInt32(3, __v)
-        }
-      };
-      {
-        val __v = splitStem
-        if (__v != false) {
-          _output__.writeBool(4, __v)
-        }
+      options.foreach { __v =>
+        _output__.writeTag(2, 2)
+        _output__.writeUInt32NoTag(__v.serializedSize)
+        __v.writeTo(_output__)
       };
     }
     def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.generated.service.IdentifiersRequest = {
       var __uast = this.uast
-      var __docfreqThreshold = this.docfreqThreshold
-      var __weight = this.weight
-      var __splitStem = this.splitStem
+      var __options = this.options
       var _done__ = false
       while (!_done__) {
         val _tag__ = _input__.readTag()
@@ -69,52 +50,33 @@ final case class IdentifiersRequest(
           case 0 => _done__ = true
           case 10 =>
             __uast = Option(_root_.scalapb.LiteParser.readMessage(_input__, __uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.generated.Node.defaultInstance)))
-          case 16 =>
-            __docfreqThreshold = _input__.readInt32()
-          case 24 =>
-            __weight = _input__.readInt32()
-          case 32 =>
-            __splitStem = _input__.readBool()
+          case 18 =>
+            __options = Option(_root_.scalapb.LiteParser.readMessage(_input__, __options.getOrElse(tech.sourced.featurext.generated.service.IdentifiersOptions.defaultInstance)))
           case tag => _input__.skipField(tag)
         }
       }
       tech.sourced.featurext.generated.service.IdentifiersRequest(
           uast = __uast,
-          docfreqThreshold = __docfreqThreshold,
-          weight = __weight,
-          splitStem = __splitStem
+          options = __options
       )
     }
     def getUast: gopkg.in.bblfsh.sdk.v1.uast.generated.Node = uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.generated.Node.defaultInstance)
     def clearUast: IdentifiersRequest = copy(uast = None)
     def withUast(__v: gopkg.in.bblfsh.sdk.v1.uast.generated.Node): IdentifiersRequest = copy(uast = Option(__v))
-    def withDocfreqThreshold(__v: _root_.scala.Int): IdentifiersRequest = copy(docfreqThreshold = __v)
-    def withWeight(__v: _root_.scala.Int): IdentifiersRequest = copy(weight = __v)
-    def withSplitStem(__v: _root_.scala.Boolean): IdentifiersRequest = copy(splitStem = __v)
+    def getOptions: tech.sourced.featurext.generated.service.IdentifiersOptions = options.getOrElse(tech.sourced.featurext.generated.service.IdentifiersOptions.defaultInstance)
+    def clearOptions: IdentifiersRequest = copy(options = None)
+    def withOptions(__v: tech.sourced.featurext.generated.service.IdentifiersOptions): IdentifiersRequest = copy(options = Option(__v))
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => uast.orNull
-        case 2 => {
-          val __t = docfreqThreshold
-          if (__t != 0) __t else null
-        }
-        case 3 => {
-          val __t = weight
-          if (__t != 0) __t else null
-        }
-        case 4 => {
-          val __t = splitStem
-          if (__t != false) __t else null
-        }
+        case 2 => options.orNull
       }
     }
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
       require(__field.containingMessage eq companion.scalaDescriptor)
       (__field.number: @_root_.scala.unchecked) match {
         case 1 => uast.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
-        case 2 => _root_.scalapb.descriptors.PInt(docfreqThreshold)
-        case 3 => _root_.scalapb.descriptors.PInt(weight)
-        case 4 => _root_.scalapb.descriptors.PBoolean(splitStem)
+        case 2 => options.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
@@ -128,9 +90,7 @@ object IdentifiersRequest extends scalapb.GeneratedMessageCompanion[tech.sourced
     val __fields = javaDescriptor.getFields
     tech.sourced.featurext.generated.service.IdentifiersRequest(
       __fieldsMap.get(__fields.get(0)).asInstanceOf[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]],
-      __fieldsMap.getOrElse(__fields.get(1), 0).asInstanceOf[_root_.scala.Int],
-      __fieldsMap.getOrElse(__fields.get(2), 0).asInstanceOf[_root_.scala.Int],
-      __fieldsMap.getOrElse(__fields.get(3), false).asInstanceOf[_root_.scala.Boolean]
+      __fieldsMap.get(__fields.get(1)).asInstanceOf[scala.Option[tech.sourced.featurext.generated.service.IdentifiersOptions]]
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.generated.service.IdentifiersRequest] = _root_.scalapb.descriptors.Reads{
@@ -138,18 +98,17 @@ object IdentifiersRequest extends scalapb.GeneratedMessageCompanion[tech.sourced
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
       tech.sourced.featurext.generated.service.IdentifiersRequest(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).flatMap(_.as[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]]),
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Int]).getOrElse(0),
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Int]).getOrElse(0),
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(4).get).map(_.as[_root_.scala.Boolean]).getOrElse(false)
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).flatMap(_.as[scala.Option[tech.sourced.featurext.generated.service.IdentifiersOptions]])
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = ServiceProto.javaDescriptor.getMessageTypes.get(0)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = ServiceProto.scalaDescriptor.messages(0)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = ServiceProto.javaDescriptor.getMessageTypes.get(5)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = ServiceProto.scalaDescriptor.messages(5)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
       case 1 => __out = gopkg.in.bblfsh.sdk.v1.uast.generated.Node
+      case 2 => __out = tech.sourced.featurext.generated.service.IdentifiersOptions
     }
     __out
   }
@@ -160,12 +119,9 @@ object IdentifiersRequest extends scalapb.GeneratedMessageCompanion[tech.sourced
   implicit class IdentifiersRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.service.IdentifiersRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.generated.service.IdentifiersRequest](_l) {
     def uast: _root_.scalapb.lenses.Lens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.generated.Node] = field(_.getUast)((c_, f_) => c_.copy(uast = Option(f_)))
     def optionalUast: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]] = field(_.uast)((c_, f_) => c_.copy(uast = f_))
-    def docfreqThreshold: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.docfreqThreshold)((c_, f_) => c_.copy(docfreqThreshold = f_))
-    def weight: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.weight)((c_, f_) => c_.copy(weight = f_))
-    def splitStem: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Boolean] = field(_.splitStem)((c_, f_) => c_.copy(splitStem = f_))
+    def options: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.service.IdentifiersOptions] = field(_.getOptions)((c_, f_) => c_.copy(options = Option(f_)))
+    def optionalOptions: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[tech.sourced.featurext.generated.service.IdentifiersOptions]] = field(_.options)((c_, f_) => c_.copy(options = f_))
   }
   final val UAST_FIELD_NUMBER = 1
-  final val DOCFREQTHRESHOLD_FIELD_NUMBER = 2
-  final val WEIGHT_FIELD_NUMBER = 3
-  final val SPLITSTEM_FIELD_NUMBER = 4
+  final val OPTIONS_FIELD_NUMBER = 2
 }

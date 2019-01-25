@@ -235,6 +235,10 @@ class FileQuerySpec extends FlatSpec
 
   def feMock(features: Seq[Feature]): FeatureExtractor = {
     class FEServerMock extends FeatureExtractor {
+      override def extract(request: ExtractRequest): Future[FeaturesReply] = {
+        Future.successful(FeaturesReply(features=features))
+      }
+
       override def identifiers(request: IdentifiersRequest): Future[FeaturesReply] = {
         Future.successful(FeaturesReply(features=features))
       }

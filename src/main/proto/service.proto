@@ -7,6 +7,9 @@ import "gopkg.in/bblfsh/sdk.v1/uast/generated.proto";
 
 // Feature Extractor Service
 service FeatureExtractor {
+  // Extract allows to run multiple extractors on the same uast
+  rpc Extract (ExtractRequest) returns (FeaturesReply) {}
+
   // Extract identifiers weighted set
   rpc Identifiers (IdentifiersRequest) returns (FeaturesReply) {}
   // Extract literals weighted set
@@ -17,35 +20,59 @@ service FeatureExtractor {
   rpc Graphlet (GraphletRequest) returns (FeaturesReply) {}
 }
 
+message IdentifiersOptions {
+  int32 docfreqThreshold = 1;
+  int32 weight = 2;
+  bool splitStem = 3;
+}
+
+message LiteralsOptions {
+  int32 docfreqThreshold = 1;
+  int32 weight = 2;
+}
+
+message Uast2seqOptions {
+  int32 docfreqThreshold = 1;
+  int32 weight = 2;
+  int32 stride = 3;
+  repeated int32 seqLen = 4;
+}
+
+message GraphletOptions {
+  int32 docfreqThreshold = 1;
+  int32 weight = 2;
+}
+
+message ExtractRequest {
+  gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
+  IdentifiersOptions identifiers = 2;
+  LiteralsOptions literals = 3;
+  Uast2seqOptions uast2seq = 4;
+  GraphletOptions graphlet = 5;
+}
+
 // The identifiers request message containing extractor configuration and uast.
 message IdentifiersRequest {
   gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
-  int32 docfreqThreshold = 2;
-  int32 weight = 3;
-  bool splitStem = 4;
+  IdentifiersOptions options = 2;
 }
 
 // The literals request message containing extractor configuration and uast.
 message LiteralsRequest {
   gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
-  int32 docfreqThreshold = 2;
-  int32 weight = 3;
+  LiteralsOptions options = 2;
 }
 
 // The uast2seq request message containing extractor configuration and uast.
 message Uast2seqRequest {
   gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
-  int32 docfreqThreshold = 2;
-  int32 weight = 3;
-  int32 stride = 4;
-  repeated int32 seqLen = 5;
+  Uast2seqOptions options = 2;
 }
 
 // The graphlet request message containing extractor configuration and uast.
 message GraphletRequest {
   gopkg.in.bblfsh.sdk.v1.uast.Node uast = 1;
-  int32 docfreqThreshold = 2;
-  int32 weight = 3;
+  GraphletOptions options = 2;
 }
 
 message Feature {
