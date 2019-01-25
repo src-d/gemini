@@ -129,6 +129,25 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     ReportResult(duplicates, similarities)
   }
 
+  def isDBEmpty(session: Session, mode: String): Boolean = {
+    var row = session.execute(s"select count(*) from $keyspace.${tables.docFreq} where id='$mode'").one()
+    if (row.getLong(0) > 0) {
+      return false
+    }
+
+    row = session.execute(s"select count(*) from $keyspace.${tables.hashtables}_$mode").one()
+    if (row.getLong(0) > 0) {
+      return false
+    }
+
+    true
+  }
+
+  def cleanDB(session: Session, mode: String): Unit = {
+    session.execute(s"delete from $keyspace.${tables.docFreq} where id='$mode'")
+    session.execute(s"truncate table $keyspace.${tables.hashtables}_$mode")
+  }
+
   def applySchema(session: Session): Unit = {
     log.debug("CQL: creating schema")
     Source

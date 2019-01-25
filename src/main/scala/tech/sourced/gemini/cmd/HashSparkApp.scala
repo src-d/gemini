@@ -25,7 +25,8 @@ case class HashAppConfig(
   docFreqFile: String = "",
   verbose: Boolean = false,
   mode: String = Gemini.fileSimilarityMode,
-  gcsKeyFile: String = ""
+  gcsKeyFile: String = "",
+  replace: Boolean = false
 )
 
 /**
@@ -98,6 +99,9 @@ object HashSparkApp extends App with Logging {
     opt[String]("gcs-keyfile")
       .action((x, c) => c.copy(gcsKeyFile = x))
       .text("path to JSON keyfile for authentication in Google Cloud Storage")
+    opt[Unit]("replace")
+      .action((x, c) => c.copy(replace = true))
+      .text("replace results of previous hashing")
     arg[String]("<path-to-git-repos>")
       .required()
       .action((x, c) => c.copy(reposPath = x))
@@ -136,6 +140,16 @@ object HashSparkApp extends App with Logging {
       log.info("Checking DB schema")
       CassandraConnector(spark.sparkContext).withSessionDo { cassandra =>
         gemini.applySchema(cassandra)
+
+        if (config.replace) {
+          gemini.cleanDB(cassandra, config.mode)
+        }
+
+        if (!gemini.isDBEmpty(cassandra, config.mode)) {
+          println("Database keyspace is not empty! Hashing may produce wrong results. " +
+            "Please choose another keyspace or pass the --replace option")
+          System.exit(2)
+        }
       }
 
       gemini.hash(reposPath, config.limit, config.format, config.mode, config.docFreqFile)
