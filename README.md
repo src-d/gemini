@@ -154,6 +154,11 @@ Hash command specific arguments:
  * `-f/--format` - format of the stored repositories. Supported input data formats that repositories could be stored in are `siva`, `bare` or `standard`, default `siva`
  * `--gcs-keyfile` - path to [JSON keyfile](https://cloud.google.com/storage/docs/authentication) for authentication in Google Cloud Storage
 
+Report specific arguments:
+
+ * `--output-format` - output format: text or json
+ * `--cassandra` - Enable advanced cql queries for Apache Cassandra database
+
 ## Development
 
 ### Compile & Run

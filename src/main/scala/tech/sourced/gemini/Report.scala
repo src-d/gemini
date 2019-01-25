@@ -21,7 +21,7 @@ import scala.sys.process._
   */
 case class ReportResult(duplicates: ReportDuplicates, similar: Iterable[Iterable[SimilarItem]])
 
-sealed abstract class ReportDuplicates(v: Iterable[Any]) {
+case class ReportDuplicates(v: Iterable[Iterable[RepoFile]]) {
   def empty(): Boolean = {
     v.isEmpty
   }
@@ -29,24 +29,7 @@ sealed abstract class ReportDuplicates(v: Iterable[Any]) {
   def size(): Int = v.size
 }
 
-case class ReportByLine(v: Iterable[RepoFile]) extends ReportDuplicates(v)
-
-case class ReportGrouped(v: Iterable[DuplicateBlobHash]) extends ReportDuplicates(v)
-
-case class ReportExpandedGroup(v: Iterable[Iterable[RepoFile]]) extends ReportDuplicates(v)
-
 class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) {
-
-  /**
-    * Finds duplicate files among hashed repositories
-    * It is used only one query
-    * (Only supported by Apache Cassandra databases)
-    *
-    * @return
-    */
-  def reportCassandraCondensed(): Iterable[DuplicateBlobHash] = {
-    findAllDuplicateBlobHashes()
-  }
 
   /**
     * Finds duplicate files among hashed repositories
@@ -56,7 +39,7 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     * @return
     */
   def reportCassandraGroupBy(): Iterable[Iterable[RepoFile]] = {
-    reportCassandraCondensed()
+    findAllDuplicateBlobHashes()
       .map { item =>
         Database.findFilesByHash(item.sha, conn, keyspace, tables)
       }

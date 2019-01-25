@@ -65,17 +65,6 @@ class ReportSpec extends FlatSpec
     super.afterAll()
   }
 
-  "Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
-    val report = new Report(session, logger, DUPLICATES, Gemini.tables)
-
-    println("Query")
-    val result = report.reportCassandraCondensed()
-    println("Done")
-
-    result should have size expectedDuplicateFiles.size
-    result foreach (_.count should be(2))
-  }
-
   "Detailed Report from Cassandra using GROUP BY" should "return duplicate files" taggedAs Cassandra in {
     val report = new Report(session, logger, DUPLICATES, Gemini.tables)
 

@@ -108,18 +108,17 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
     * It is used one query per distinct file
     *
     * @param conn Database connections
-    * @param format Duplicated items mode
+    * @param advancedCql use advanced cql or not (supported only by Apache Cassandra)
     * @param ccDirPath directory for connected components
     * @return
     */
-  def report(conn: Session, format: String, ccDirPath: String): ReportResult = {
+  def report(conn: Session, advancedCql: Boolean, ccDirPath: String): ReportResult = {
     val report = new Report(conn, log, keyspace, tables)
 
     log.info(s"Report duplicate items from DB $keyspace")
-    val duplicates = format match {
-      case ReportApp.defaultFmt => ReportExpandedGroup(report.findAllDuplicateItems())
-      case ReportApp.defaultFmtGroupBy => ReportExpandedGroup(report.reportCassandraGroupBy())
-      case ReportApp.condensedFmt => ReportGrouped(report.reportCassandraCondensed())
+    val duplicates = advancedCql match {
+      case false => ReportDuplicates(report.findAllDuplicateItems())
+      case true => ReportDuplicates(report.reportCassandraGroupBy())
     }
     log.info(s"${duplicates.size} duplicate SHA1s")
 
