@@ -229,14 +229,22 @@ class Hash(session: SparkSession,
 
   protected def saveDocFreqToDB(docFreq: OrderedDocFreq, keyspace: String, tables: Tables): Unit = {
     log.warn(s"save document frequencies to DB")
-    CassandraConnector(session.sparkContext).withSessionDo { cassandra =>
-      val cols = tables.docFreqCols
-      val javaMap = docFreq.df.asJava
 
+    CassandraConnector(session.sparkContext).withSessionDo { cassandra =>
+      val docsCols = tables.featuresDocsCols
       cassandra.execute(
-        s"INSERT INTO $keyspace.${tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",
-        mode, int2Integer(docFreq.docs), javaMap
+        s"INSERT INTO $keyspace.${tables.featuresDocs} (${docsCols.id}, ${docsCols.docs}) VALUES (?, ?)",
+        mode, int2Integer(docFreq.docs)
       )
+
+      val freqCols = tables.featuresFreqCols
+      docFreq.df.foreach { case(feature, weight) =>
+        cassandra.execute(
+          s"INSERT INTO $keyspace.${tables.featuresFreq}" +
+            s"(${freqCols.id}, ${freqCols.feature}, ${freqCols.weight}) VALUES (?, ?, ?)",
+            mode, feature, int2Integer(weight)
+        )
+      }
     }
   }
 
@@ -267,7 +275,6 @@ class Hash(session: SparkSession,
       case Gemini.funcSimilarityMode => FeaturesHash.funcParams
     }
 
-    val hashtablesTable = s"${tables.hashtables}_${mode}"
     val cols = tables.hashtablesCols
     rdd
       .flatMap { case RDDHash(doc, wmh) =>
@@ -276,7 +283,7 @@ class Hash(session: SparkSession,
       .toDF(cols.sha, cols.hashtable, cols.value)
       .write
       .mode("append")
-      .cassandraFormat(hashtablesTable, keyspace)
+      .cassandraFormat(tables.hashtables(mode), keyspace)
       .save()
   }
 

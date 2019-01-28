@@ -198,10 +198,12 @@ object Gemini {
   val tables = Tables(
     "meta",
     "hashtables",
-    "docfreq",
+    "features_docs",
+    "features_freq",
     MetaCols("sha1", "repo", "commit", "path"),
     HashtablesCols("sha1", "hashtable", "value"),
-    DocFreqCols("id", "docs", "df")
+    FeaturesDocsCols("id", "docs"),
+    FeaturesFreqCols("id", "feature", "weight")
   )
 
   val formatter = new ObjectInserter.Formatter

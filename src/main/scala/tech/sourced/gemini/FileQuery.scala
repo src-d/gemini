@@ -135,7 +135,6 @@ class FileQuery(
       case Gemini.funcSimilarityMode => FeaturesHash.funcParams
     }
 
-    val hashtablesTable = s"${tables.hashtables}_${mode}"
     val cols = tables.hashtablesCols
     val wmh = hashFile(featuresList, docFreq, sampleSize)
 
@@ -143,7 +142,7 @@ class FileQuery(
 
     log.info("Looking for similar items")
     val similar = bands.zipWithIndex.foldLeft(Set[String]()) { case (sim, (band, i)) =>
-      val cql = s"""SELECT ${cols.sha} FROM $keyspace.${hashtablesTable}
+      val cql = s"""SELECT ${cols.sha} FROM $keyspace.${tables.hashtables(mode)}
         WHERE ${cols.hashtable}=$i AND ${cols.value}=0x${MathUtil.bytes2hex(band)}"""
       log.debug(cql)
 
@@ -186,18 +185,26 @@ class FileQuery(
 
   protected def readDocFreqFromDB(): Option[OrderedDocFreq] = {
     log.info(s"Reading docFreq from DB")
-    val cols = tables.docFreqCols
-    val row = conn.execute(s"SELECT * FROM ${tables.docFreq} WHERE ${cols.id} = '${mode}'").one()
-    if (row == null) {
+    val docsCols = tables.featuresDocsCols
+    val freqCols = tables.featuresFreqCols
+    val docsRow = conn.execute(s"SELECT * FROM ${tables.featuresDocs} WHERE ${docsCols.id} = '$mode'").one()
+    if (docsRow == null) {
       log.warn("Document frequency table is empty.")
       None
     } else {
-      val df = row
-        .getMap("df", classOf[java.lang.String], classOf[java.lang.Integer])
+      var tokens = IndexedSeq[String]()
+      val df = conn
+        .execute(s"SELECT * FROM ${tables.featuresFreq} WHERE ${freqCols.id} = '$mode'")
         .asScala
-        .mapValues(_.toInt)
+        .map { row =>
+          // tokens have to be sorted, df.keys isn't sorted
+          val name = row.getString(freqCols.feature)
+          tokens = tokens :+ name
 
-      Some(OrderedDocFreq(row.getInt(cols.docs), df.keys.toIndexedSeq, df))
+          (name, row.getInt(freqCols.weight))
+        }.toMap
+
+      Some(OrderedDocFreq(docsRow.getInt(docsCols.docs), tokens, df))
     }
   }
 

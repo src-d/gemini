@@ -63,8 +63,7 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     */
   def findConnectedComponents(mode: String): (Map[Int, Set[Int]], Map[Int, List[Int]], Map[String, Int]) = {
     log.info(s"Finding ${mode} connected components")
-    val hashtablesTable = s"${tables.hashtables}_${mode}"
-    val cc = new DBConnectedComponents(log, conn, hashtablesTable, keyspace)
+    val cc = new DBConnectedComponents(log, conn, tables.hashtables(mode), keyspace)
     val (buckets, elementIds) = cc.makeBuckets()
     val elsToBuckets = cc.elementsToBuckets(buckets)
 
