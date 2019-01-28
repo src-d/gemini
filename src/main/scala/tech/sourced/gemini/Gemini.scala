@@ -130,7 +130,7 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 
   def isDBEmpty(session: Session, mode: String): Boolean = {
-    var row = session.execute(s"select count(*) from $keyspace.${tables.docFreq} where id='$mode'").one()
+    var row = session.execute(s"select count(*) from $keyspace.${tables.docFreq} where id='$mode' limit 1").one()
     if (row.getLong(0) > 0) {
       return false
     }
