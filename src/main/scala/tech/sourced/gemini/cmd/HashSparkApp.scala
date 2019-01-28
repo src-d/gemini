@@ -143,9 +143,7 @@ object HashSparkApp extends App with Logging {
 
         if (config.replace) {
           gemini.cleanDB(cassandra, config.mode)
-        }
-
-        if (!gemini.isDBEmpty(cassandra, config.mode)) {
+        } else if (!gemini.isDBEmpty(cassandra, config.mode)) {
           println("Database keyspace is not empty! Hashing may produce wrong results. " +
             "Please choose another keyspace or pass the --replace option")
           System.exit(2)
