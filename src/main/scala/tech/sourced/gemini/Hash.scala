@@ -238,12 +238,11 @@ class Hash(session: SparkSession,
       )
 
       val freqCols = tables.featuresFreqCols
+      val prepared = cassandra.prepare(s"INSERT INTO $keyspace.${tables.featuresFreq}" +
+        s"(${freqCols.id}, ${freqCols.feature}, ${freqCols.weight}) VALUES (?, ?, ?)")
+
       docFreq.df.foreach { case(feature, weight) =>
-        cassandra.execute(
-          s"INSERT INTO $keyspace.${tables.featuresFreq}" +
-            s"(${freqCols.id}, ${freqCols.feature}, ${freqCols.weight}) VALUES (?, ?, ?)",
-            mode, feature, int2Integer(weight)
-        )
+        cassandra.execute(prepared.bind(mode, feature, int2Integer(weight)))
       }
     }
   }
