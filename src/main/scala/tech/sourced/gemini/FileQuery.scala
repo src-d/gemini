@@ -194,7 +194,7 @@ class FileQuery(
     } else {
       var tokens = IndexedSeq[String]()
       val df = conn
-        .execute(s"SELECT * FROM ${tables.featuresFreq} WHERE ${freqCols.id} = '$mode'")
+        .execute(s"SELECT * FROM ${tables.featuresFreq} WHERE ${freqCols.id} = '$mode' ORDER BY ${freqCols.feature}")
         .asScala
         .map { row =>
           // tokens have to be sorted, df.keys isn't sorted
