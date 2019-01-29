@@ -130,13 +130,18 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 
   def isDBEmpty(session: Session, mode: String): Boolean = {
-    var row = session.execute(s"select count(*) from $keyspace.${tables.docFreq} where id='$mode' limit 1").one()
-    if (row.getLong(0) > 0) {
+    var row = session.execute(s"select * from $keyspace.${tables.featuresDocs} where id='$mode' limit 1").one()
+    if (row != null) {
       return false
     }
 
-    row = session.execute(s"select count(*) from $keyspace.${tables.hashtables}_$mode").one()
-    if (row.getLong(0) > 0) {
+    row = session.execute(s"select * from $keyspace.${tables.featuresFreq} where id='$mode' limit 1").one()
+    if (row != null) {
+      return false
+    }
+
+    row = session.execute(s"select * from $keyspace.${tables.hashtables}_$mode limit 1").one()
+    if (row != null) {
       return false
     }
 
@@ -144,8 +149,9 @@ class Gemini(session: SparkSession, log: Slf4jLogger, keyspace: String = Gemini.
   }
 
   def cleanDB(session: Session, mode: String): Unit = {
-    session.execute(s"delete from $keyspace.${tables.docFreq} where id='$mode'")
-    session.execute(s"truncate table $keyspace.${tables.hashtables}_$mode")
+    session.execute(s"delete from $keyspace.${tables.featuresDocs} where id='$mode'")
+    session.execute(s"delete from $keyspace.${tables.featuresFreq} where id='$mode'")
+    session.execute(s"truncate table $keyspace.${tables.hashtables(mode)}")
   }
 
   def applySchema(session: Session): Unit = {
