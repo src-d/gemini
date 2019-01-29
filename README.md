@@ -36,6 +36,8 @@ To pre-process repositories for search of similar functions run:
 ./hash -m func ./src/test/resources/siva
 ```
 
+Besides local file system gemini support different [distributed storages](#distributed-storages).
+
 ### Query
 
 To find all duplicate of the single file run
@@ -158,6 +160,38 @@ Report specific arguments:
 
  * `--output-format` - output format: text or json
  * `--cassandra` - Enable advanced cql queries for Apache Cassandra database
+
+
+### Distributed storages
+
+Gemini supports different distributed storages in local and cluster mode. It already includes all necessary jars as a part of fat jar.
+
+#### HDFS
+
+Path format to git repositories: `hdfs://hdfs-namenode/path`
+
+To configure HDFS in local or cluster mode please consult [Hadoop documentation](https://hadoop.apache.org/docs/r2.7.2/index.html).
+
+#### Google Cloud Storage
+
+Path format to git repositories: `gs://bucket/path`
+
+To connect to GCS locally use `--gcs-keyfile` flag with path to [JSON keyfile](https://cloud.google.com/storage/docs/authentication#service_accounts).
+
+To use GCS in cluster mode please consult [Google Cloud Storage Connector documentation](https://github.com/GoogleCloudPlatform/bigdata-interop/blob/master/gcs/INSTALL.md#configure-hadoop).
+
+#### Amazon Web Services S3
+
+Path format to git repositories: `s3a://bucket/path`
+
+To connect to S3 locally use following flags:
+- `--aws-key` - AWS access keys
+- `--aws-secret` - AWS access secret
+- `--aws-s3-endpoint` - [region endpoint](https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region) of your S3 bucket
+
+Due to some limitations passing key&secret as part of URI is not supported.
+
+To use AWS S3 in cluster mode please consult [hadoop-aws documentation](https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#S3A)
 
 ## Development
 
