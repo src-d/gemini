@@ -58,8 +58,8 @@ object ReportApp extends App {
         })
       .action((x, c) => c.copy(output = x))
       .text("output format")
-    opt[Boolean]("cassandra")
-      .action((x, c) => c.copy(cassandra = x))
+    opt[Unit]("cassandra")
+      .action((x, c) => c.copy(cassandra = true))
       .text("Enable advanced cql queries for Apache Cassandra database")
   }
 
