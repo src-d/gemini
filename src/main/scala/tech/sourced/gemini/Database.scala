@@ -7,22 +7,31 @@ import scala.collection.JavaConverters._
 
 case class MetaCols(sha: String, repo: String, commit: String, path: String)
 case class HashtablesCols(sha: String, hashtable: String, value: String)
-case class DocFreqCols(id: String, docs: String, df: String)
+case class FeaturesDocsCols(id: String, docs: String)
+case class FeaturesFreqCols(id: String, feature: String, weight: String)
 
 /**
   * Tables is static typed definition of DB schema
   *
   * @param meta name of meta table
-  * @param hashtables name of hashtables table
-  * @param metaCols
-  * @param hashtablesCols
+  * @param hashtables prefix of hashtables table
+  * @param featuresDocs name of features documents table
+  * @param featuresFreq name of features frequencies table
+  * @param metaCols columns of meta table
+  * @param hashtablesCols columns of hashtables table
+  * @param featuresDocsCols columns of features documents table
+  * @param featuresFreqCols columns of features frequencies table
   */
 case class Tables(meta: String,
                   hashtables: String,
-                  docFreq: String,
+                  featuresDocs: String,
+                  featuresFreq: String,
                   metaCols: MetaCols,
                   hashtablesCols: HashtablesCols,
-                  docFreqCols: DocFreqCols)
+                  featuresDocsCols: FeaturesDocsCols,
+                  featuresFreqCols: FeaturesFreqCols) {
+  def hashtables(mode: String): String = s"${hashtables}_$mode"
+}
 
 /**
   * Database object contains common queries to DB

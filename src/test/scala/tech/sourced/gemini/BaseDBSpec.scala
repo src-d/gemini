@@ -40,10 +40,9 @@ trait BaseDBSpec extends BeforeAndAfterAll {
   }
 
   def insertHashtables(items: Iterable[HashtableItem], mode: String): Unit = {
-    val hashtablesTable = s"${Gemini.tables.hashtables}_${mode}"
     val cols = Gemini.tables.hashtablesCols
     items.foreach { case HashtableItem(ht, v, sha1) =>
-      val cql = s"""INSERT INTO $keyspace.${hashtablesTable}
+      val cql = s"""INSERT INTO $keyspace.${Gemini.tables.hashtables(mode)}
         (${cols.hashtable}, ${cols.value}, ${cols.sha})
         VALUES ($ht, $v, '$sha1')"""
       cassandra.execute(cql)
@@ -51,13 +50,20 @@ trait BaseDBSpec extends BeforeAndAfterAll {
   }
 
   def insertDocFreq(docFreq: OrderedDocFreq, mode: String): Unit = {
-    val cols = Gemini.tables.docFreqCols
-    val javaMap = docFreq.df.asJava
-
+    val docsCols = Gemini.tables.featuresDocsCols
     cassandra.execute(
-      s"INSERT INTO $keyspace.${Gemini.tables.docFreq} (${cols.id}, ${cols.docs}, ${cols.df}) VALUES (?, ?, ?)",
-      mode, int2Integer(docFreq.docs), javaMap
+      s"INSERT INTO $keyspace.${Gemini.tables.featuresDocs} (${docsCols.id}, ${docsCols.docs}) VALUES (?, ?)",
+      mode, int2Integer(docFreq.docs)
     )
+
+    val freqCols = Gemini.tables.featuresFreqCols
+    docFreq.df.foreach { case(feature, weight) =>
+      cassandra.execute(
+        s"INSERT INTO $keyspace.${Gemini.tables.featuresFreq}" +
+          s"(${freqCols.id}, ${freqCols.feature}, ${freqCols.weight}) VALUES (?, ?, ?)",
+        mode, feature, int2Integer(weight)
+      )
+    }
   }
 
   override def afterAll(): Unit = {
