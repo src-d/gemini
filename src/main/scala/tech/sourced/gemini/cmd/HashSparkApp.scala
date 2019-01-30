@@ -25,8 +25,11 @@ case class HashAppConfig(
   docFreqFile: String = "",
   verbose: Boolean = false,
   mode: String = Gemini.fileSimilarityMode,
+  replace: Boolean = false,
   gcsKeyFile: String = "",
-  replace: Boolean = false
+  awsKey: String = "",
+  awsSecret: String = "",
+  awsS3Endpoint: String = ""
 )
 
 /**
@@ -96,12 +99,21 @@ object HashSparkApp extends App with Logging {
     opt[String]("doc-freq-file")
       .action((x, c) => c.copy(docFreqFile = x))
       .text("path to file with feature frequencies")
-    opt[String]("gcs-keyfile")
-      .action((x, c) => c.copy(gcsKeyFile = x))
-      .text("path to JSON keyfile for authentication in Google Cloud Storage")
     opt[Unit]("replace")
       .action((x, c) => c.copy(replace = true))
       .text("replace results of previous hashing")
+    opt[String]("gcs-keyfile")
+      .action((x, c) => c.copy(gcsKeyFile = x))
+      .text("path to JSON keyfile for authentication in Google Cloud Storage")
+    opt[String]("aws-key")
+      .action((x, c) => c.copy(awsKey = x))
+      .text("AWS access keys")
+    opt[String]("aws-secret")
+      .action((x, c) => c.copy(awsSecret = x))
+      .text("AWS access secret")
+    opt[String]("aws-s3-endpoint")
+      .action((x, c) => c.copy(awsS3Endpoint = x))
+      .text("region S3 endpoint")
     arg[String]("<path-to-git-repos>")
       .required()
       .action((x, c) => c.copy(reposPath = x))
@@ -130,6 +142,28 @@ object HashSparkApp extends App with Logging {
 
       if (config.gcsKeyFile.nonEmpty) {
         spark.sparkContext.hadoopConfiguration.set("google.cloud.auth.service.account.json.keyfile", config.gcsKeyFile)
+      }
+
+      // AWS S3 combo
+      // The problem is we use old version of spark&hadoop which has 4 issues:
+      // 1. It brings as dependency old amazon-aws package
+      // which requires separate flag to enable support for current aws protocol
+      spark.sparkContext.hadoopConfiguration.set("com.amazonaws.services.s3.enableV4", "true")
+      // 2. Only NativeS3FileSystem works correctly with new protocol
+      spark.sparkContext.hadoopConfiguration.set("fs.s3a.impl", "org.apache.hadoop.fs.s3native.NativeS3FileSystem")
+      // 3. The client is configured to use the default S3A service endpoint
+      // but for v4 protocol it must be set to the region endpoint bucket belongs to
+      if (config.awsS3Endpoint.nonEmpty) {
+        spark.sparkContext.hadoopConfiguration.set("fs.s3a.endpoint", config.awsS3Endpoint)
+      }
+      // 4. Glob (from jgit-spark-connector) with key&secret in URL isn't supported by current version
+      // $ ./hash s3a://key:token@bucket/repos/
+      // Error: "Wrong FS: s3a://key:token@bucket/repos/*, expected: s3a://key:token@bucket"
+      if (config.awsKey.nonEmpty) {
+        spark.sparkContext.hadoopConfiguration.set("fs.s3a.awsAccessKeyId", config.awsKey)
+      }
+      if (config.awsSecret.nonEmpty) {
+        spark.sparkContext.hadoopConfiguration.set("fs.s3a.awsSecretAccessKey", config.awsSecret)
       }
 
       val reposPath = config.reposPath
