@@ -13,11 +13,11 @@ import org.apache.spark.storage.StorageLevel
 import org.bblfsh.client.BblfshClient
 import org.slf4j.{Logger => Slf4jLogger}
 import tech.sourced.engine._
+import tech.sourced.enry.Enry
 import tech.sourced.featurext.{Extractor, FEClient, SparkFEClient}
 import tech.sourced.featurext.generated.service.Feature
 import tech.sourced.gemini.util.MapAccumulator
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 
@@ -125,6 +125,7 @@ class Hash(session: SparkSession,
       .getCommits
       .getTreeEntries
       .getBlobs
+      .filter(r => !Enry.isVendor(r.getAs[String]("path")))
       .filter('is_binary === false)
   }
 

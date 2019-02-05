@@ -35,13 +35,13 @@ class SparkHashSpec extends FlatSpec
     val hashResult = hashWithNewGemini()
     val files = hashResult.files
     // num of files * num of repos
-    files.count() shouldEqual 6
+    files.count() shouldEqual 4
     // make sure DataFrame contains correct fields
     val row = files.limit(1).select("blob_id", "repository_id", "commit_hash", "path").collect().last
-    row.getAs[String]("blob_id") shouldEqual "d8c728246ae60060da0d199f530f47772f89c77b"
+    row.getAs[String]("blob_id") shouldEqual "6b600b3f0a6172af59eddecef8ea39fde80fe66c"
     row.getAs[String]("repository_id") shouldEqual "github.com/erizocosmico/borges.git"
     row.getAs[String]("commit_hash") shouldEqual "b1fcd3bf0ba810c05cb418babc09cc7f7783cc03"
-    row.getAs[String]("path") shouldEqual ".gitignore"
+    row.getAs[String]("path") shouldEqual "archiver.go"
   }
 
   "Hash" should "calculate hashes" in {
