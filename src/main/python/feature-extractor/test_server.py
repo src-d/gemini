@@ -25,7 +25,7 @@ class TestServer(unittest.TestCase):
             self.uast = node
 
         port = get_open_port()
-        self.server = _get_server(port)
+        self.server = _get_server(port, 1)
         self.server.start()
 
         channel = grpc.insecure_channel("localhost:%d" % port)

@@ -69,10 +69,10 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
         return service_pb2.FeaturesReply(features=features)
 
 
-def serve(port):
+def serve(port, workers):
     logger = logging.getLogger('feature-extractor')
 
-    server = _get_server(port)
+    server = _get_server(port, workers)
     server.start()
     logger.info("server started on port %d" % port)
 
@@ -85,17 +85,25 @@ def serve(port):
         server.stop(0)
 
 
-def _get_server(port):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+def _get_server(port, workers):
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=workers))
     service_pb2_grpc.add_FeatureExtractorServicer_to_server(Service(), server)
     server.add_insecure_port('[::]:%d' % port)
     return server
 
 
 if __name__ == '__main__':
+    port = int(os.getenv('FEATURE_EXT_PORT', "9001"))
+    workers = int(os.getenv('FEATURE_EXT_WORKERS', "10"))
+
     parser = argparse.ArgumentParser(description='Feature Extractor Service.')
     parser.add_argument(
-        "--port", type=int, default=9001, help="server listen port")
+        "--port", type=int, default=port, help="server listen port")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=workers,
+        help="number of service workers")
     args = parser.parse_args()
 
     # sourced-ml expects PYTHONHASHSEED != random or unset
@@ -105,4 +113,4 @@ if __name__ == '__main__':
         raise RuntimeError("PYTHONHASHSEED must be set")
 
     logging.basicConfig(level=logging.INFO)
-    serve(args.port)
+    serve(args.port, args.workers)
