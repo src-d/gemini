@@ -14,6 +14,11 @@ class FeatureExtractorStub(object):
     Args:
       channel: A grpc.Channel.
     """
+    self.Extract = channel.unary_unary(
+        '/tech.sourced.featurext.generated.FeatureExtractor/Extract',
+        request_serializer=service__pb2.ExtractRequest.SerializeToString,
+        response_deserializer=service__pb2.FeaturesReply.FromString,
+        )
     self.Identifiers = channel.unary_unary(
         '/tech.sourced.featurext.generated.FeatureExtractor/Identifiers',
         request_serializer=service__pb2.IdentifiersRequest.SerializeToString,
@@ -39,6 +44,13 @@ class FeatureExtractorStub(object):
 class FeatureExtractorServicer(object):
   """Feature Extractor Service
   """
+
+  def Extract(self, request, context):
+    """Extract allows to run multiple extractors on the same uast
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
 
   def Identifiers(self, request, context):
     """Extract identifiers weighted set
@@ -71,6 +83,11 @@ class FeatureExtractorServicer(object):
 
 def add_FeatureExtractorServicer_to_server(servicer, server):
   rpc_method_handlers = {
+      'Extract': grpc.unary_unary_rpc_method_handler(
+          servicer.Extract,
+          request_deserializer=service__pb2.ExtractRequest.FromString,
+          response_serializer=service__pb2.FeaturesReply.SerializeToString,
+      ),
       'Identifiers': grpc.unary_unary_rpc_method_handler(
           servicer.Identifiers,
           request_deserializer=service__pb2.IdentifiersRequest.FromString,

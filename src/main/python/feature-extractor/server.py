@@ -9,7 +9,8 @@ import os
 import time
 
 import grpc
-from sourced.ml.extractors import IdentifiersBagExtractor, LiteralsBagExtractor, UastSeqBagExtractor, GraphletBagExtractor
+from sourced.ml.extractors import IdentifiersBagExtractor, LiteralsBagExtractor, \
+    UastSeqBagExtractor, GraphletBagExtractor
 
 import pb.service_pb2 as service_pb2
 import pb.service_pb2_grpc as service_pb2_grpc
@@ -20,53 +21,80 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 class Service(service_pb2_grpc.FeatureExtractorServicer):
     """Feature Extractor Service"""
 
+    extractors_names = ["identifiers", "literals", "uast2seq", "graphlet"]
+
+    def Extract(self, request, context):
+        """ Extract features using multiple extrators """
+
+        extractors = []
+
+        for name in self.extractors_names:
+            if request.HasField(name):
+                options = getattr(request, name, None)
+                if options is None:
+                    continue
+                constructor = getattr(self, "_%s_extractor" % name)
+                extractors.append(constructor(options))
+
+        features = []
+
+        for ex in extractors:
+            features.extend(_features_iter_to_list(ex.extract(request.uast)))
+
+        return service_pb2.FeaturesReply(features=features)
+
     def Identifiers(self, request, context):
         """Extract identifiers weighted set"""
 
-        extractor = IdentifiersBagExtractor(
-            docfreq_threshold=request.docfreqThreshold,
-            split_stem=request.splitStem,
-            weight=request.weight or 1)
-
-        return self._create_response(extractor.extract(request.uast))
+        it = self._identifiers_extractor(request.options).extract(request.uast)
+        return service_pb2.FeaturesReply(features=_features_iter_to_list(it))
 
     def Literals(self, request, context):
         """Extract literals weighted set"""
 
-        extractor = LiteralsBagExtractor(
-            docfreq_threshold=request.docfreqThreshold,
-            weight=request.weight or 1)
-
-        return self._create_response(extractor.extract(request.uast))
+        it = self._literals_extractor(request.options).extract(request.uast)
+        return service_pb2.FeaturesReply(features=_features_iter_to_list(it))
 
     def Uast2seq(self, request, context):
         """Extract uast2seq weighted set"""
 
-        seq_len = list(request.seqLen) if request.seqLen else None
-
-        extractor = UastSeqBagExtractor(
-            docfreq_threshold=request.docfreqThreshold,
-            weight=request.weight or 1,
-            stride=request.stride or 1,
-            seq_len=seq_len or 5)
-
-        return self._create_response(extractor.extract(request.uast))
+        it = self._uast2seq_extractor(request.options).extract(request.uast)
+        return service_pb2.FeaturesReply(features=_features_iter_to_list(it))
 
     def Graphlet(self, request, context):
         """Extract graphlet weighted set"""
 
-        extractor = GraphletBagExtractor(
-            docfreq_threshold=request.docfreqThreshold,
-            weight=request.weight or 1)
+        it = self._graphlet_extractor(request.options).extract(request.uast)
+        return service_pb2.FeaturesReply(features=_features_iter_to_list(it))
 
-        return self._create_response(extractor.extract(request.uast))
+    def _identifiers_extractor(self, options):
+        return IdentifiersBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            split_stem=options.splitStem,
+            weight=options.weight or 1)
 
-    def _create_response(self, f_iter):
-        features = [
-            service_pb2.Feature(name=f[0], weight=f[1]) for f in f_iter
-        ]
+    def _literals_extractor(self, options):
+        return LiteralsBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            weight=options.weight or 1)
 
-        return service_pb2.FeaturesReply(features=features)
+    def _uast2seq_extractor(self, options):
+        seq_len = list(options.seqLen) if options.seqLen else None
+
+        return UastSeqBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            weight=options.weight or 1,
+            stride=options.stride or 1,
+            seq_len=seq_len or 5)
+
+    def _graphlet_extractor(self, options):
+        return GraphletBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            weight=options.weight or 1)
+
+
+def _features_iter_to_list(f_iter):
+    return [service_pb2.Feature(name=f[0], weight=f[1]) for f in f_iter]
 
 
 def serve(port, workers):

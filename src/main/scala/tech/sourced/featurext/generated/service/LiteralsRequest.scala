@@ -10,16 +10,14 @@ package tech.sourced.featurext.generated.service
 @SerialVersionUID(0L)
 final case class LiteralsRequest(
     uast: scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node] = None,
-    docfreqThreshold: _root_.scala.Int = 0,
-    weight: _root_.scala.Int = 0
+    options: scala.Option[tech.sourced.featurext.generated.service.LiteralsOptions] = None
     ) extends scalapb.GeneratedMessage with scalapb.Message[LiteralsRequest] with scalapb.lenses.Updatable[LiteralsRequest] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
       var __size = 0
       if (uast.isDefined) { __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(uast.get.serializedSize) + uast.get.serializedSize }
-      if (docfreqThreshold != 0) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt32Size(2, docfreqThreshold) }
-      if (weight != 0) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt32Size(3, weight) }
+      if (options.isDefined) { __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(options.get.serializedSize) + options.get.serializedSize }
       __size
     }
     final override def serializedSize: _root_.scala.Int = {
@@ -36,23 +34,15 @@ final case class LiteralsRequest(
         _output__.writeUInt32NoTag(__v.serializedSize)
         __v.writeTo(_output__)
       };
-      {
-        val __v = docfreqThreshold
-        if (__v != 0) {
-          _output__.writeInt32(2, __v)
-        }
-      };
-      {
-        val __v = weight
-        if (__v != 0) {
-          _output__.writeInt32(3, __v)
-        }
+      options.foreach { __v =>
+        _output__.writeTag(2, 2)
+        _output__.writeUInt32NoTag(__v.serializedSize)
+        __v.writeTo(_output__)
       };
     }
     def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): tech.sourced.featurext.generated.service.LiteralsRequest = {
       var __uast = this.uast
-      var __docfreqThreshold = this.docfreqThreshold
-      var __weight = this.weight
+      var __options = this.options
       var _done__ = false
       while (!_done__) {
         val _tag__ = _input__.readTag()
@@ -60,43 +50,33 @@ final case class LiteralsRequest(
           case 0 => _done__ = true
           case 10 =>
             __uast = Option(_root_.scalapb.LiteParser.readMessage(_input__, __uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.generated.Node.defaultInstance)))
-          case 16 =>
-            __docfreqThreshold = _input__.readInt32()
-          case 24 =>
-            __weight = _input__.readInt32()
+          case 18 =>
+            __options = Option(_root_.scalapb.LiteParser.readMessage(_input__, __options.getOrElse(tech.sourced.featurext.generated.service.LiteralsOptions.defaultInstance)))
           case tag => _input__.skipField(tag)
         }
       }
       tech.sourced.featurext.generated.service.LiteralsRequest(
           uast = __uast,
-          docfreqThreshold = __docfreqThreshold,
-          weight = __weight
+          options = __options
       )
     }
     def getUast: gopkg.in.bblfsh.sdk.v1.uast.generated.Node = uast.getOrElse(gopkg.in.bblfsh.sdk.v1.uast.generated.Node.defaultInstance)
     def clearUast: LiteralsRequest = copy(uast = None)
     def withUast(__v: gopkg.in.bblfsh.sdk.v1.uast.generated.Node): LiteralsRequest = copy(uast = Option(__v))
-    def withDocfreqThreshold(__v: _root_.scala.Int): LiteralsRequest = copy(docfreqThreshold = __v)
-    def withWeight(__v: _root_.scala.Int): LiteralsRequest = copy(weight = __v)
+    def getOptions: tech.sourced.featurext.generated.service.LiteralsOptions = options.getOrElse(tech.sourced.featurext.generated.service.LiteralsOptions.defaultInstance)
+    def clearOptions: LiteralsRequest = copy(options = None)
+    def withOptions(__v: tech.sourced.featurext.generated.service.LiteralsOptions): LiteralsRequest = copy(options = Option(__v))
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => uast.orNull
-        case 2 => {
-          val __t = docfreqThreshold
-          if (__t != 0) __t else null
-        }
-        case 3 => {
-          val __t = weight
-          if (__t != 0) __t else null
-        }
+        case 2 => options.orNull
       }
     }
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
       require(__field.containingMessage eq companion.scalaDescriptor)
       (__field.number: @_root_.scala.unchecked) match {
         case 1 => uast.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
-        case 2 => _root_.scalapb.descriptors.PInt(docfreqThreshold)
-        case 3 => _root_.scalapb.descriptors.PInt(weight)
+        case 2 => options.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
@@ -110,8 +90,7 @@ object LiteralsRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.fe
     val __fields = javaDescriptor.getFields
     tech.sourced.featurext.generated.service.LiteralsRequest(
       __fieldsMap.get(__fields.get(0)).asInstanceOf[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]],
-      __fieldsMap.getOrElse(__fields.get(1), 0).asInstanceOf[_root_.scala.Int],
-      __fieldsMap.getOrElse(__fields.get(2), 0).asInstanceOf[_root_.scala.Int]
+      __fieldsMap.get(__fields.get(1)).asInstanceOf[scala.Option[tech.sourced.featurext.generated.service.LiteralsOptions]]
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[tech.sourced.featurext.generated.service.LiteralsRequest] = _root_.scalapb.descriptors.Reads{
@@ -119,17 +98,17 @@ object LiteralsRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.fe
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
       tech.sourced.featurext.generated.service.LiteralsRequest(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).flatMap(_.as[scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]]),
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Int]).getOrElse(0),
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Int]).getOrElse(0)
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).flatMap(_.as[scala.Option[tech.sourced.featurext.generated.service.LiteralsOptions]])
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = ServiceProto.javaDescriptor.getMessageTypes.get(1)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = ServiceProto.scalaDescriptor.messages(1)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = ServiceProto.javaDescriptor.getMessageTypes.get(6)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = ServiceProto.scalaDescriptor.messages(6)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
       case 1 => __out = gopkg.in.bblfsh.sdk.v1.uast.generated.Node
+      case 2 => __out = tech.sourced.featurext.generated.service.LiteralsOptions
     }
     __out
   }
@@ -140,10 +119,9 @@ object LiteralsRequest extends scalapb.GeneratedMessageCompanion[tech.sourced.fe
   implicit class LiteralsRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.service.LiteralsRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, tech.sourced.featurext.generated.service.LiteralsRequest](_l) {
     def uast: _root_.scalapb.lenses.Lens[UpperPB, gopkg.in.bblfsh.sdk.v1.uast.generated.Node] = field(_.getUast)((c_, f_) => c_.copy(uast = Option(f_)))
     def optionalUast: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[gopkg.in.bblfsh.sdk.v1.uast.generated.Node]] = field(_.uast)((c_, f_) => c_.copy(uast = f_))
-    def docfreqThreshold: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.docfreqThreshold)((c_, f_) => c_.copy(docfreqThreshold = f_))
-    def weight: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.weight)((c_, f_) => c_.copy(weight = f_))
+    def options: _root_.scalapb.lenses.Lens[UpperPB, tech.sourced.featurext.generated.service.LiteralsOptions] = field(_.getOptions)((c_, f_) => c_.copy(options = Option(f_)))
+    def optionalOptions: _root_.scalapb.lenses.Lens[UpperPB, scala.Option[tech.sourced.featurext.generated.service.LiteralsOptions]] = field(_.options)((c_, f_) => c_.copy(options = f_))
   }
   final val UAST_FIELD_NUMBER = 1
-  final val DOCFREQTHRESHOLD_FIELD_NUMBER = 2
-  final val WEIGHT_FIELD_NUMBER = 3
+  final val OPTIONS_FIELD_NUMBER = 2
 }

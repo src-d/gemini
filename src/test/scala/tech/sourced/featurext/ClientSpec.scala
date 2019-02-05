@@ -34,7 +34,7 @@ class ClientSpec extends FlatSpec
   }
 
   "identifiers call" should "return correct response" in {
-    val request = IdentifiersRequest(docfreqThreshold=5, uast=Some(uast))
+    val request = IdentifiersRequest(uast=Some(uast), options=Some(IdentifiersOptions(docfreqThreshold=5)))
     val reply = blockingStub.identifiers(request)
     var features = reply.features.sortBy(_.name)
 
@@ -45,7 +45,7 @@ class ClientSpec extends FlatSpec
   }
 
   "literals call" should "return correct response" in {
-    val request = LiteralsRequest(docfreqThreshold=5, uast=Some(uast))
+    val request = LiteralsRequest(uast=Some(uast), options=Some(LiteralsOptions(docfreqThreshold=5)))
     val reply = blockingStub.literals(request)
     var features = reply.features.sortBy(_.name)
 
@@ -56,7 +56,7 @@ class ClientSpec extends FlatSpec
   }
 
   "uast2seq call" should "return correct response" in {
-    val request = Uast2seqRequest(docfreqThreshold=5, uast=Some(uast))
+    val request = Uast2seqRequest(uast=Some(uast), options=Some(Uast2seqOptions(docfreqThreshold=5)))
     val reply = blockingStub.uast2Seq(request)
     var features = reply.features.sortBy(_.name)
 
@@ -67,7 +67,7 @@ class ClientSpec extends FlatSpec
   }
 
   "graphlet call" should "return correct response" in {
-    val request = GraphletRequest(docfreqThreshold=5, uast=Some(uast))
+    val request = GraphletRequest(uast=Some(uast), options=Some(GraphletOptions(docfreqThreshold=5)))
     val reply = blockingStub.graphlet(request)
     var features = reply.features.sortBy(_.name)
 
