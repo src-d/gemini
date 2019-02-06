@@ -153,7 +153,12 @@ class Hash(session: SparkSession,
           val uast = Node.parseFrom(byteArr)
           SparkFEClient.extract(uast, feConfig, extractors, Some(skippedFiles))
         }
-        features.map(feat => (feat.name, row.getAs[String]("document"), feat.weight.toLong))
+        features
+          // 65535 is the limit for a key in Scylla
+          // key = (hash mode, feature.name)
+          // and it's just sane to remove such huge name
+          .filter(_.name.length < 65530)
+          .map(feat => (feat.name, row.getAs[String]("document"), feat.weight.toLong))
       }
       .toDF("feature", "doc", "weight")
   }
