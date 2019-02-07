@@ -196,6 +196,8 @@ class Hash(session: SparkSession,
   ): Dataset[RDDHash] = {
     log.warn("hashing features")
 
+    val wmh = makeBroadcastedWmh(docFreq.tokens.size, sampleSize)
+
     val tf = features.rdd
       .map { case Row(feature: String, doc: String, weight: Long) => (RDDFeatureKey(feature, doc), weight) }
       .reduceByKey(_ + _)
@@ -204,9 +206,8 @@ class Hash(session: SparkSession,
       .map(row => (row._1.doc, Feature(row._1.token, row._2)))
       .groupByKey(session.sparkContext.defaultParallelism)
       .mapPartitions { partIter =>
-        val wmh = FeaturesHash.initWmh(docFreq.tokens.size, sampleSize) // ~1.6 Gb (for 1 PGA bucket)
         partIter.map { case (doc, features) =>
-          RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features.iterator, docFreq)))
+          RDDHash(doc, wmh.value.hash(FeaturesHash.toBagOfFeatures(features.iterator, docFreq)))
         }
       }
     tfIdf.toDS()
@@ -222,15 +223,31 @@ class Hash(session: SparkSession,
   ): Dataset[RDDHash] = {
     log.warn("hashing features")
 
+    val wmh = makeBroadcastedWmh(docFreq.tokens.size, sampleSize)
     val tf = features.groupBy("feature", "doc").sum("weight").alias("weight")
     val tfIdf = tf
       .map { case Row(token: String, doc: String, weight: Long) => (doc, Feature(token, weight)) }
       .groupByKey { case (doc, _) => doc }
       .mapGroups { (doc, features) =>
-        val wmh = FeaturesHash.initWmh(docFreq.tokens.size, sampleSize) // ~1.6 Gb RAM (for 1 PGA bucket)
-        RDDHash(doc, wmh.hash(FeaturesHash.toBagOfFeatures(features.map(_._2), docFreq)))
+        RDDHash(doc, wmh.value.hash(FeaturesHash.toBagOfFeatures(features.map(_._2), docFreq)))
       }
     tfIdf
+  }
+
+  /**
+    * Create WeightedMinHash instance and broadcasts it
+    *
+    * create it only once and keep on node
+    * because the instance is relatively huge (2 * N of features * sampleSize(160 or 256 depends on mode) * 8)
+    * According to tests ~1.6 Gb per 1 PGA bucket (but really depends on bucket)
+    *
+    * @param tokens     number of features
+    * @param sampleSize depends on hashing mode and threshold
+    * @return
+    */
+  def makeBroadcastedWmh(tokens: Int, sampleSize: Int): Broadcast[WeightedMinHash] = {
+    val wmh = FeaturesHash.initWmh(tokens, sampleSize)
+    session.sparkContext.broadcast(wmh)
   }
 
   protected def saveDocFreqToDB(docFreq: OrderedDocFreq, keyspace: String, tables: Tables): Unit = {

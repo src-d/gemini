@@ -7,6 +7,8 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
+
 import static java.lang.Math.floor;
 import static java.lang.Math.log;
 
@@ -15,7 +17,7 @@ import static java.lang.Math.log;
  * https://github.com/ekzhu/datasketch/blob/master/datasketch/weighted_minhash.py
  * https://github.com/src-d/go-license-detector/blob/master/licensedb/internal/wmh/wmh.go
  */
-public class WeightedMinHash {
+public class WeightedMinHash implements Serializable {
     private static final Logger log = LoggerFactory.getLogger(WeightedMinHash.class);
 
     protected int dim;
