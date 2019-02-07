@@ -21,38 +21,41 @@ from pb.service_pb2 import gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_g
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-
 # keep extractors out of the Service class to be able to pickle them
 # return list instead of iterator for pickle also
 
 
 def _identifiers_extractor(uast, options):
-    return list(IdentifiersBagExtractor(
-        docfreq_threshold=options.docfreqThreshold,
-        split_stem=options.splitStem,
-        weight=options.weight or 1).extract(uast))
+    return list(
+        IdentifiersBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            split_stem=options.splitStem,
+            weight=options.weight or 1).extract(uast))
 
 
 def _literals_extractor(uast, options):
-    return list(LiteralsBagExtractor(
-        docfreq_threshold=options.docfreqThreshold,
-        weight=options.weight or 1).extract(uast))
+    return list(
+        LiteralsBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            weight=options.weight or 1).extract(uast))
 
 
 def _uast2seq_extractor(uast, options):
     seq_len = list(options.seqLen) if options.seqLen else None
 
-    return list(UastSeqBagExtractor(
-        docfreq_threshold=options.docfreqThreshold,
-        weight=options.weight or 1,
-        stride=options.stride or 1,
-        seq_len=seq_len or 5).extract(uast))
+    return list(
+        UastSeqBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            weight=options.weight or 1,
+            stride=options.stride or 1,
+            seq_len=seq_len or 5).extract(uast))
 
 
 def _graphlet_extractor(uast, options):
-    return list(GraphletBagExtractor(
-        docfreq_threshold=options.docfreqThreshold,
-        weight=options.weight or 1).extract(uast))
+    return list(
+        GraphletBagExtractor(
+            docfreq_threshold=options.docfreqThreshold,
+            weight=options.weight or 1).extract(uast))
 
 
 def _features_from_iter(f_iter):
