@@ -2,15 +2,16 @@
 import sys
 sys.path.append('./pb')
 
+from multiprocessing import Pool
 import grpc
 import json
 import unittest
 
-import pb.service_pb2 as service_pb2
-import pb.service_pb2_grpc as service_pb2_grpc
 from google.protobuf.json_format import ParseDict as ProtoParseDict
-from pb.service_pb2 import gopkg_dot_in_dot_bblfsh_dot_sdk_dot_v1_dot_uast_dot_generated__pb2 as uast_pb
-from server import _get_server
+# all grpc stuff must be imported from server and not directly from pb package
+# otherwise requests will be failing with
+# PicklingError: Can't pickle <class ...>: it's not the same object as ...
+from server import _get_server, service_pb2, service_pb2_grpc, uast_pb
 
 
 class TestServer(unittest.TestCase):
@@ -24,8 +25,9 @@ class TestServer(unittest.TestCase):
             node.ParseFromString(f.read())
             self.uast = node
 
+        pool = Pool(processes=1)
         port = get_open_port()
-        self.server = _get_server(port, 1)
+        self.server = _get_server(port, 1, pool)
         self.server.start()
 
         channel = grpc.insecure_channel("localhost:%d" % port)
