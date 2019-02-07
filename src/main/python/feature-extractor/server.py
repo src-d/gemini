@@ -74,7 +74,7 @@ class Service(service_pb2_grpc.FeatureExtractorServicer):
     }
 
     def __init__(self, pool):
-        super(Service, self)
+        super(Service, self).__init__()
         self.pool = pool
 
     def Extract(self, request, context):
