@@ -25,7 +25,7 @@ object FeaturesHash {
     * Factory method for initializing WMH data structure
     * \w default parameters, specific to Gemini.
     *
-    * Allocates at least 2*dim*sampleSize*4 bytes of RAM
+    * Allocates at least 3*dim*sampleSize*4 bytes of RAM
     *
     * @param dim weight vector size
     * @param sampleSize number of samples
