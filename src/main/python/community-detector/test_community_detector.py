@@ -1,3 +1,4 @@
+from collections import defaultdict
 import unittest
 import os
 
@@ -23,9 +24,12 @@ class TestCommunityDetector(unittest.TestCase):
         with numpy.load("%s/fixtures/input.npz" % (dirname)) as input_npz:
             buckets = build_csr_matrix(input_npz)
             cc = input_npz['id_to_cc']
+            ccs = defaultdict(list)
+            for i, c in enumerate(cc):
+                ccs[c].append(i)
 
         # Call community_detector
-        communities = detect_communities(cc.tolist(), buckets)
+        communities = detect_communities(ccs, buckets)
 
         # Replaces CommunitiesModel().construct(communities, ccsmodel.id_to_element).save(output)
         size = sum(map(len, communities))

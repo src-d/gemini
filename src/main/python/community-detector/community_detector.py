@@ -1,4 +1,3 @@
-from collections import defaultdict
 from itertools import chain
 import logging
 
@@ -34,30 +33,7 @@ def build_matrix(id_to_buckets):
     return csr_matrix((data, indices, indptr))
 
 
-def build_id_to_cc(connected_components, length):
-    """Builds a ndarray that associates element id to a connected component
-
-    Same code as in Apollo ConnectedComponentsModel.
-    https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L28
-
-    Args:
-        connected_components: list of tuples (connected-component, element ids)
-        length: number of elements
-
-    Returns:
-        A 1 dimension ndarray. The index will be the element id, and the
-            value is the connected component
-    """
-
-    id_to_cc = numpy.zeros(length, dtype=numpy.uint32)
-    for cc, ids in connected_components:
-        for id_ in ids:
-            id_to_cc[id_] = cc
-
-    return id_to_cc
-
-
-def detect_communities(cc,
+def detect_communities(ccs,
                        buckets_matrix,
                        edges="linear",
                        algorithm="walktrap",
@@ -68,8 +44,8 @@ def detect_communities(cc,
     https://github.com/src-d/apollo/blob/6b370b5f34ba9e31cf3310e70a2eff35dd978faa/apollo/graph.py#L191
 
     Args:
-        cc: list with the connected components. Index is the element id, the
-            value is the connected component
+        ccs: list with the connected components. Index is the connected component, the
+            value is the list of element ids
         buckets_matrix: scipy.sparse.csr_matrix with the buckets. One row for
             each element, with a column for each bucket. If the element is in a
             bucket, the corresponding row,column (element id, bucket id) is 1,
@@ -80,7 +56,7 @@ def detect_communities(cc,
             - quadratic: slow, but surely fits all the algorithms.
         algorithm: The community detection algorithm to apply.
         algorithm_params: Parameters for the algorithm (**kwargs, JSON format).
-    
+
     Returns:
         A list of communities. Each community is a list of element-ids
     """
@@ -92,11 +68,6 @@ def detect_communities(cc,
 
     log = logging.getLogger("community-detector")
     log.debug("Building the connected components")
-
-    ccs = defaultdict(list)
-
-    for i, c in enumerate(cc):
-        ccs[c].append(i)
 
     buckindices = buckets_matrix.indices
     buckindptr = buckets_matrix.indptr
