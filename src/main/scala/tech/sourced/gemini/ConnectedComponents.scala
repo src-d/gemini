@@ -64,7 +64,9 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
           val elId = elementIds.getOrElseUpdate(sha1, elementIds.size)
           if (!band.contains(value)) {
             if (band.isDefined) {
-              buckets = buckets :+ bucket
+              if (bucket.size > 1) {
+                buckets = buckets :+ bucket
+              }
               bucket = List[Int]()
             }
             band = Some(value)
@@ -72,7 +74,7 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
           bucket = bucket :+ elId
         }
 
-        if (bucket.nonEmpty) {
+        if (bucket.size > 1) {
           buckets = buckets :+ bucket
         }
 
