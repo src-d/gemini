@@ -238,8 +238,8 @@ class Hash(session: SparkSession,
     * Create WeightedMinHash instance and broadcasts it
     *
     * create it only once and keep on node
-    * because the instance is relatively huge (2 * N of features * sampleSize(160 or 256 depends on mode) * 8)
-    * According to tests ~1.6 Gb per 1 PGA bucket (but really depends on bucket)
+    * because the instance is relatively huge (3 * N of features * sampleSize(160 or 256 depends on mode) * 4)
+    * On my system with 1.000.000 tokens it allocated 1920009680 bytes (~2Gb) (measured using JAMM)
     *
     * @param tokens     number of features
     * @param sampleSize depends on hashing mode and threshold

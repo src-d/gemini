@@ -23,9 +23,9 @@ public class WeightedMinHash implements Serializable {
     protected int dim;
     protected int sampleSize;
 
-    protected double[][] rs;
-    protected double[][] lnCs;
-    protected double[][] betas;
+    protected float[][] rs;
+    protected float[][] lnCs;
+    protected float[][] betas;
 
     /**
      * Initializes a WeightedMinHash
@@ -53,37 +53,37 @@ public class WeightedMinHash implements Serializable {
 
         GammaDistribution gammaGen = new GammaDistribution(randSrc, 2, 1);
 
-        rs = new double[sampleSize][dim];
+        rs = new float[sampleSize][dim];
 
         for (int y = 0; y < sampleSize; y++) {
-            double[] arr = rs[y];
+            float[] arr = rs[y];
             for (int x = 0; x < dim; x++) {
-                arr[x] = gammaGen.sample();
+                arr[x] = (float)gammaGen.sample();
             }
         }
 
-        lnCs = new double[sampleSize][dim];
+        lnCs = new float[sampleSize][dim];
 
         for (int y = 0; y < sampleSize; y++) {
-            double[] arr = lnCs[y];
+            float[] arr = lnCs[y];
             for (int x = 0; x < dim; x++) {
-                arr[x] = log(gammaGen.sample());
+                arr[x] = (float)log(gammaGen.sample());
             }
         }
 
         UniformRealDistribution uniformGen = new UniformRealDistribution(randSrc, 0, 1);
 
-        betas = new double[sampleSize][dim];
+        betas = new float[sampleSize][dim];
 
         for (int y = 0; y < sampleSize; y++) {
-            double[] arr = betas[y];
+            float[] arr = betas[y];
             for (int x = 0; x < dim; x++) {
-                arr[x] = uniformGen.sample();
+                arr[x] = (float)uniformGen.sample();
             }
         }
     }
 
-    WeightedMinHash(int dim, int sampleSize, double[][] rs, double[][] lnCs, double[][] betas) {
+    WeightedMinHash(int dim, int sampleSize, float[][] rs, float[][] lnCs, float[][] betas) {
         this.dim = dim;
         this.sampleSize = sampleSize;
         this.rs = rs;
@@ -97,7 +97,7 @@ public class WeightedMinHash implements Serializable {
      * @param values weighted vector
      * @return weighted MinHash
      */
-    public long[][] hash(double[] values) {
+    public long[][] hash(float[] values) {
         if (values.length != dim) {
             throw new IllegalArgumentException("input dimension mismatch, expected " + dim);
         }

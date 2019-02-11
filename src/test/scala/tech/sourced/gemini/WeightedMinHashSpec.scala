@@ -18,11 +18,11 @@ class WeightedMinHashSpec extends FlatSpec with Matchers {
     mg.sampleSize should be(4)
   }
 
-  def readCSV(filename: String): Array[Array[Double]] = {
+  def readCSV(filename: String): Array[Array[Float]] = {
     Source
       .fromFile(s"src/test/resources/weighted-minhash/csv/${filename}")
       .getLines()
-      .map(_.split(",").map(_.trim.toDouble))
+      .map(_.split(",").map(_.trim.toFloat))
       .toArray
   }
 

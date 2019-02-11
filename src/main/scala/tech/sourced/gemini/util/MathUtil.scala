@@ -26,5 +26,5 @@ object MathUtil {
     )
   }
 
-  def logTFlogIDF(tf: Double, df: Double, ndocs: Int): Double = math.log(1 + tf) * math.log(ndocs / df)
+  def logTFlogIDF(tf: Float, df: Int, ndocs: Int): Float = (math.log(1 + tf) * math.log(ndocs / df)).toFloat
 }
