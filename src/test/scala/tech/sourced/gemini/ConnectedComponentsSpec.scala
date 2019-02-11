@@ -11,20 +11,38 @@ import scala.collection.mutable.ListBuffer
 class TestConnectedComponents(log: Slf4jLogger) extends ConnectedComponents(log) {
   def getHashtables(): List[Byte] = List(0, 1, 2)
 
-  def getHashValues(hashtable: Byte): Iterable[FileHash] = {
-    val uniqVal = hashtable + 10
-    val intersectVal = hashtable + 1
+  def intToHash(x: Byte): ByteBuffer = ByteBuffer.wrap(Array[Byte](x))
 
-    List(
-      // same elem in all buckets
-      FileHash("a", ByteBuffer.wrap(Array[Byte](1))),
-      FileHash("b" + hashtable.toString, ByteBuffer.wrap(Array[Byte](1))),
-      // different elem in each bucket
-      FileHash("c" + hashtable.toString, ByteBuffer.wrap(Array[Byte](uniqVal.toByte))),
-      // appear in 2 buckets
-      FileHash("d", ByteBuffer.wrap(Array[Byte](intersectVal.toByte))),
-      FileHash("d" + hashtable.toString, ByteBuffer.wrap(Array[Byte](intersectVal.toByte)))
-    )
+  // emulate database, restrictions:
+  // - each hashtable must have all elements
+  // - results must be sorted by (hash values, key)
+  def getHashValues(hashtable: Byte): Iterable[FileHash] = {
+    hashtable match {
+      // bucket for a&b and d&3
+      case 0 => List(
+        FileHash("a", intToHash(1)),
+        FileHash("b", intToHash(1)),
+        FileHash("c", intToHash(2)),
+        FileHash("d", intToHash(3)),
+        FileHash("e", intToHash(3))
+      )
+      // bucket for b&c
+      case 1 => List(
+        FileHash("a", intToHash(1)),
+        FileHash("b", intToHash(2)),
+        FileHash("c", intToHash(2)),
+        FileHash("d", intToHash(3)),
+        FileHash("e", intToHash(4))
+      )
+      // no bucket
+      case 2 => List(
+        FileHash("a", intToHash(1)),
+        FileHash("b", intToHash(2)),
+        FileHash("c", intToHash(3)),
+        FileHash("d", intToHash(4)),
+        FileHash("e", intToHash(5))
+      )
+    }
   }
 }
 
@@ -36,32 +54,22 @@ class ConnectedComponentsSpec extends FlatSpec
 
     "makeBuckets" should "correctly create buckets" in {
       cc.makeBuckets()._1 shouldEqual List[List[Int]](
+        // buckets from hashtable 0
         List(0, 1),
-        List(2),
         List(3, 4),
-        List(0, 5),
-        List(6),
-        List(3, 7),
-        List(0, 8),
-        List(9),
-        List(3, 10)
+        // bucket from hashtable 1
+        List(1, 2)
       )
     }
 
     "elementsToBuckets" should "create correct map" in {
       val (buckets, _) = cc.makeBuckets()
       cc.elementsToBuckets(buckets) shouldEqual Map[Int, List[Int]](
-        0 -> List(0, 3, 6),
-        1 -> List(0),
-        2 -> List(1),
-        3 -> List(2, 5, 8),
-        4 -> List(2),
-        5 -> List(3),
-        6 -> List(4),
-        7 -> List(5),
-        8 -> List(6),
-        9 -> List(7),
-        10 -> List(8)
+        0 -> List(0),
+        1 -> List(0, 2),
+        2 -> List(2),
+        3 -> List(1),
+        4 -> List(1)
       )
     }
 
@@ -69,11 +77,8 @@ class ConnectedComponentsSpec extends FlatSpec
     val (buckets, _) = cc.makeBuckets()
     val elementToBuckets = cc.elementsToBuckets(buckets)
     cc.findInBuckets(buckets, elementToBuckets) shouldEqual Map[Int, Set[Int]](
-      0 -> Set(3, 10, 7, 4),
-      1 -> Set(9),
-      2 -> Set(0, 8, 5, 1),
-      3 -> Set(6),
-      4 -> Set(2)
+      0 -> Set(1, 2, 0),
+      1 -> Set(3, 4)
     )
   }
 }
