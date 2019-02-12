@@ -253,7 +253,7 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
       .withConf(parquetConf)
       .build()
 
-    elsToBuckets.foreach { case (_, bucket) =>
+    elsToBuckets.toSeq.sortBy(_._1).foreach { case (_, bucket) =>
       val record = new GenericRecordBuilder(schemaBuckets)
         .set("buckets", bucket.toArray)
         .build()
