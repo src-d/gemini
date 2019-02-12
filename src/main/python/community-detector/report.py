@@ -13,11 +13,8 @@ def read_connected_components(filepath):
 
 
 def read_buckets_matrix(filepath):
-    dict = pq.read_table(filepath).to_pydict()
-
-    id_to_buckets = dict['buckets']
-
-    return community_detector.build_matrix(id_to_buckets)
+    d = pq.read_table(filepath).to_pydict()
+    return community_detector.build_matrix(list(zip(d['elId'], d['buckets'])))
 
 
 def main(dirpath):

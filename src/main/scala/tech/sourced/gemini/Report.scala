@@ -240,6 +240,7 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     val schemaBuckets = SchemaBuilder
       .record("id_to_buckets")
       .fields()
+      .name("elId").`type`().intType().noDefault()
       .name("buckets").`type`().array().items().intType().noDefault()
       .endRecord()
 
@@ -253,8 +254,9 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
       .withConf(parquetConf)
       .build()
 
-    elsToBuckets.toSeq.sortBy(_._1).foreach { case (_, bucket) =>
+    elsToBuckets.toSeq.sortBy(_._1).foreach { case (elId, bucket) =>
       val record = new GenericRecordBuilder(schemaBuckets)
+        .set("elId", elId)
         .set("buckets", bucket.toArray)
         .build()
 

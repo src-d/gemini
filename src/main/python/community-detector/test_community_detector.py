@@ -6,7 +6,7 @@ import numpy
 from numpy.testing import assert_array_equal
 from scipy.sparse import csr_matrix
 
-from community_detector import detect_communities
+from community_detector import detect_communities, build_matrix
 
 dirname = os.path.dirname(__file__)
 
@@ -49,6 +49,47 @@ class TestCommunityDetector(unittest.TestCase):
         # Assert equality
         assert_array_equal(data, fixture_data)
         assert_array_equal(indptr, fixture_indptr)
+
+    def test_with_optimized_input(self):
+        # scala part would remove elements that appear only in 1 bucket
+        id_to_buckets = [
+            [0, [0]],
+            [1, [0, 2]],
+            [5, [2]],
+            [6, [1]],
+            [7, [1]],
+        ]
+        ccs = {
+            0: [1, 5, 0],
+            1: [6, 7]
+        }
+        buckets = build_matrix(id_to_buckets)
+        communities = detect_communities(ccs, buckets)
+
+        self.assertTrue(len(communities) == 3)
+        assert_array_equal(communities[0], [6, 7])
+        assert_array_equal(communities[1], [1, 0])
+        assert_array_equal(communities[2], [5])
+
+        # input without skipped ids should produce the same communites
+        id_to_buckets = [
+            [0, [0]],
+            [1, [0, 2]],
+            [2, [2]],
+            [3, [1]],
+            [4, [1]],
+        ]
+        ccs = {
+            0: [1, 2, 0],
+            1: [3, 4]
+        }
+        buckets = build_matrix(id_to_buckets)
+        communities = detect_communities(ccs, buckets)
+
+        self.assertTrue(len(communities) == 3)
+        assert_array_equal(communities[0], [3, 4])
+        assert_array_equal(communities[1], [1, 0])
+        assert_array_equal(communities[2], [2])
 
 
 if __name__ == '__main__':

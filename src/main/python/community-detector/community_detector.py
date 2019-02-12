@@ -9,11 +9,8 @@ from scipy.sparse import csr_matrix
 def build_matrix(id_to_buckets):
     """Builds a CSR matrix from a list of lists of buckets
 
-    Same code as in Apollo ConnectedComponentsModel.
-    https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L28
-
     Args:
-        id_to_buckets: list of lists of buckets. The index is the element id
+        id_to_buckets: list of lists of elementid, buckets.
 
     Returns:
         A scipy.sparse.csr_matrix with the same contents
@@ -22,14 +19,16 @@ def build_matrix(id_to_buckets):
     if len(id_to_buckets) == 0:
         return csr_matrix((0, 0), dtype=numpy.uint8)
 
-    data = numpy.ones(sum(map(len, id_to_buckets)), dtype=numpy.uint8)
+    max_el_id = max((item[0] for item in id_to_buckets))
+    data = numpy.ones(
+        sum((len(item[1]) for item in id_to_buckets)), dtype=numpy.uint8)
     indices = numpy.zeros(len(data), dtype=numpy.uint32)
-    indptr = numpy.zeros(len(id_to_buckets) + 1, dtype=numpy.uint32)
+    indptr = numpy.zeros(max_el_id + 2, dtype=numpy.uint32)
     pos = 0
-    for i, element in enumerate(id_to_buckets):
-        indices[pos:(pos + len(element))] = element
-        pos += len(element)
-        indptr[i + 1] = pos
+    for el_id, bucket in id_to_buckets:
+        indices[pos:(pos + len(bucket))] = bucket
+        pos += len(bucket)
+        indptr[el_id + 1:] = pos
     return csr_matrix((data, indices, indptr))
 
 
@@ -44,7 +43,7 @@ def detect_communities(ccs,
     https://github.com/src-d/apollo/blob/6b370b5f34ba9e31cf3310e70a2eff35dd978faa/apollo/graph.py#L191
 
     Args:
-        ccs: list with the connected components. Index is the connected component, the
+        ccs: dict with the connected components. Index is the connected component, the
             value is the list of element ids
         buckets_matrix: scipy.sparse.csr_matrix with the buckets. One row for
             each element, with a column for each bucket. If the element is in a
@@ -91,12 +90,12 @@ def detect_communities(ccs,
         fat_ccs.append(vertices)
 
     log.debug("Building %d graphs", len(fat_ccs))
+    bucket_weights = buckets_matrix.sum(axis=0)
 
     for vertices in fat_ccs:
         if linear:
             edges = []
             weights = []
-            bucket_weights = buckets_matrix.sum(axis=0)
             buckets = set()
             for i in vertices:
                 for j in range(buckindptr[i], buckindptr[i + 1]):
@@ -113,8 +112,8 @@ def detect_communities(ccs,
                 for j in range(buckindptr[i], buckindptr[i + 1]):
                     buckets.add(buckindices[j])
             for bucket in buckets:
-                buckverts = \
-                    buckmat_csc.indices[buckmat_csc.indptr[bucket]:buckmat_csc.indptr[bucket + 1]]
+                buckverts = buckmat_csc.indices[
+                    buckmat_csc.indptr[bucket]:buckmat_csc.indptr[bucket + 1]]
                 for i, x in enumerate(buckverts):
                     for y in buckverts:
                         if x < y:
