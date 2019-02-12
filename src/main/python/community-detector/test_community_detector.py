@@ -31,24 +31,20 @@ class TestCommunityDetector(unittest.TestCase):
         # Call community_detector
         communities = detect_communities(ccs, buckets)
 
-        # Replaces CommunitiesModel().construct(communities, ccsmodel.id_to_element).save(output)
-        size = sum(map(len, communities))
-        data = numpy.zeros(size, dtype=numpy.uint32)
-        indptr = numpy.zeros(len(communities) + 1, dtype=numpy.int64)
-        pos = 0
-        for i, community in enumerate(communities):
-            data[pos:pos + len(community)] = community
-            pos += len(community)
-            indptr[i + 1] = pos
-
         # Read npz output
         with numpy.load("%s/fixtures/output.npz" % (dirname)) as output:
-            fixture_data = output['data']
             fixture_indptr = output['indptr']
+            fixture_data = output['data']
+            fixture_communities = []
+            for i in range(len(fixture_indptr) - 1):
+                ptr_from = fixture_indptr[i]
+                ptr_to = fixture_indptr[i + 1]
+                community = fixture_data[ptr_from:ptr_to]
+                # filter out buckets from fixture (apollo returns them)
+                fixture_communities.append(
+                    [j for j in community if j < len(cc)])
 
-        # Assert equality
-        assert_array_equal(data, fixture_data)
-        assert_array_equal(indptr, fixture_indptr)
+        assert_array_equal(communities, fixture_communities)
 
     def test_with_optimized_input(self):
         # scala part would remove elements that appear only in 1 bucket

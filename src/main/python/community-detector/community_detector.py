@@ -130,7 +130,8 @@ def detect_communities(ccs,
     log.debug("Launching the community detection")
     detector = CommunityDetector(algorithm=algorithm, config=algorithm_params)
 
-    communities.extend(chain.from_iterable((detector(g) for g in graphs)))
+    for community in chain.from_iterable((detector(g) for g in graphs)):
+        communities.append([i for i in community if i < total_nvertices])
 
     if len(communities) > 0:
         log.debug("Overall communities: %d", len(communities))
