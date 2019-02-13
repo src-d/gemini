@@ -65,6 +65,10 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     log.info(s"Finding ${mode} connected components")
     val cc = new DBConnectedComponents(log, conn, tables.hashtables(mode), keyspace)
     val (buckets, elementIds) = cc.makeBuckets()
+    if (buckets.isEmpty) {
+      return (Map[Int, Set[Int]](), Map[Int, List[Int]](), elementIds)
+    }
+
     val elsToBuckets = cc.elementsToBuckets(buckets)
 
     val result = cc.findInBuckets(buckets, elsToBuckets)
@@ -98,19 +102,18 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     */
   def findAllDuplicateItems(): Iterable[Iterable[RepoFile]] = {
     val hash = tables.metaCols.sha
-    val distinctBlobHash = s"SELECT distinct $hash FROM $keyspace.${tables.meta}"
+    val distinctBlobHash = s"SELECT * FROM $keyspace.${tables.meta}"
 
     conn
       .execute(new SimpleStatement(distinctBlobHash))
       .asScala
-      .flatMap { r =>
-        val dupes = Database.findFilesByHash(r.getString(hash), conn, keyspace, tables)
-        if (dupes.size > 1) {
-          List(dupes)
-        } else {
-          List()
-        }
+      .foldLeft(Map[String, List[RepoFile]]()) { (map, row) =>
+        val file = Database.rowToRepoFile(tables)(row)
+        val list = map.getOrElse(file.sha, List[RepoFile]()) :+ file
+        map + (file.sha -> list)
       }
+      .values
+      .filter(_.size > 1)
   }
 
   case class funcElem(sha1: String, name: String, line: String)
@@ -185,6 +188,10 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
   def findSimilarItems(ccDirPath: String, mode: String): Iterable[Iterable[SimilarItem]] = {
 
     val (connectedComponents, elsToBuckets, elementIds) = findConnectedComponents(mode)
+    if (connectedComponents.isEmpty) {
+      return Iterable[Iterable[SimilarItem]]()
+    }
+
     saveConnectedComponents(connectedComponents, elsToBuckets, ccDirPath)
 
     log.info("Detecting communities in Python")

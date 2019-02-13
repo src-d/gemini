@@ -109,7 +109,7 @@ object ReportApp extends App {
     if (similarities.isEmpty) {
       println(s"No similarities found.")
     } else {
-      similarities.foreach { community =>
+      similarities.filter(_.nonEmpty).foreach { community =>
         val count = community.size
         val typeName = community.head match {
           case SimilarFunc(_, _, _) => "functions"
