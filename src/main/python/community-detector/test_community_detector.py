@@ -87,6 +87,26 @@ class TestCommunityDetector(unittest.TestCase):
         assert_array_equal(communities[1], [1, 0])
         assert_array_equal(communities[2], [2])
 
+    def test_start_with_not_zero_input(self):
+        id_to_buckets = [
+            [2, [0]],
+            [3, [0, 2]],
+            [7, [2]],
+            [8, [1]],
+            [9, [1]],
+        ]
+        ccs = {
+            0: [3, 7, 2],
+            1: [8, 9]
+        }
+        buckets = build_matrix(id_to_buckets)
+        communities = detect_communities(ccs, buckets)
+
+        self.assertTrue(len(communities) == 3)
+        assert_array_equal(communities[0], [8, 9])
+        assert_array_equal(communities[1], [3, 2])
+        assert_array_equal(communities[2], [7])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,10 +7,10 @@ from scipy.sparse import csr_matrix
 
 
 def build_matrix(id_to_buckets):
-    """Builds a CSR matrix from a list of lists of buckets
+    """Builds a CSR matrix from a list of [elementid, buckets]
 
     Args:
-        id_to_buckets: list of [elementid, buckets].
+        id_to_buckets: sorted list of [elementid, buckets] by elementid.
 
     Returns:
         A scipy.sparse.csr_matrix with the same contents
@@ -29,10 +29,15 @@ def build_matrix(id_to_buckets):
     indices = numpy.zeros(len(data), dtype=numpy.uint32)
     indptr = numpy.zeros(max_el_id + 2, dtype=numpy.uint32)
     pos = 0
+    from_el_id = 0
     for el_id, bucket in id_to_buckets:
         indices[pos:(pos + len(bucket))] = bucket
+        # fill gap from previous elem id to current el id with prev pos value
+        indptr[from_el_id + 1:el_id + 1] = pos
         pos += len(bucket)
-        indptr[el_id + 1:] = pos
+        indptr[el_id + 1] = pos
+        from_el_id = el_id + 1
+
     return csr_matrix((data, indices, indptr))
 
 
