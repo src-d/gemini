@@ -135,6 +135,7 @@ class Hash(session: SparkSession,
     files
       .dropDuplicates("blob_id")
       .classifyLanguages
+      .filter('lang.isNotNull)
       .extractUASTs
       .select("repository_id", "path", "blob_id", "uast")
       .filter(_.getAs[Seq[Array[Byte]]]("uast").nonEmpty)
