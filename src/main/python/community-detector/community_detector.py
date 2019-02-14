@@ -1,4 +1,3 @@
-from collections import defaultdict
 from itertools import chain
 import logging
 
@@ -8,56 +7,41 @@ from scipy.sparse import csr_matrix
 
 
 def build_matrix(id_to_buckets):
-    """Builds a CSR matrix from a list of lists of buckets
-
-    Same code as in Apollo ConnectedComponentsModel.
-    https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L28
+    """Builds a CSR matrix from a list of [elementid, buckets]
 
     Args:
-        id_to_buckets: list of lists of buckets. The index is the element id
+        id_to_buckets: sorted list of [elementid, buckets] by elementid.
 
     Returns:
         A scipy.sparse.csr_matrix with the same contents
     """
 
-    if len(id_to_buckets) == 0:
+    if not id_to_buckets:
         return csr_matrix((0, 0), dtype=numpy.uint8)
 
-    data = numpy.ones(sum(map(len, id_to_buckets)), dtype=numpy.uint8)
+    max_el_id = 0
+    data_size = 0
+    for item in id_to_buckets:
+        max_el_id = max(max_el_id, item[0])
+        data_size += len(item[1])
+
+    data = numpy.ones(data_size, dtype=numpy.uint8)
     indices = numpy.zeros(len(data), dtype=numpy.uint32)
-    indptr = numpy.zeros(len(id_to_buckets) + 1, dtype=numpy.uint32)
+    indptr = numpy.zeros(max_el_id + 2, dtype=numpy.uint32)
     pos = 0
-    for i, element in enumerate(id_to_buckets):
-        indices[pos:(pos + len(element))] = element
-        pos += len(element)
-        indptr[i + 1] = pos
+    from_el_id = 0
+    for el_id, bucket in id_to_buckets:
+        indices[pos:(pos + len(bucket))] = bucket
+        # fill gap from previous elem id to current el id with prev pos value
+        indptr[from_el_id + 1:el_id + 1] = pos
+        pos += len(bucket)
+        indptr[el_id + 1] = pos
+        from_el_id = el_id + 1
+
     return csr_matrix((data, indices, indptr))
 
 
-def build_id_to_cc(connected_components, length):
-    """Builds a ndarray that associates element id to a connected component
-
-    Same code as in Apollo ConnectedComponentsModel.
-    https://github.com/src-d/apollo/blob/f51c5a92c24cbedd54b9b30bab02f03e51fd27b3/apollo/graph.py#L28
-
-    Args:
-        connected_components: list of tuples (connected-component, element ids)
-        length: number of elements
-
-    Returns:
-        A 1 dimension ndarray. The index will be the element id, and the
-            value is the connected component
-    """
-
-    id_to_cc = numpy.zeros(length, dtype=numpy.uint32)
-    for cc, ids in connected_components:
-        for id_ in ids:
-            id_to_cc[id_] = cc
-
-    return id_to_cc
-
-
-def detect_communities(cc,
+def detect_communities(ccs,
                        buckets_matrix,
                        edges="linear",
                        algorithm="walktrap",
@@ -68,8 +52,8 @@ def detect_communities(cc,
     https://github.com/src-d/apollo/blob/6b370b5f34ba9e31cf3310e70a2eff35dd978faa/apollo/graph.py#L191
 
     Args:
-        cc: list with the connected components. Index is the element id, the
-            value is the connected component
+        ccs: dict with the connected components. Index is the connected component, the
+            value is the list of element ids
         buckets_matrix: scipy.sparse.csr_matrix with the buckets. One row for
             each element, with a column for each bucket. If the element is in a
             bucket, the corresponding row,column (element id, bucket id) is 1,
@@ -80,7 +64,7 @@ def detect_communities(cc,
             - quadratic: slow, but surely fits all the algorithms.
         algorithm: The community detection algorithm to apply.
         algorithm_params: Parameters for the algorithm (**kwargs, JSON format).
-    
+
     Returns:
         A list of communities. Each community is a list of element-ids
     """
@@ -92,11 +76,6 @@ def detect_communities(cc,
 
     log = logging.getLogger("community-detector")
     log.debug("Building the connected components")
-
-    ccs = defaultdict(list)
-
-    for i, c in enumerate(cc):
-        ccs[c].append(i)
 
     buckindices = buckets_matrix.indices
     buckindptr = buckets_matrix.indptr
@@ -120,12 +99,12 @@ def detect_communities(cc,
         fat_ccs.append(vertices)
 
     log.debug("Building %d graphs", len(fat_ccs))
+    bucket_weights = buckets_matrix.sum(axis=0)
 
     for vertices in fat_ccs:
         if linear:
             edges = []
             weights = []
-            bucket_weights = buckets_matrix.sum(axis=0)
             buckets = set()
             for i in vertices:
                 for j in range(buckindptr[i], buckindptr[i + 1]):
@@ -142,8 +121,8 @@ def detect_communities(cc,
                 for j in range(buckindptr[i], buckindptr[i + 1]):
                     buckets.add(buckindices[j])
             for bucket in buckets:
-                buckverts = \
-                    buckmat_csc.indices[buckmat_csc.indptr[bucket]:buckmat_csc.indptr[bucket + 1]]
+                buckverts = buckmat_csc.indices[
+                    buckmat_csc.indptr[bucket]:buckmat_csc.indptr[bucket + 1]]
                 for i, x in enumerate(buckverts):
                     for y in buckverts:
                         if x < y:
@@ -160,7 +139,8 @@ def detect_communities(cc,
     log.debug("Launching the community detection")
     detector = CommunityDetector(algorithm=algorithm, config=algorithm_params)
 
-    communities.extend(chain.from_iterable((detector(g) for g in graphs)))
+    for community in chain.from_iterable((detector(g) for g in graphs)):
+        communities.append([i for i in community if i < total_nvertices])
 
     if len(communities) > 0:
         log.debug("Overall communities: %d", len(communities))

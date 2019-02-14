@@ -108,8 +108,8 @@ class ReportSpec extends FlatSpec
 
     val files = similarGroups.head.map(_.toString)
     files.toSeq should contain theSameElementsAs Seq(
-      "https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/consumer_test.go",
-      "https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/consumer_test.go"
+      "https://github.com/erizocosmico/borges/blob/b1fcd3bf0ba810c05cb418babc09cc7f7783cc03/fixtures_test.go",
+      "https://github.com/src-d/borges/blob/e784f9d5f59d5c081c5f8f71b6c517918b899df0/fixtures_test.go"
     )
   }
 

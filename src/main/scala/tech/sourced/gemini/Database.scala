@@ -53,7 +53,7 @@ object Database {
     conn.execute(query).asScala.map(rowToRepoFile(tables))
   }
 
-  private def rowToRepoFile(tables: Tables)(row: Row): RepoFile = {
+  def rowToRepoFile(tables: Tables)(row: Row): RepoFile = {
     val cols = tables.metaCols
     RepoFile(row.getString(cols.repo), row.getString(cols.commit), row.getString(cols.path), row.getString(cols.sha))
   }

@@ -52,40 +52,74 @@ abstract class ConnectedComponents(log: Slf4jLogger) {
     * @return Buckets, Element-to-ID
     */
   def makeBuckets(): (List[List[Int]], Map[String, Int]) = {
-    val (buckets, elementIds) = getHashtables()
-      .foldLeft(List[List[Int]](), mutable.Map[String, Int]()) { (result, hashtable) =>
+    val allHashTables = getHashtables()
+    if (allHashTables.isEmpty) {
+      return (List[List[Int]](), Map[String, Int]())
+    }
 
-        var (buckets, elementIds) = result
-        val prevBucketsSize = buckets.size
-        var band: Option[ByteBuffer] = None
-        var bucket = List[Int]()
+    val firstHashTable::hashTables = allHashTables
 
-        getHashValues(hashtable).foreach { case FileHash(sha1, value) =>
-          val elId = elementIds.getOrElseUpdate(sha1, elementIds.size)
-          if (!band.contains(value)) {
-            if (band.isDefined) {
-              buckets = buckets :+ bucket
-              bucket = List[Int]()
-            }
-            band = Some(value)
-          }
-          bucket = bucket :+ elId
-        }
+    var buckets = List[List[Int]]()
+    var band: Option[ByteBuffer] = None
+    var bucket = List[Int]()
 
-        if (bucket.nonEmpty) {
+    // code for the first hashTable uses the algorithm as for others (bucketsForHashTable methods)
+    // but also builds elementIds map
+    val elementIds = getHashValues(firstHashTable)
+      .zipWithIndex.
+      foldLeft(Map[String, Int]()) { (idsMap, item) =>
+      val (hash, elId) = item
+      val FileHash(sha1, value) = hash
+
+      if (!band.contains(value)) {
+        if (bucket.size > 1) {
           buckets = buckets :+ bucket
         }
 
-        val bucketsSize = buckets.size - prevBucketsSize
-        log.debug(s"Fetched $hashtable, $bucketsSize buckets")
-
-        (buckets, elementIds)
+        bucket = List[Int]()
+        band = Some(value)
       }
+      bucket = bucket :+ elId
+
+      idsMap + (sha1 -> elId)
+    }
+
+    if (bucket.size > 1) {
+      buckets = buckets :+ bucket
+    }
+
+    buckets ++= hashTables.par.flatMap(bucketsForHashTable(_, elementIds))
 
     log.info(s"Number of buckets: ${buckets.size}")
     log.info(s"Number of elements: ${elementIds.size}")
 
-    (buckets, elementIds.toMap)
+    (buckets, elementIds)
+  }
+
+  private def bucketsForHashTable(hashTable: Byte, elementIds: Map[String, Int]): List[List[Int]] = {
+    var buckets = List[List[Int]]()
+    var band: Option[ByteBuffer] = None
+    var bucket = List[Int]()
+
+    getHashValues(hashTable).foreach { case FileHash(sha1, value) =>
+      val elId = elementIds(sha1)
+
+      if (!band.contains(value)) {
+        if (bucket.size > 1) {
+          buckets = buckets :+ bucket
+        }
+
+        bucket = List[Int]()
+        band = Some(value)
+      }
+      bucket = bucket :+ elId
+    }
+
+    if (bucket.size > 1) {
+      buckets = buckets :+ bucket
+    }
+
+    buckets
   }
 
   /**
