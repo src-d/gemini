@@ -101,7 +101,6 @@ class Report(conn: Session, log: Slf4jLogger, keyspace: String, tables: Tables) 
     * @return
     */
   def findAllDuplicateItems(): Iterable[Iterable[RepoFile]] = {
-    val hash = tables.metaCols.sha
     val distinctBlobHash = s"SELECT * FROM $keyspace.${tables.meta}"
 
     conn

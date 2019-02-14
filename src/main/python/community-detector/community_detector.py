@@ -10,18 +10,22 @@ def build_matrix(id_to_buckets):
     """Builds a CSR matrix from a list of lists of buckets
 
     Args:
-        id_to_buckets: list of lists of elementid, buckets.
+        id_to_buckets: list of [elementid, buckets].
 
     Returns:
         A scipy.sparse.csr_matrix with the same contents
     """
 
-    if len(id_to_buckets) == 0:
+    if not id_to_buckets:
         return csr_matrix((0, 0), dtype=numpy.uint8)
 
-    max_el_id = max((item[0] for item in id_to_buckets))
-    data = numpy.ones(
-        sum((len(item[1]) for item in id_to_buckets)), dtype=numpy.uint8)
+    max_el_id = 0
+    data_size = 0
+    for item in id_to_buckets:
+        max_el_id = max(max_el_id, item[0])
+        data_size += len(item[1])
+
+    data = numpy.ones(data_size, dtype=numpy.uint8)
     indices = numpy.zeros(len(data), dtype=numpy.uint32)
     indptr = numpy.zeros(max_el_id + 2, dtype=numpy.uint32)
     pos = 0
