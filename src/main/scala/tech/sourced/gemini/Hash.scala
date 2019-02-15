@@ -43,6 +43,9 @@ class Hash(session: SparkSession,
            mode: String = Gemini.fileSimilarityMode,
            docFreqPath: String = "") {
 
+  // very small files produce too much false positives
+  val fileSizeThresholdBytes = 500
+
   import session.implicits._
 
   def report(header: String, countProcessed: Long, skipped: MapAccumulator): Unit = {
@@ -139,6 +142,7 @@ class Hash(session: SparkSession,
 
     files
       .dropDuplicates("blob_id")
+      .filter('content_size > fileSizeThresholdBytes)
       .classifyLanguages
       .filter('lang.isNotNull)
       .extractUASTs
