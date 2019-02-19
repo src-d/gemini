@@ -140,9 +140,15 @@ class Hash(session: SparkSession,
   protected def extractUast(files: DataFrame): DataFrame = {
     log.warn("Extracting UASTs")
 
-    files
-      .dropDuplicates("blob_id")
-      .filter('content_size > fileSizeThresholdBytes)
+    val blobs = files.dropDuplicates("blob_id")
+
+    val filteredBlobs = if (mode == Gemini.fileSimilarityMode) {
+      blobs.filter('content_size > fileSizeThresholdBytes)
+    } else {
+      blobs
+    }
+
+    filteredBlobs
       .classifyLanguages
       .filter('lang.isNotNull)
       .extractUASTs
