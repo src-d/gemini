@@ -55,10 +55,7 @@ class TestCommunityDetector(unittest.TestCase):
             [6, [1]],
             [7, [1]],
         ]
-        ccs = {
-            0: [1, 5, 0],
-            1: [6, 7]
-        }
+        ccs = {0: [1, 5, 0], 1: [6, 7]}
         buckets = build_matrix(id_to_buckets)
         communities = detect_communities(ccs, buckets)
 
@@ -75,10 +72,7 @@ class TestCommunityDetector(unittest.TestCase):
             [3, [1]],
             [4, [1]],
         ]
-        ccs = {
-            0: [1, 2, 0],
-            1: [3, 4]
-        }
+        ccs = {0: [1, 2, 0], 1: [3, 4]}
         buckets = build_matrix(id_to_buckets)
         communities = detect_communities(ccs, buckets)
 
@@ -95,10 +89,7 @@ class TestCommunityDetector(unittest.TestCase):
             [8, [1]],
             [9, [1]],
         ]
-        ccs = {
-            0: [3, 7, 2],
-            1: [8, 9]
-        }
+        ccs = {0: [3, 7, 2], 1: [8, 9]}
         buckets = build_matrix(id_to_buckets)
         communities = detect_communities(ccs, buckets)
 

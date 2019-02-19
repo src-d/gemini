@@ -121,8 +121,8 @@ def detect_communities(ccs,
                 for j in range(buckindptr[i], buckindptr[i + 1]):
                     buckets.add(buckindices[j])
             for bucket in buckets:
-                buckverts = buckmat_csc.indices[
-                    buckmat_csc.indptr[bucket]:buckmat_csc.indptr[bucket + 1]]
+                buckverts = buckmat_csc.indices[buckmat_csc.indptr[bucket]:
+                                                buckmat_csc.indptr[bucket + 1]]
                 for i, x in enumerate(buckverts):
                     for y in buckverts:
                         if x < y:
