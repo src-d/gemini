@@ -8,6 +8,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra._
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.functions.{udf => sparkUdf} // udf name conflicts with engine
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.storage.StorageLevel
 import org.bblfsh.client.BblfshClient
@@ -41,6 +42,9 @@ class Hash(session: SparkSession,
            log: Slf4jLogger,
            mode: String = Gemini.fileSimilarityMode,
            docFreqPath: String = "") {
+
+  // very small files produce too much false positives
+  val fileSizeThresholdBytes = 500
 
   import session.implicits._
 
@@ -120,20 +124,31 @@ class Hash(session: SparkSession,
   protected def filesForRepos(repos: DataFrame): DataFrame = {
     log.warn("Listing files")
 
+    val fileSizeUdf = sparkUdf { (content: Array[Byte]) => content.size }
+
     repos
       .getHEAD
       .getCommits
       .getTreeEntries
       .getBlobs
-      .filter(r => !Enry.isVendor(r.getAs[String]("path")))
       .filter('is_binary === false)
+      .filter(r => !Enry.isVendor(r.getAs[String]("path")))
+      .withColumn("content_size", fileSizeUdf('content))
+      .filter('content_size !== 0) // empty files only pollute results
   }
 
   protected def extractUast(files: DataFrame): DataFrame = {
     log.warn("Extracting UASTs")
 
-    files
-      .dropDuplicates("blob_id")
+    val blobs = files.dropDuplicates("blob_id")
+
+    val filteredBlobs = if (mode == Gemini.fileSimilarityMode) {
+      blobs.filter('content_size > fileSizeThresholdBytes)
+    } else {
+      blobs
+    }
+
+    filteredBlobs
       .classifyLanguages
       .filter('lang.isNotNull)
       .extractUASTs
