@@ -53,7 +53,8 @@ models = {
         'transform': lambda x: {
             'docs': x.docs,
             'tokens': x.tokens(),
-            'df': {k: float(v) for k, v in x._df.items()},
+            'df': {k: float(v)
+                   for k, v in x._df.items()},
         }
     },
     'params': {
