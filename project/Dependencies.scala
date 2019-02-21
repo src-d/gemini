@@ -33,4 +33,5 @@ object Dependencies {
   lazy val bblfshClient = "org.bblfsh" % "bblfsh-client" % "1.8.2"
   lazy val scalaJsonParser = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7"
   lazy val gcs = "com.google.cloud.bigdataoss" % "gcs-connector" % "hadoop2-1.9.11"
+  lazy val enry = "tech.sourced" % "enry-java" % "1.7.1"
 }

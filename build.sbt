@@ -17,6 +17,7 @@ libraryDependencies ++= Seq(
   fixNewerHadoopClient % Provided, //due to newer v. of guava
 
   scalaLib % Compile,
+  bblfshClient % Compile,
   scalapb % Compile,
   ioGrpc % Compile,
   scalapbGrpc % Compile,
@@ -32,9 +33,9 @@ libraryDependencies ++= Seq(
   log4j12 % Compile,
   log4jBinding % Compile,
   commonsMath % Compile,
-  bblfshClient % Compile,
   avro % Compile,
   parquetAvro % Compile,
+  enry % Compile,
   scalaJsonParser % Compile //needed for docFreq reading
   //TODO(bzz): remove scalaJsonParser at https://github.com/src-d/gemini/issues/112
 )
