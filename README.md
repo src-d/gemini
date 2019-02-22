@@ -96,7 +96,7 @@ You would need:
 
  - JVM 1.8
  - Apache Cassandra or ScyllaDB
- - Apache Spark
+ - Apache Spark 2.2.x
  - Python 3
  - [Bblfshd](https://github.com/bblfsh/bblfshd/) v2.5.0+
 
@@ -162,6 +162,26 @@ Report specific arguments:
  * `--cassandra` - Enable advanced cql queries for Apache Cassandra database
 
 
+### Limitations
+
+Currently gemini targets medium size repositories and datasets.
+
+We set resonable defaults and pre-filtering rules to provide the best results for this case.
+List of rules:
+
+- Exclude binary files
+- Exclude empty files from full duplication results
+- Exclude files less than 500B from file-similarity results
+- Similarity deduplication works only for [languages supported by babelfish](https://docs.sourced.tech/babelfish/languages) and syntactically correct files
+
+
+### Performance tips
+
+We recommend to run Spark with 10GB+ memory for each executer and for the driver. Gemini wouldn't benifit from more than 1 CPU per task.
+
+Horizontal scaling doesn't work well for the first stage of the pipeline and depends on size of the biggest repositories in a dataset but the rest of pipeline scales well.
+
+
 ### Distributed storages
 
 Gemini supports different distributed storages in local and cluster mode. It already includes all necessary jars as a part of fat jar.
@@ -192,6 +212,14 @@ To connect to S3 locally use following flags:
 Due to some limitations passing key&secret as part of URI is not supported.
 
 To use AWS S3 in cluster mode please consult [hadoop-aws documentation](https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#S3A)
+
+
+### Known bugs
+
+* Search for similarities in C# code isn't supported right now ([patch](https://github.com/smacker/gemini/commit/dcaebc295ff490d2800ef80af07a29925201a673) with workaround)
+* Timeout for UAST extraction is relatevely low on real dataset according to our experience and it isn't configurable ([patch1](https://github.com/smacker/gemini/commit/cc5703169df640ff34bf35e2c8259216319f1cfb) and [path2](https://github.com/smacker/gemini/commit/342dd5074db5bd6bdeef2f6c855f8b5622b4b3ff) with workaround)
+* For standard & bare format gemini prints wrong repositories listing ([issue](https://github.com/src-d/gemini/issues/199))
+
 
 ## Development
 
