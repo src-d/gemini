@@ -134,7 +134,7 @@ export DRIVER_MEMORY=30g
 export EXECUTOR_MEMORY=60g
 ```
 
-To use external claster just set url to the Spark Master though env var
+To use a external cluster just set the URL to the Spark Master though an env var:
 ```
 MASTER="spark://<spark-master-url>" ./hash <path>
 ```
