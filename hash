@@ -56,7 +56,8 @@ sparkSubmit \
   --master "${MASTER:=local[*]}" \
   --name "${app_name}" \
   --jars "${deps_jar}" \
-  --conf "spark.executor.memory=4g" \
+  --conf "spark.driver.memory=${DRIVER_MEMORY:=2g}" \
+  --conf "spark.executor.memory=${EXECUTOR_MEMORY:=4g}" \
   --conf "spark.serializer=org.apache.spark.serializer.KryoSerializer" \
   --conf "spark.tech.sourced.engine.skip.read.errors=true" \
   --conf "spark.files.maxPartitionBytes=12582912" \
