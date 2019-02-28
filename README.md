@@ -126,12 +126,19 @@ docker exec -it some-scylla cqlsh
 ```
 
 
-### External Apache Spark cluster
+### Configuration for Apache Spark
 
-Just set url to the Spark Master though env var
+Use env variables to set memory for hash job:
+```
+export DRIVER_MEMORY=30g
+export EXECUTOR_MEMORY=60g
+```
+
+To use external claster just set url to the Spark Master though env var
 ```
 MASTER="spark://<spark-master-url>" ./hash <path>
 ```
+
 
 ### CLI arguments
 
