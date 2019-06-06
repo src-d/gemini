@@ -81,7 +81,7 @@ class FileQuerySpec extends FlatSpec
     duplicates.head.repo should be("null/Users/alex/src-d/gemini")
     duplicates.head.commit should be("4aa29ac236c55ebbfbef149fef7054d25832717f")
     channel.shutdownNow()
-    //TODO(bzz): bblfshClient.shutdownNow() after https://github.com/bblfsh/client-scala/issues/71
+    bblfshClient.close()
   }
 
   /**
