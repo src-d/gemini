@@ -1,4 +1,4 @@
-# Gemini [![Build Status](https://travis-ci.org/src-d/gemini.svg?branch=master)](https://travis-ci.org/src-d/gemini) [![codecov](https://codecov.io/gh/src-d/gemini/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/gemini)
+# Gemini [![Build Status](https://travis-ci.com/src-d/gemini.svg?branch=master)](https://travis-ci.com/src-d/gemini) [![codecov](https://codecov.io/gh/src-d/gemini/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/gemini)
 > Find similar code in Git repositories
 
 Gemini is a tool for searching for similar 'items' in source code repositories.
