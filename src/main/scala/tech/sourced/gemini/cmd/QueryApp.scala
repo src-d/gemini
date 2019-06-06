@@ -92,7 +92,7 @@ object QueryApp extends App {
       gemini.applySchema(cassandra)
 
       log.info("Setting up bblfsh/fe gRPC clients")
-      val bblfshClient = BblfshClient.apply(config.bblfshHost, config.bblfshPort)
+      val bblfshClient = BblfshClient(config.bblfshHost, config.bblfshPort)
       val channel = ManagedChannelBuilder.forAddress(config.feHost, config.fePort).usePlaintext(true).build()
       val feClient = FeatureExtractorGrpc.stub(channel)
       val QueryResult(duplicates, similar) =
