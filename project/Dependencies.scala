@@ -30,7 +30,7 @@ object Dependencies {
   lazy val scalapbGrpc = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % "0.8.4"
   lazy val ioGrpc = "io.grpc" % "grpc-netty" % "1.10.0"
   lazy val commonsMath = "org.apache.commons" % "commons-math3" % "3.6.1"
-  lazy val bblfshClient = "org.bblfsh" % "bblfsh-client" % "1.8.2"
+  lazy val bblfshClient = "org.bblfsh" % "bblfsh-client" % "1.10.1"
   lazy val scalaJsonParser = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7"
   lazy val gcs = "com.google.cloud.bigdataoss" % "gcs-connector" % "hadoop2-1.9.11"
   lazy val enry = "tech.sourced" % "enry-java" % "1.7.1"
